@@ -53,3 +53,13 @@ dist/
 
 # File uploads
 uploads/
+
+# Secrets & local env
+.env
+
+# Python
+.venv/
+__pycache__/
+
+# Local upload staging
+uploads/

@@ -69,6 +69,21 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── RAG orchestrator — FastAPI + LangGraph sidecar (Phase 4) ─────────────────
+  # Called by the backend at CORRELATING: correlates findings into incidents,
+  # writes the report, and answers drill-down questions over the chunk store.
+  rag-orchestrator:
+    build: ./rag-orchestrator
+    container_name: chunkai-orchestrator
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://deepdocai:deepdocai123@postgres:5432/deepdocai_db
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   kafka_data:
