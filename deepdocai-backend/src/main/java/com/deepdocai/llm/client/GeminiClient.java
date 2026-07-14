@@ -43,7 +43,8 @@ public class GeminiClient {
         List<Map<String, Object>> requests = texts.stream()
             .map(text -> Map.<String, Object>of(
                 "model", "models/" + config.getEmbeddingModel(),
-                "content", Map.of("parts", List.of(Map.of("text", text)))
+                "content", Map.of("parts", List.of(Map.of("text", text))),
+                "outputDimensionality", config.getEmbeddingDimensions()
             ))
             .collect(Collectors.toList());
 
@@ -108,7 +109,8 @@ public class GeminiClient {
 
         Map<String, Object> request = Map.of(
             "model", "models/" + config.getEmbeddingModel(),
-            "content", Map.of("parts", List.of(Map.of("text", text)))
+            "content", Map.of("parts", List.of(Map.of("text", text))),
+            "outputDimensionality", config.getEmbeddingDimensions()
         );
 
         int maxRetries = config.getMaxRetries();

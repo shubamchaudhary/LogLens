@@ -22,6 +22,7 @@ class DrilldownState(TypedDict, total=False):
     original_question: str
     question: str
     docs: list[dict[str, Any]]
+    best_docs: list[dict[str, Any]]
     graded: list[dict[str, Any]]
     rewrites: int
     answer: str
@@ -38,7 +39,12 @@ def retrieve_node(state: DrilldownState) -> DrilldownState:
             log.exception("embedding failed, falling back to full-text only")
     docs = db.retrieve_chunks(state["session_id"], embedding, q, config.RETRIEVE_LIMIT)
     log.info("[%s] retrieved %d chunk(s)", state["session_id"], len(docs))
-    return {"docs": docs}
+    out: DrilldownState = {"docs": docs}
+    # Preserve the first useful retrieval so a degrading rewrite (or an
+    # over-strict grader) can never leave us answering from nothing.
+    if docs and not state.get("best_docs"):
+        out["best_docs"] = docs
+    return out
 
 
 def grade_node(state: DrilldownState) -> DrilldownState:

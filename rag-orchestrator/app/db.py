@@ -49,6 +49,14 @@ def load_findings(session_id: str) -> list[dict[str, Any]]:
         return cur.fetchall()
 
 
+def count_findings(session_id: str) -> int:
+    """Cheap count used to size Graph 1's recursion budget before invoking it."""
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute("SELECT count(*) AS n FROM log_findings WHERE session_id = %s", (session_id,))
+        row = cur.fetchone()
+        return int(row["n"]) if row else 0
+
+
 def load_top_metrics(session_id: str, limit: int) -> list[dict[str, Any]]:
     sql = (
         "SELECT category, metric, SUM(count) AS total, "

@@ -17,7 +17,8 @@ import java.util.List;
 public class GeminiConfig {
     private String apiKey; // Single key (for backward compatibility)
     private String apiKeys; // Comma-separated multiple keys for round-robin
-    private String embeddingModel = "text-embedding-004";
+    private String embeddingModel = "gemini-embedding-001";
+    private int embeddingDimensions = 768; // schema-v2 chunk vectors are vector(768); gemini-embedding-001 truncates via outputDimensionality
     private String generationModel = "gemini-2.5-flash";
     private String baseUrl = "https://generativelanguage.googleapis.com/v1beta";
     private int maxRetries = 3;

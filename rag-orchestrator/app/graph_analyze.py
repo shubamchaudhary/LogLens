@@ -240,7 +240,18 @@ GRAPH = _build()
 def run_analysis(session_id: str) -> None:
     """Invoke Graph 1 for a session; mark FAILED on any unhandled error."""
     try:
-        GRAPH.invoke({"session_id": session_id})
+        # LangGraph counts every node run as a super-step and defaults to a limit
+        # of 25. Each cluster (there are at most one-per-finding) can consume up to
+        # MAX_CORRELATE_ATTEMPTS correlate+ground_check pairs before it is force-
+        # accepted, so a legitimate bounded run over many clusters — common when a
+        # weaker model keeps failing the grounding check — would otherwise trip the
+        # guard. Size the budget to the worst case plus a fixed margin.
+        n_findings = db.count_findings(session_id)
+        recursion_limit = 12 + n_findings * (config.MAX_CORRELATE_ATTEMPTS * 2 + 1)
+        GRAPH.invoke(
+            {"session_id": session_id},
+            config={"recursion_limit": recursion_limit},
+        )
     except Exception as exc:  # noqa: BLE001 — top-level guard, must catch all
         log.exception("[%s] analysis failed", session_id)
         try:
