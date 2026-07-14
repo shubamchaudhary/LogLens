@@ -25,6 +25,9 @@ bin/
 # VS Code
 .vscode/
 
+# SpecStory tool artifacts
+.specstory/
+
 # Mac
 .DS_Store
 

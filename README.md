@@ -1,68 +1,63 @@
 # ChunkAI
 
-Grounded Q&A over your own documents. Upload PDFs, slide decks, scanned notes in bulk; ask questions; get answers generated strictly from that content, with file and page/slide citations on every claim.
+Log intelligence pipeline. Upload a production log archive; get back exact metrics, classified failures, correlated incidents with root-cause narratives, and a generated report — every claim cited back to the actual log lines.
 
-## What it solves
+Built for the question class where standard RAG structurally fails: **whole-corpus analytical questions**. "What defect patterns appeared this week?" isn't answerable from top-10 retrieved chunks — the answer is spread across thousands. ChunkAI analyzes the entire archive once at ingest, materializes the findings, and answers questions instantly from them.
 
-- **Grounding.** Answers come from retrieved document context only. Every response cites its sources. If the documents don't cover the question, the system says so or falls back to web-grounded search — explicitly, never silently.
-- **Context overflow.** A hundred slide decks won't fit in any model's window. Retrieval is recall-first, then hierarchically compressed until it fits — precision problems are cheaper to fix than missing facts.
-- **Ingestion at rate-limit scale.** Bulk uploads produce thousands of LLM calls against per-key API quotas. Work is queued durably, partitioned across API keys, retried with backoff, and survives process restarts. Bursts buffer; they don't fail.
-- **Retrieval quality.** Lexical and semantic search fail on different query classes. Both run on every query and fuse by rank — exact identifiers and paraphrased questions land on the same chunks.
+## Design positions
+
+- **LLMs never count.** Counts, latencies, and distributions come from deterministic parsers — exact, free, fast. LLM calls are spent only where semantics matter: explaining anomalies, classifying errors, correlating events into incidents. Numbers from parsers, narratives from the model.
+- **Compute understanding once, not per question.** The heavy LLM work (thousands of enrichment calls per corpus) runs at ingest time through durable queues and lands in structured tables. User queries are SQL over those tables — milliseconds, and hallucination-proof by construction, with a grounded RAG drill-down to the raw log lines as the escape hatch.
+- **Rate limits are an architecture problem, not a retry problem.** Enrichment bursts run against per-key API quotas. Work is partitioned one-Kafka-partition-per-API-key — preserving per-key rate limits across any number of workers — with delayed-retry topics for 429s and replayable history for rebuilding anything derived.
+- **A session is a corpus, not a chat.** One session holds one archive (10⁵–10⁶ chunks) in its own physical table with its own vector index: search cost scales with that corpus only, other tenants' data is never touched, and deleting a corpus is a `DROP TABLE`.
 
 ## Stack
 
 | Technology | Role |
 |---|---|
-| Spring Boot / Java | API — auth, uploads, chats, document lifecycle |
-| PostgreSQL + pgvector | System of record: users, documents, chunks, embeddings |
-| Apache Kafka | Durable work queues; one partition per API key preserves per-key rate limits across any number of workers; replayable on failure |
-| Elasticsearch | Hybrid retrieval — BM25 + dense kNN, rank-fused |
-| LangGraph / Python | Query orchestration: rewrite → retrieve → grade → generate → groundedness check, with retry loops |
-| Google Gemini | Embeddings, summarization, generation |
-| MinIO / S3 | Object storage |
-| React + Vite | Frontend |
+| Spring Boot / Java | API, auth, ingestion pipeline, parsers, Kafka consumers |
+| PostgreSQL + pgvector | System of record: sessions, chunks (per-session tables with vector + full-text indexes), metrics, findings, incidents, reports |
+| Apache Kafka | Durable analysis queues; partition-per-API-key LLM lanes; replayable history |
+| MinIO | Temporary staging for uploaded archives — self-hosted, free, S3-compatible; chunker streams and deletes, Postgres holds the durable copy |
+| LangGraph / Python | Correlation & report graphs; grounded drill-down Q&A |
+| Google Gemini | Enrichment, correlation, report generation |
+| React + Vite | Frontend: progress, report, fixed-param queries |
 
-Postgres is the single source of truth. Kafka topics and the ES index are projections — both rebuildable from it.
+Postgres is the only stateful system of record; everything derived (findings, incidents, reports) is rebuildable by replaying Kafka. Uploaded files are staging, not storage — deleted once processed. Deliberately absent: Elasticsearch, a dedicated vector DB, managed cloud storage — each solved a problem this design doesn't have (the cut list with reasoning is in `docs/02`, §4).
 
 ## High-level flow
 
 ```
- INGESTION
- ┌──────┐   files    ┌─────────┐  ingest req   ┌───────┐
- │ User │ ─────────▶ │   API   │ ────────────▶ │ Kafka │
- └──────┘            └────┬────┘               └───┬───┘
-                          │ metadata               │ partition-per-key
-                          ▼                        ▼
-                   ┌────────────┐            ┌──────────┐   embed    ┌────────┐
-                   │ PostgreSQL │ ◀───────── │ Workers  │ ─────────▶ │ Gemini │
-                   └────────────┘  chunks +  │ extract  │            └────────┘
-                          │        vectors   │ chunk    │
-                          │                  └────┬─────┘
-                          │                       │ index
-                          │                       ▼
-                          │                ┌───────────────┐
-                          │                │ Elasticsearch │
-                          │                └───────┬───────┘
- QUERY                    │                        │
- ┌──────┐  question  ┌────┴────┐   orchestrate ┌───┴──────────────┐
- │ User │ ─────────▶ │   API   │ ────────────▶ │ RAG Orchestrator │
- └──────┘            └─────────┘               │    (LangGraph)   │
-     ▲                                         └───┬──────────────┘
-     │      answer + citations                     │ hybrid search, then
-     └─────────────────────────────────────────────┘ generate + self-check
+ ANALYSIS (once per archive — heavy, async)
+ ───────────────────────────────────────────────────────────────
+ upload ──▶ API ──▶ Kafka ──▶ chunk by time window
+                                    │
+                     ┌──────────────┴──────────────┐
+                     ▼                             ▼
+              Layer 1: PARSERS              Layer 2: LLM ENRICHMENT
+              exact counts/latencies        anomalous windows only,
+              → log_metrics                 via per-key Kafka lanes
+                     │                      → log_findings
+                     └──────────┬───────────┘
+                                ▼
+                     CORRELATION (LangGraph)
+                     findings → incidents → REPORT
+
+ QUERY (per question — light, instant)
+ ───────────────────────────────────────────────────────────────
+ fixed-param question ──▶ SQL over metrics/findings/incidents ──▶ answer
+ "show me the lines"  ──▶ evidence drill-down (vector + full-text search, grounded RAG)
 ```
 
-Two independent paths. Ingestion: upload → Kafka → extract, chunk, embed, index. Query: rewrite → hybrid retrieve → grade relevance → generate → verify groundedness against sources → answer with citations. Kafka decouples bursty producers from rate-limited consumers on both.
-
-The codebase is mid-migration to this design. Current architecture, target architecture with trade-off analysis, and the phased plan are in [`docs/`](docs/) — start at [`docs/HANDOVER.md`](docs/HANDOVER.md).
+Details — schemas, Kafka topics, extraction taxonomy, trade-off analysis, migration phases — live in [`docs/`](docs/), starting at [`docs/HANDOVER.md`](docs/HANDOVER.md). Document Q&A over PDFs/slides (the v1 feature set) remains a secondary mode on the same machinery.
 
 ## Running locally
 
-Java 17+, Node 18+, Docker, and a Gemini API key ([aistudio.google.com](https://aistudio.google.com/)). Entire stack is free and self-hosted.
+Java 17+, Node 18+, Docker, and a free Gemini API key ([aistudio.google.com](https://aistudio.google.com/)). Entire stack is free and self-hosted.
 
 ```bash
 cp .env.example .env                        # add GEMINI_API_KEYS
-docker-compose up -d                        # postgres+pgvector (kafka/es join as phases land)
+docker-compose up -d                        # postgres+pgvector (kafka/minio join as phases land)
 ./gradlew :deepdocai-backend:bootRun        # api on :8080
 cd examprep-frontend && npm i && npm run dev
 ```
