@@ -1,161 +1,77 @@
-# Chunk AI
+# ChunkAI
 
-An AI-powered exam preparation system where students can upload PPTs/PDFs/handwritten notes and get exam-ready answers structured by marks.
+Grounded Q&A over your own documents. Upload PDFs, slide decks, scanned notes in bulk; ask questions; get answers generated strictly from that content, with file and page/slide citations on every claim.
 
-## Features
+## What it solves
 
-- 📚 Upload 50-100+ PPTs/PDFs/handwritten notes in bulk
-- 🤖 Ask questions and get AI-generated answers
-- 📝 Exam-ready answers structured by marks (5 marks, 10 marks format)
-- 📍 Source attribution (which slide/page the answer came from)
-- 🔍 Vector similarity search using pgvector
-- 🔐 JWT-based authentication
+- **Grounding.** Answers come from retrieved document context only. Every response cites its sources. If the documents don't cover the question, the system says so or falls back to web-grounded search — explicitly, never silently.
+- **Context overflow.** A hundred slide decks won't fit in any model's window. Retrieval is recall-first, then hierarchically compressed until it fits — precision problems are cheaper to fix than missing facts.
+- **Ingestion at rate-limit scale.** Bulk uploads produce thousands of LLM calls against per-key API quotas. Work is queued durably, partitioned across API keys, retried with backoff, and survives process restarts. Bursts buffer; they don't fail.
+- **Retrieval quality.** Lexical and semantic search fail on different query classes. Both run on every query and fuse by rank — exact identifiers and paraphrased questions land on the same chunks.
 
-## Tech Stack
+## Stack
 
-- **Backend**: Spring Boot 3.2 + Gradle (Multi-module)
-- **Database**: PostgreSQL + pgvector
-- **LLM**: Google Gemini 2.5 Flash
-- **Embeddings**: Google text-embedding-004
-- **OCR**: Tesseract
-- **File Processing**: Apache POI, PDFBox
-- **Frontend**: React + Vite (coming soon)
+| Technology | Role |
+|---|---|
+| Spring Boot / Java | API — auth, uploads, chats, document lifecycle |
+| PostgreSQL + pgvector | System of record: users, documents, chunks, embeddings |
+| Apache Kafka | Durable work queues; one partition per API key preserves per-key rate limits across any number of workers; replayable on failure |
+| Elasticsearch | Hybrid retrieval — BM25 + dense kNN, rank-fused |
+| LangGraph / Python | Query orchestration: rewrite → retrieve → grade → generate → groundedness check, with retry loops |
+| Google Gemini | Embeddings, summarization, generation |
+| MinIO / S3 | Object storage |
+| React + Vite | Frontend |
 
-## Prerequisites
+Postgres is the single source of truth. Kafka topics and the ES index are projections — both rebuildable from it.
 
-- Java 17 or 21 (LTS versions)
-- Node.js 18+ (for frontend)
-- Docker Desktop (for local PostgreSQL)
-- Google Gemini API Key ([Get one here](https://aistudio.google.com/))
+## High-level flow
 
-## Quick Start
+```
+ INGESTION
+ ┌──────┐   files    ┌─────────┐  ingest req   ┌───────┐
+ │ User │ ─────────▶ │   API   │ ────────────▶ │ Kafka │
+ └──────┘            └────┬────┘               └───┬───┘
+                          │ metadata               │ partition-per-key
+                          ▼                        ▼
+                   ┌────────────┐            ┌──────────┐   embed    ┌────────┐
+                   │ PostgreSQL │ ◀───────── │ Workers  │ ─────────▶ │ Gemini │
+                   └────────────┘  chunks +  │ extract  │            └────────┘
+                          │        vectors   │ chunk    │
+                          │                  └────┬─────┘
+                          │                       │ index
+                          │                       ▼
+                          │                ┌───────────────┐
+                          │                │ Elasticsearch │
+                          │                └───────┬───────┘
+ QUERY                    │                        │
+ ┌──────┐  question  ┌────┴────┐   orchestrate ┌───┴──────────────┐
+ │ User │ ─────────▶ │   API   │ ────────────▶ │ RAG Orchestrator │
+ └──────┘            └─────────┘               │    (LangGraph)   │
+     ▲                                         └───┬──────────────┘
+     │      answer + citations                     │ hybrid search, then
+     └─────────────────────────────────────────────┘ generate + self-check
+```
 
-### 1. Clone the repository
+Two independent paths. Ingestion: upload → Kafka → extract, chunk, embed, index. Query: rewrite → hybrid retrieve → grade relevance → generate → verify groundedness against sources → answer with citations. Kafka decouples bursty producers from rate-limited consumers on both.
+
+The codebase is mid-migration to this design. Current architecture, target architecture with trade-off analysis, and the phased plan are in [`docs/`](docs/) — start at [`docs/HANDOVER.md`](docs/HANDOVER.md).
+
+## Running locally
+
+Java 17+, Node 18+, Docker, and a Gemini API key ([aistudio.google.com](https://aistudio.google.com/)). Entire stack is free and self-hosted.
 
 ```bash
-git clone <repository-url>
-cd ChunkAI
+cp .env.example .env                        # add GEMINI_API_KEYS
+docker-compose up -d                        # postgres+pgvector (kafka/es join as phases land)
+./gradlew :deepdocai-backend:bootRun        # api on :8080
+cd examprep-frontend && npm i && npm run dev
 ```
 
-### 2. Set up environment variables
-
-Copy `.env.example` to `.env` and fill in your values:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and add your Gemini API key:
-```
-GEMINI_API_KEY=your-api-key-here
-```
-
-### 3. Start PostgreSQL with Docker
-
-```bash
-docker-compose up -d
-```
-
-This will:
-- Start PostgreSQL with pgvector extension
-- Create the database schema automatically
-- Expose PostgreSQL on port 5432
-
-### 4. Build and run the backend
-
-```bash
-# Build all modules
-./gradlew build
-
-# Run the application
-./gradlew :examprep-api:bootRun
-```
-
-The API will be available at `http://localhost:8080`
-
-### 5. Test the API
-
-```bash
-# Register a new user
-curl -X POST http://localhost:8080/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "password123",
-    "fullName": "Test User"
-  }'
-
-# Login
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "password123"
-  }'
-```
-
-## Project Structure
+## Layout
 
 ```
-examprep-ai/
-├── examprep-api/          # REST API module
-├── examprep-core/         # Business logic & document processing
-├── examprep-data/         # Data access layer (JPA entities & repositories)
-├── examprep-llm/          # LLM integration (Gemini client & RAG)
-└── examprep-common/       # Shared utilities & constants
+deepdocai-backend/    Spring Boot backend
+examprep-frontend/    React frontend
+docs/                 architecture, decisions, migration plan
+init.sql              database schema
 ```
-
-## API Endpoints
-
-### Authentication
-- `POST /api/v1/auth/register` - Register new user
-- `POST /api/v1/auth/login` - User login
-
-### Documents
-- `POST /api/v1/documents/upload` - Upload document
-- `GET /api/v1/documents` - List user's documents
-- `GET /api/v1/documents/{id}` - Get document details
-- `DELETE /api/v1/documents/{id}` - Delete document
-
-### Query
-- `POST /api/v1/query` - Ask question and get AI answer
-
-## Development
-
-### Running Tests
-
-```bash
-./gradlew test
-```
-
-### Database Migrations
-
-The schema is initialized automatically via `init.sql` when PostgreSQL starts. For production, consider using Flyway or Liquibase.
-
-### Environment Variables
-
-- `GEMINI_API_KEY` - Your Google Gemini API key (required)
-- `JWT_SECRET` - Secret key for JWT tokens (change in production)
-- Database connection settings (defaults to local Docker PostgreSQL)
-
-## Deployment
-
-### Railway Deployment
-
-1. Create a Railway account and project
-2. Add PostgreSQL service (with pgvector extension)
-3. Deploy the Spring Boot application
-4. Set environment variables in Railway dashboard
-
-### Frontend (Coming Soon)
-
-The React frontend will be deployed separately on Vercel or similar platform.
-
-## License
-
-MIT
-
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request.
-
