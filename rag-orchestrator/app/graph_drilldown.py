@@ -70,7 +70,10 @@ def rewrite_node(state: DrilldownState) -> DrilldownState:
 
 
 def generate_node(state: DrilldownState) -> DrilldownState:
-    docs = state.get("graded") or state.get("docs", [])
+    # Prefer graded-relevant docs; fall back to the current retrieval, then to the
+    # first useful retrieval we ever saw (best_docs) so an over-strict grader or a
+    # degrading rewrite can never force an empty-evidence answer.
+    docs = state.get("graded") or state.get("docs") or state.get("best_docs", [])
     if not docs:
         return {"answer": "No relevant log evidence was found for this question.",
                 "citations": []}
