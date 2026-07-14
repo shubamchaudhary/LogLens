@@ -4,7 +4,7 @@ import com.deepdocai.common.constants.KafkaTopics;
 import com.deepdocai.common.messages.EnrichRequest;
 import com.deepdocai.data.repository.SessionRepository;
 import com.deepdocai.ingest.MetricsWriter;
-import com.deepdocai.llm.client.GeminiClient;
+import com.deepdocai.llm.client.LlmGateway;
 import com.deepdocai.llm.key.ApiKeyManager;
 import com.deepdocai.llm.worker.RateLimitException;
 import com.deepdocai.storage.SessionChunkRepository;
@@ -27,13 +27,16 @@ import java.util.UUID;
 
 /**
  * The LLM enrichment lane. Each partition of {@code llm.enrich.requests} maps to
- * one Gemini API key ({@code concurrency == slot count}), so the consumer thread
- * for partition <em>p</em> always uses key <em>p</em> and paces itself lock-free
- * via that key's {@link com.deepdocai.llm.key.ApiKeySlot} (7.5s between calls).
+ * one API key of the active provider ({@code concurrency == slot count}), so the
+ * consumer thread for partition <em>p</em> always uses lane <em>p mod slots</em>
+ * and paces itself lock-free via that lane's
+ * {@link com.deepdocai.llm.key.ApiKeySlot} (interval set per provider — Groq
+ * 2.5s, Gemini 7.5s). Transport goes through {@link LlmGateway}
+ * ({@code chunkai.llm.provider}).
  *
  * <p>Dispatch by {@link EnrichRequest#kind()}:
  * <ul>
- *   <li>{@code ENRICH_WINDOW} → prompt Gemini for JSON insight(s), upsert
+ *   <li>{@code ENRICH_WINDOW} → prompt the LLM for JSON insight(s), upsert
  *       {@code log_findings} deduped on {@code (session_id, fingerprint)};</li>
  *   <li>{@code EMBED_BATCH} → batch-embed the chunks and write the vectors.</li>
  * </ul>
@@ -56,7 +59,7 @@ public class EnrichConsumer {
     private static final long RETRY_DELAY_MS = 60_000L;
 
     private final ApiKeyManager apiKeyManager;
-    private final GeminiClient geminiClient;
+    private final LlmGateway llmGateway;
     private final SessionChunkRepository chunkRepository;
     private final MetricsWriter metricsWriter;
     private final FindingsWriter findingsWriter;
@@ -68,7 +71,7 @@ public class EnrichConsumer {
 
     public EnrichConsumer(
         ApiKeyManager apiKeyManager,
-        GeminiClient geminiClient,
+        LlmGateway llmGateway,
         SessionChunkRepository chunkRepository,
         MetricsWriter metricsWriter,
         FindingsWriter findingsWriter,
@@ -79,7 +82,7 @@ public class EnrichConsumer {
         @Value("${chunkai.window-seconds:60}") long windowSeconds
     ) {
         this.apiKeyManager = apiKeyManager;
-        this.geminiClient = geminiClient;
+        this.llmGateway = llmGateway;
         this.chunkRepository = chunkRepository;
         this.metricsWriter = metricsWriter;
         this.findingsWriter = findingsWriter;
@@ -124,10 +127,13 @@ public class EnrichConsumer {
     }
 
     private void process(EnrichRequest request, int partition) {
-        String apiKey = apiKeyManager.getApiKey(partition);
+        // Modulo guards against a topic wider than the active provider's key
+        // count (Kafka partitions can never be lowered on an existing volume).
+        int lane = partition % apiKeyManager.getSlotCount();
+        String apiKey = apiKeyManager.getApiKey(lane);
         switch (request.kind()) {
-            case EnrichRequest.ENRICH_WINDOW -> enrichWindow(request, partition, apiKey);
-            case EnrichRequest.EMBED_BATCH -> embedBatch(request, partition, apiKey);
+            case EnrichRequest.ENRICH_WINDOW -> enrichWindow(request, lane, apiKey);
+            case EnrichRequest.EMBED_BATCH -> embedBatch(request, lane, apiKey);
             default -> log.warn("Unknown enrich kind '{}' for work {} — skipping",
                 request.kind(), request.workId());
         }
@@ -165,7 +171,7 @@ public class EnrichConsumer {
         apiKeyManager.getSlot(partition).enforceRateLimit();
         String json;
         try {
-            json = geminiClient.generateContent(user, EnrichPrompts.SYSTEM, false, apiKey);
+            json = llmGateway.generate(user, EnrichPrompts.SYSTEM, apiKey);
         } finally {
             apiKeyManager.getSlot(partition).markCallMade();
         }
@@ -207,7 +213,7 @@ public class EnrichConsumer {
         apiKeyManager.getSlot(partition).enforceRateLimit();
         List<float[]> vectors;
         try {
-            vectors = geminiClient.batchGenerateEmbeddings(texts, apiKey);
+            vectors = llmGateway.embedBatch(texts, apiKey);
         } finally {
             apiKeyManager.getSlot(partition).markCallMade();
         }
@@ -220,7 +226,7 @@ public class EnrichConsumer {
         List<SessionChunkRepository.ChunkEmbedding> updates = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             updates.add(new SessionChunkRepository.ChunkEmbedding(
-                chunks.get(i).chunkId(), geminiClient.toVectorString(vectors.get(i))));
+                chunks.get(i).chunkId(), llmGateway.toVectorString(vectors.get(i))));
         }
         int updated = chunkRepository.updateEmbeddings(request.sessionId(), updates);
         log.info("EMBED_BATCH work {} → {} embeddings written", request.workId(), updated);

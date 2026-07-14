@@ -79,6 +79,8 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql://deepdocai:deepdocai123@postgres:5432/deepdocai_db
+      LLM_PROVIDER: ${LLM_PROVIDER:-groq}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     depends_on:
       postgres:

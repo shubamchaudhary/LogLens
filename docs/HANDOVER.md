@@ -42,7 +42,16 @@ Owner (Shubam) is building this for **interview-portfolio strength**; every tech
 
 ## Current state (update each session)
 
-**2026-07-15 (Phase 3 DONE — LLM enrichment + embedding lanes over Kafka).** Branch `phase-3-enrich-lanes` (off `phase-2-chunker-parsers`). **Committed LOCALLY ONLY — NOT pushed, no PR** (owner directive "dont push any change"). One commit `b8a1d82`: _Add Layer-2 LLM enrichment lanes over Kafka_.
+**2026-07-15 (Groq migration DONE — Groq is now the DEFAULT LLM provider).** Branch `phase-4-orchestrator`, local-only. Reason: Gemini free tier collapsed to 5 RPM / **20 RPD** per project (owner's AI Studio screenshot) — unusable for enrichment. Groq free tier: 30 RPM / 14,400 RPD on `llama-3.1-8b-instant`, plus embeddings via `nomic-embed-text-v1_5` (**natively 768-dim → drop-in for vector(768), no schema change**).
+
+- **New:** `llm/client/GroqConfig` (`groq.*` props: base-url `https://api.groq.com/openai/v1`, chat `llama-3.1-8b-instant`, embed `nomic-embed-text-v1_5`, 30 RPM), `GroqClient` (OpenAI-compatible chat + batch embeddings; same contract: 429→`RateLimitException`, 5xx/connect retry in-place, other 4xx fail fast; embeddings re-ordered by response `index`), `LlmGateway` (provider switch on `chunkai.llm.provider`, default **groq**; also owns `toVectorString`).
+- **Modified:** `EnrichConsumer` → talks to `LlmGateway` (only GeminiClient call site); partition→lane now `partition % slotCount` (guards stale topics wider than the new key count — Kafka can't lower partitions; recreate topic/volume for clean 1:1). `ApiKeyManagerConfig` → builds lanes from the ACTIVE provider's keys + rate (groq 2,500ms/key, gemini 7,500ms). `application.properties` (+`chunkai.llm.provider`, `groq.*` block). Python orchestrator: `config.py` (+`LLM_PROVIDER`, `GROQ_*`; drill-down embedding MUST match ingest provider), `llm.py` (ChatOpenAI→Groq for chat — correlation/report on `llama-3.3-70b-versatile`; `/embeddings` REST for query embedding; gemini path kept as fallback), `requirements.txt` (+`langchain-openai`). docker-compose orchestrator env += `LLM_PROVIDER`/`GROQ_API_KEY`. `.env.example`/`.env` += Groq block (`.env` gitignored, scaffolding commit `1ab1a14`).
+- **Consistency rule (repeat of gateway javadoc):** vectors from different providers never mix — sessions embedded under Gemini must be re-ingested under Groq. GeminiClient/GeminiConfig KEPT as fallback provider (`LLM_PROVIDER=gemini`).
+- Verified: `compileJava` clean; `py_compile` clean. NOT yet exercised against live Groq (owner must set real `GROQ_API_KEY` in `.env`). ⚠️ Groq embeddings endpoint rate limits are account-visible only — check console before sizing lanes.
+
+---
+
+_Phase 3 (superseded by the above; kept for detail):_ **2026-07-15 (Phase 3 DONE — LLM enrichment + embedding lanes over Kafka).** Branch `phase-3-enrich-lanes` (off `phase-2-chunker-parsers`). **Committed LOCALLY ONLY — NOT pushed, no PR** (owner directive "dont push any change"). One commit `b8a1d82`: _Add Layer-2 LLM enrichment lanes over Kafka_.
 
 New `com.deepdocai.enrich` package + `common/messages/EnrichRequest` (all **additive** — Phase 1 spent the spec's v1 deletion lists):
 - `EnrichRequest` (record) `{workId, sessionId, kind (ENRICH_WINDOW|EMBED_BATCH), chunkIds, attempt, notBeforeEpochMs}` + `retry(notBefore)` helper.
