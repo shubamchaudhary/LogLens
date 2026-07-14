@@ -8,9 +8,10 @@ Clients are created lazily so the service still imports and serves `/health`
 when no key is configured; the LLM nodes raise a clear error only when they
 actually try to call the model.
 
-Embeddings go through each provider's REST endpoint directly (not langchain):
-- groq:   OpenAI-compatible /embeddings with nomic-embed-text-v1_5 (768-dim native)
+Embeddings use EMBEDDING_PROVIDER (default gemini — Groq serves no embedding
+models as of 2026-07), independent of the chat provider, via REST directly:
 - gemini: embedContent with outputDimensionality=768 (Matryoshka truncation)
+- groq:   OpenAI-compatible /embeddings (kept in case Groq ships embeddings)
 Vectors are L2-normalised here; pgvector cosine ops are scale-invariant so this
 is safe for both providers.
 """
@@ -85,9 +86,19 @@ _GEMINI_EMBED_URL = (
 
 
 def embed_query(text: str) -> list[float]:
-    """Embed `text` to a unit-length vector matching schema-v2's vector(768)."""
-    key = _require_key()
-    if config.is_groq():
+    """Embed `text` to a unit-length vector matching schema-v2's vector(768).
+
+    Uses EMBEDDING_PROVIDER (default gemini — Groq serves no embedding models),
+    which is deliberately independent of the chat provider and must match the
+    model that embedded the chunks at ingest.
+    """
+    key = config.embed_api_key()
+    if not key:
+        raise MissingApiKey(
+            f"No API key for embedding provider '{config.EMBEDDING_PROVIDER}' — set "
+            f"{'GROQ_API_KEY' if config.embed_is_groq() else 'GEMINI_API_KEY'}."
+        )
+    if config.embed_is_groq():
         values = _groq_embed(text, key)
     else:
         values = _gemini_embed(text, key)

@@ -18,11 +18,15 @@ DATABASE_URL: str = os.environ.get(
     "postgresql://deepdocai:deepdocai123@localhost:5434/deepdocai_db",
 )
 
-# ── Provider switch ──────────────────────────────────────────────────────────
-# "groq" (default) or "gemini". MUST match the Java side's chunkai.llm.provider:
-# the drill-down question embedding has to use the same model that embedded the
-# chunks at ingest, or cosine similarity is meaningless.
+# ── Provider switches ────────────────────────────────────────────────────────
+# Chat: "groq" (default) or "gemini". MUST match the Java side's
+# chunkai.llm.provider.
+# Embeddings are SPLIT from chat: Groq serves no embedding models (2026-07), so
+# EMBEDDING_PROVIDER defaults to gemini. It MUST match the Java side's
+# chunkai.llm.embedding-provider — the drill-down question embedding has to use
+# the same model that embedded the chunks at ingest, or cosine is meaningless.
 LLM_PROVIDER: str = os.environ.get("LLM_PROVIDER", "groq").strip().lower()
+EMBEDDING_PROVIDER: str = os.environ.get("EMBEDDING_PROVIDER", "gemini").strip().lower()
 
 # Groq (OpenAI-compatible). Correlation/report benefit from the larger model;
 # free tier: ~30 RPM / 1,000 RPD on llama-3.3-70b-versatile.
@@ -55,8 +59,16 @@ def is_groq() -> bool:
     return LLM_PROVIDER == "groq"
 
 
+def embed_is_groq() -> bool:
+    return EMBEDDING_PROVIDER == "groq"
+
+
 def active_api_key() -> str:
     return GROQ_API_KEY if is_groq() else GEMINI_API_KEY
+
+
+def embed_api_key() -> str:
+    return GROQ_API_KEY if embed_is_groq() else GEMINI_API_KEY
 
 
 def has_api_key() -> bool:
