@@ -3,18 +3,18 @@ version: '3.8'
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: examprep-postgres
+    container_name: deepdocai-postgres
     environment:
-      POSTGRES_DB: examprep_db
-      POSTGRES_USER: examprep
-      POSTGRES_PASSWORD: examprep123
+      POSTGRES_DB: deepdocai_db
+      POSTGRES_USER: deepdocai
+      POSTGRES_PASSWORD: deepdocai123
     ports:
       - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U examprep"]
+      test: ["CMD-SHELL", "pg_isready -U deepdocai"]
       interval: 10s
       timeout: 5s
       retries: 5

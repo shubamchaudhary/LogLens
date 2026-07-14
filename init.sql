@@ -1,16 +1,16 @@
 -- ============================================
--- EXAMPREP AI DATABASE SCHEMA
+-- DEEPDOCAI DATABASE SCHEMA
 -- Run this in Railway PostgreSQL or local Docker
 -- ============================================
 
--- Ensure the examprep user exists and password is set correctly
+-- Ensure the deepdocai user exists and password is set correctly
 -- This handles cases where POSTGRES_USER creates the user but password auth fails
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'examprep') THEN
-        CREATE USER examprep WITH PASSWORD 'examprep123' SUPERUSER;
+    IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'deepdocai') THEN
+        CREATE USER deepdocai WITH PASSWORD 'deepdocai123' SUPERUSER;
 ELSE
-        ALTER USER examprep WITH PASSWORD 'examprep123';
+        ALTER USER deepdocai WITH PASSWORD 'deepdocai123';
 END IF;
 END
 $$;
