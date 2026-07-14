@@ -30,6 +30,12 @@ dependencies {
     // ── JSON ──────────────────────────────────────────────────────────────────
     implementation("com.fasterxml.jackson.core:jackson-databind")
 
+    // ── Messaging (Kafka LLM lanes) ───────────────────────────────────────────
+    implementation("org.springframework.kafka:spring-kafka")
+
+    // ── Object storage (MinIO staging blobs) ──────────────────────────────────
+    implementation("io.minio:minio:8.5.17")
+
     // ── Document processing ───────────────────────────────────────────────────
     implementation("org.apache.poi:poi:5.2.5")           // Excel / old PPT
     implementation("org.apache.poi:poi-ooxml:5.2.5")     // PPTX / DOCX
