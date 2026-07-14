@@ -1,10 +1,3 @@
-rootProject.name = "examprep-ai"
+rootProject.name = "deepdocai"
 
-include(
-    "examprep-api",
-    "examprep-core",
-    "examprep-llm",
-    "examprep-data",
-    "examprep-common"
-)
-
+include("deepdocai-backend")

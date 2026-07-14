@@ -5,9 +5,9 @@ plugins {
 }
 
 allprojects {
-    group = "com.examprep"
+    group = "com.deepdocai"
     version = "1.0.0-SNAPSHOT"
-    
+
     repositories {
         mavenCentral()
     }
@@ -16,18 +16,18 @@ allprojects {
 subprojects {
     apply(plugin = "java")
     apply(plugin = "io.spring.dependency-management")
-    
+
     java {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    
+
     configurations {
         compileOnly {
             extendsFrom(configurations.annotationProcessor.get())
         }
     }
-    
+
     dependencies {
         implementation("org.slf4j:slf4j-api:2.0.9")
         compileOnly("org.projectlombok:lombok:1.18.30")
@@ -35,9 +35,8 @@ subprojects {
         testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     }
-    
+
     tasks.withType<Test> {
         useJUnitPlatform()
     }
 }
-
