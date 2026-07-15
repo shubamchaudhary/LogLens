@@ -81,7 +81,11 @@ services:
       DATABASE_URL: postgresql://deepdocai:deepdocai123@postgres:5432/deepdocai_db
       LLM_PROVIDER: ${LLM_PROVIDER:-groq}
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-gemini}
+      # Plural *_API_KEYS are round-robined across all N keys (daily quota = sum
+      # of every account's budget). Singular vars are still honoured as fallback.
+      GROQ_API_KEYS: ${GROQ_API_KEYS:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GEMINI_API_KEYS: ${GEMINI_API_KEYS:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     depends_on:
       postgres:

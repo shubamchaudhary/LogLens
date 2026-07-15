@@ -31,6 +31,7 @@ public class GroqConfig {
     private int maxOutputTokens = 4096;
     private int maxRetries = 3;
     private int rateLimitPerMin = 30;      // free tier: 30 RPM on 8b-instant
+    private int tpmLimit = 6000;           // free tier: 6000 tokens/min on 8b-instant (the binding limit)
 
     /** Same fallback semantics as {@link GeminiConfig#getAllApiKeys()}. */
     public List<String> getAllApiKeys() {

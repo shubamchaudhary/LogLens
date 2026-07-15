@@ -56,9 +56,13 @@ public class ApiKeyManagerConfig {
         }
 
         long minIntervalMs = (long) (60_000.0 / (rateLimitPerMin * rateLimitUtilization));
-        log.info("ApiKeyManager[{}]: {} key lane(s), rateLimitPerMin={}, utilization={}, minIntervalMs={}",
-            groq ? "groq" : "gemini", apiKeys.size(), rateLimitPerMin, rateLimitUtilization, minIntervalMs);
+        // TPM budget applies only to the Groq generation lane (its token/min ceiling
+        // is the binding limit). Gemini lanes leave it disabled (0) — embeddings hit
+        // Gemini's own quota, not this pool's.
+        long tpmBudget = groq ? (long) (groqConfig.getTpmLimit() * rateLimitUtilization) : 0L;
+        log.info("ApiKeyManager[{}]: {} key lane(s), rateLimitPerMin={}, utilization={}, minIntervalMs={}, tpmBudget={}",
+            groq ? "groq" : "gemini", apiKeys.size(), rateLimitPerMin, rateLimitUtilization, minIntervalMs, tpmBudget);
 
-        return new ApiKeyManager(apiKeys, minIntervalMs);
+        return new ApiKeyManager(apiKeys, minIntervalMs, tpmBudget);
     }
 }

@@ -5,7 +5,7 @@ injection guard the Java side enforces — so a caller can never splice arbitrar
 text into SQL.
 """
 from __future__ import annotations
-
+import re
 import uuid
 from contextlib import contextmanager
 from typing import Any, Iterator, Optional
@@ -159,5 +159,27 @@ def retrieve_chunks(
         cur.execute(fts_sql, (query_text, limit))
         for row in cur.fetchall():
             results.setdefault(row["chunk_id"], row)
+
+    # websearch_to_tsquery AND-matches every term, so a long natural-language
+    # question often matches nothing. If full-text found nothing (common when
+    # vectors are also missing), retry with an OR of the individual terms so
+    # full-text can still surface partial matches.
+    if not results:
+        terms = re.findall(r"[A-Za-z0-9_]+", query_text)
+        if terms:
+            or_query = " | ".join(terms)
+            or_sql = (
+                f"SELECT chunk_id, line_start, line_end, time_bucket, content, "
+                f"NULL::float8 AS score "
+                f"FROM {table} "
+                f"WHERE to_tsvector('simple', content) @@ to_tsquery('simple', %s) "
+                f"ORDER BY ts_rank(to_tsvector('simple', content), "
+                f"to_tsquery('simple', %s)) DESC "
+                f"LIMIT %s"
+            )
+            with connect() as conn, conn.cursor() as cur:
+                cur.execute(or_sql, (or_query, or_query, limit))
+                for row in cur.fetchall():
+                    results.setdefault(row["chunk_id"], row)
 
     return list(results.values())[:limit]

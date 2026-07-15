@@ -23,6 +23,9 @@ public class GeminiConfig {
     private String baseUrl = "https://generativelanguage.googleapis.com/v1beta";
     private int maxRetries = 3;
     private int timeoutSeconds = 60;
+    // On a 429 the embedding call rotates to the next key and waits this long
+    // before retrying, cycling across all keys instead of failing the batch.
+    private long rateLimitRetryDelayMs = 5000;
     private int maxOutputTokens = 8192; // Max for Gemini 2.5 Flash
     private int maxContextChunks = 150; // Increased to 150 for enhanced RAG
     private int maxConversationHistory = 50; // Max Q&A pairs in conversation history

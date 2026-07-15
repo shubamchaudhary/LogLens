@@ -128,7 +128,8 @@ public class GroqClient {
             } catch (WebClientResponseException e) {
                 int status = e.getStatusCode().value();
                 if (status == 429) {
-                    throw new RateLimitException("Rate limit (429) on Groq " + path, e);
+                    throw new RateLimitException("Rate limit (429) on Groq " + path + ": "
+                        + e.getResponseBodyAsString(), e);
                 }
                 if (status == 401 || status == 403) {
                     throw new RuntimeException("Groq auth failed (" + status + "): " + e.getResponseBodyAsString(), e);

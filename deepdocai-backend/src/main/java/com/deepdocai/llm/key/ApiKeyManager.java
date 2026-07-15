@@ -23,14 +23,19 @@ public class ApiKeyManager {
     private final List<ApiKeySlot> slots;
 
     public ApiKeyManager(List<String> apiKeys, long minIntervalMs) {
+        this(apiKeys, minIntervalMs, 0L);
+    }
+
+    public ApiKeyManager(List<String> apiKeys, long minIntervalMs, long tpmBudget) {
         if (apiKeys == null || apiKeys.isEmpty()) {
             throw new IllegalArgumentException("At least one API key is required");
         }
         this.slots = IntStream.range(0, apiKeys.size())
-            .mapToObj(i -> new ApiKeySlot(apiKeys.get(i), i, minIntervalMs))
+            .mapToObj(i -> new ApiKeySlot(apiKeys.get(i), i, minIntervalMs, tpmBudget))
             .collect(Collectors.toList());
 
-        log.info("ApiKeyManager initialized with {} slots, minIntervalMs={}", slots.size(), minIntervalMs);
+        log.info("ApiKeyManager initialized with {} slots, minIntervalMs={}, tpmBudget={}",
+            slots.size(), minIntervalMs, tpmBudget);
     }
 
     /** Returns the slot permanently assigned to the given thread index. */

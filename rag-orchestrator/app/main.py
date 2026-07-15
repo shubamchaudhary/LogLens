@@ -14,7 +14,7 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
-from . import config, db, graph_analyze, graph_drilldown
+from . import config, db, graph_analyze, graph_drilldown, llm
 
 logging.basicConfig(
     level=logging.INFO,
@@ -62,5 +62,12 @@ async def drilldown(req: DrilldownRequest) -> DrilldownResponse:
     sid = _valid_uuid(req.session_id)
     if not db.session_exists(sid):
         raise HTTPException(status_code=404, detail="session not found")
-    result = await run_in_threadpool(graph_drilldown.run_drilldown, sid, req.question)
+    try:
+        result = await run_in_threadpool(graph_drilldown.run_drilldown, sid, req.question)
+    except llm.ProviderRateLimited as exc:
+        # Every key in the pool is rate-limited (typically a daily quota cap).
+        # Surface a distinct 429 so the client can tell "rate-limited, try later"
+        # apart from a genuine orchestrator outage.
+        log.warning("[%s] drilldown rate-limited: %s", sid, exc)
+        raise HTTPException(status_code=429, detail="AI provider rate-limited; try again later")
     return DrilldownResponse(**result)

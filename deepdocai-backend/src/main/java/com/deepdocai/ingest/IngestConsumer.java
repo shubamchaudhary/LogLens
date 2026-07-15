@@ -73,6 +73,16 @@ public class IngestConsumer {
         UUID sessionId = request.sessionId();
         UUID documentId = request.documentId();
 
+        // Stale-message guard: the session (and its per-session chunk table) may
+        // have been deleted while this request sat on the topic. Without the
+        // chunk table every write below fails with "relation ... does not exist",
+        // so skip cleanly rather than error-loop a message for a session that no
+        // longer exists.
+        if (!sessionRepository.existsById(sessionId)) {
+            log.warn("No session {} for ingest request — skipping (deleted?)", sessionId);
+            return;
+        }
+
         Optional<Document> maybeDoc = documentRepository.findById(documentId);
         if (maybeDoc.isEmpty()) {
             log.warn("No document {} for ingest request — skipping", documentId);

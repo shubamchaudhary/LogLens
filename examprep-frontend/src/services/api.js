@@ -4,21 +4,19 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // 30 second timeout
-  withCredentials: false, // Important: Set to false for CORS
+  timeout: 30000,
+  withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor - Add token to requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Log request for debugging (remove in production)
     console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
   },
@@ -28,15 +26,10 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor - Better error handling
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // Log detailed error information
     if (error.response) {
-      // Server responded with error status
       console.error('[API Error Response]', {
         status: error.response.status,
         statusText: error.response.statusText,
@@ -45,7 +38,6 @@ api.interceptors.response.use(
         baseURL: error.config?.baseURL,
       });
     } else if (error.request) {
-      // Request made but no response received (network error, backend down, etc.)
       console.error('[API Network Error]', {
         message: error.message,
         url: error.config?.url,
@@ -53,61 +45,105 @@ api.interceptors.response.use(
         code: error.code,
       });
     } else {
-      // Error in request setup
       console.error('[API Request Setup Error]', error.message);
     }
     return Promise.reject(error);
   }
 );
 
-// Auth API
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
 };
 
-// Chat API
-export const chatAPI = {
-  create: (data) => api.post('/chats', data),
-  getAll: (params) => api.get('/chats', { params }),
-  getById: (id) => api.get(`/chats/${id}`),
-  update: (id, data) => api.put(`/chats/${id}`, data),
-  delete: (id) => api.delete(`/chats/${id}`),
+export const sessionAPI = {
+  list: () => api.get('/sessions'),
+  get: (id) => api.get(`/sessions/${id}`),
+  create: (title) => api.post('/sessions', title ? { title } : {}),
+  rename: (id, title) => api.patch(`/sessions/${id}`, { title }),
+  remove: (id) => api.delete(`/sessions/${id}`),
 };
 
-// Document API
 export const documentAPI = {
-  upload: (file, chatId) => {
+  list: (sessionId) => api.get(`/sessions/${sessionId}/documents`),
+  upload: (sessionId, file, onUploadProgress) => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('chatId', chatId);
-    return api.post('/documents/upload', formData, {
+    return api.post(`/sessions/${sessionId}/documents`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 300000, // 5 minutes for single file upload
+      timeout: 300000,
+      onUploadProgress,
     });
   },
-  uploadBulk: (files, chatId) => {
-    const formData = new FormData();
-    files.forEach(file => formData.append('files', file));
-    formData.append('chatId', chatId);
-    return api.post('/documents/upload/bulk', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 1800000, // 30 minutes for bulk upload (45 files need time)
-    });
-  },
-  getAll: (params) => api.get('/documents', { params }),
-  getById: (id) => api.get(`/documents/${id}`),
-  delete: (id, chatId) => api.delete(`/documents/${id}`, { params: { chatId } }),
-  getStatus: (id) => api.get(`/documents/${id}/status`),
 };
 
-// Query API
-export const queryAPI = {
-  query: (data) => api.post('/query', data, {
-    timeout: 60000, // 60 seconds for RAG queries (backend timeout is 30s, frontend must be more patient)
-  }),
-  getHistory: (params) => api.get('/query/history', { params }),
+export const analysisAPI = {
+  metrics: (sessionId, params) => api.get(`/sessions/${sessionId}/metrics`, { params }),
+  findings: (sessionId, params) => api.get(`/sessions/${sessionId}/findings`, { params }),
+  incidents: (sessionId) => api.get(`/sessions/${sessionId}/incidents`),
+  report: (sessionId) => api.get(`/sessions/${sessionId}/report`),
+  evidence: (sessionId, chunkIds) =>
+    api.get(`/sessions/${sessionId}/evidence`, {
+      params: { chunkIds },
+      paramsSerializer: { indexes: null },
+    }),
+  drilldown: (sessionId, question) =>
+    api.post(`/sessions/${sessionId}/drilldown`, { question }, { timeout: 130000 }),
+  drilldownHistory: (sessionId) => api.get(`/sessions/${sessionId}/drilldown`),
+  drilldownClear: (sessionId) => api.delete(`/sessions/${sessionId}/drilldown`),
 };
+
+export function streamProgress(sessionId, { onUpdate, onDone, onError } = {}) {
+  const token = localStorage.getItem('token');
+  const controller = new AbortController();
+  const url = `${API_BASE_URL}/sessions/${sessionId}/progress`;
+
+  (async () => {
+    try {
+      const resp = await fetch(url, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' },
+        signal: controller.signal,
+      });
+      if (!resp.ok || !resp.body) {
+        onError?.(new Error(`progress stream failed (${resp.status})`));
+        return;
+      }
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+        let sep;
+        while ((sep = buffer.indexOf('\n\n')) >= 0) {
+          const frame = buffer.slice(0, sep);
+          buffer = buffer.slice(sep + 2);
+          const payload = parseSseData(frame);
+          if (payload) onUpdate?.(payload);
+        }
+      }
+      onDone?.();
+    } catch (e) {
+      if (e.name !== 'AbortError') onError?.(e);
+    }
+  })();
+
+  return () => controller.abort();
+}
+
+function parseSseData(frame) {
+  const dataLines = [];
+  for (const line of frame.split('\n')) {
+    if (line.startsWith('data:')) dataLines.push(line.slice(5).replace(/^ /, ''));
+  }
+  if (dataLines.length === 0) return null;
+  try {
+    return JSON.parse(dataLines.join('\n'));
+  } catch {
+    return null;
+  }
+}
 
 export default api;
-

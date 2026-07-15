@@ -136,6 +136,22 @@ CREATE TABLE IF NOT EXISTS reports (
 );
 
 -- ============================================================
+-- DRILLDOWN_MESSAGES — persisted grounded Q&A chat (Graph 2).
+-- One row per question+answer turn, so a session's drill-down
+-- history survives logout, reload and device changes. Cascaded
+-- with the session; citations are the chunk ids the answer cited.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS drilldown_messages (
+    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    session_id  UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    question    TEXT NOT NULL,
+    answer      TEXT NOT NULL,
+    citations   UUID[] NOT NULL DEFAULT '{}',
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_drilldown_session ON drilldown_messages(session_id, created_at);
+
+-- ============================================================
 -- updated_at triggers
 -- ============================================================
 CREATE OR REPLACE FUNCTION update_updated_at_column()
