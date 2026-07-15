@@ -62,6 +62,33 @@ services:
       - key: KEEPALIVE_INTERVAL_MS
         value: "840000"
 
+  # RAG Orchestrator (Python FastAPI/LangGraph) — separate free web service.
+  # After first deploy, copy its public URL into loglens-api's ORCHESTRATOR_URL
+  # env var above (e.g. https://loglens-orchestrator.onrender.com) — Render
+  # free web services can't receive private-network traffic, so this must be
+  # the public HTTPS URL, not an internal hostname.
+  - type: web
+    name: loglens-orchestrator
+    runtime: docker
+    dockerfilePath: ./rag-orchestrator/Dockerfile
+    dockerContext: ./rag-orchestrator
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: loglens-db
+          property: connectionString
+      - key: LLM_PROVIDER
+        value: groq
+      - key: EMBEDDING_PROVIDER
+        value: gemini
+      - key: GROQ_API_KEYS
+        sync: false
+      - key: GEMINI_API_KEYS
+        sync: false
+
 databases:
   - name: loglens-db
     plan: free

@@ -10,4 +10,7 @@ COPY app ./app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Render injects $PORT at runtime and requires the container to bind to it
+# (it is NOT always 8000 on Render) - shell form so ${PORT} expands, with a
+# fallback for local `docker run` where PORT isn't set.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
