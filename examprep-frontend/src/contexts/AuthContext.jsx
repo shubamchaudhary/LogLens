@@ -18,8 +18,9 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      // Verify token is valid by checking localStorage
-      setUser({ token });
+      const guestSessionId = localStorage.getItem('guestSessionId');
+      const isGuest = localStorage.getItem('isGuest') === 'true';
+      setUser({ token, guestSessionId, isGuest });
     }
     setLoading(false);
   }, [token]);
@@ -29,11 +30,29 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.login({ email, password });
       const { token, userId, email: userEmail } = response.data;
       localStorage.setItem('token', token);
+      localStorage.removeItem('guestSessionId');
+      localStorage.removeItem('isGuest');
       setToken(token);
       setUser({ userId, email: userEmail, token });
       return { success: true };
     } catch (error) {
       return { success: false, error: error.response?.data?.message || 'Login failed' };
+    }
+  };
+
+  const guestLogin = async () => {
+    try {
+      const response = await authAPI.guest();
+      const { token, guestSessionId } = response.data;
+      localStorage.setItem('token', token);
+      localStorage.setItem('guestSessionId', guestSessionId);
+      localStorage.setItem('isGuest', 'true');
+      setToken(token);
+      setUser({ token, guestSessionId, isGuest: true });
+      return { success: true };
+    } catch (error) {
+      const msg = error.response?.data || 'Guest login unavailable';
+      return { success: false, error: typeof msg === 'string' ? msg : 'Guest login failed' };
     }
   };
 
@@ -90,12 +109,14 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('guestSessionId');
+    localStorage.removeItem('isGuest');
     setToken(null);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, guestLogin, register, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -32,6 +32,9 @@ public class SessionController {
     private final SessionRepository sessionRepository;
     private final SessionChunkTableManager chunkTableManager;
 
+    @org.springframework.beans.factory.annotation.Value("${chunkai.guest.session-id:}")
+    private String guestSessionId;
+
     @PostMapping
     public ResponseEntity<SessionResponse> create(
         @RequestBody(required = false) SessionRequest body,
@@ -65,7 +68,13 @@ public class SessionController {
     public ResponseEntity<List<SessionResponse>> list(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
         List<SessionResponse> sessions = sessionRepository.findByUserIdOrderByUpdatedAtDesc(userId)
-            .stream().map(SessionResponse::from).toList();
+            .stream().map(SessionResponse::from).collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
+        // If the user owns no sessions but there's a guest session, return it so
+        // the guest/recruiter lands on the precomputed demo.
+        if (sessions.isEmpty() && guestSessionId != null && !guestSessionId.isBlank()) {
+            sessionRepository.findById(UUID.fromString(guestSessionId))
+                .ifPresent(s -> sessions.add(SessionResponse.from(s)));
+        }
         return ResponseEntity.ok(sessions);
     }
 

@@ -30,6 +30,9 @@ public class SessionAccess {
 
     private final SessionRepository sessionRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${chunkai.guest.session-id:}")
+    private String guestSessionId;
+
     /**
      * Resolve whether {@code authentication} may access {@code sessionId}.
      *
@@ -42,10 +45,17 @@ public class SessionAccess {
         if (found.isEmpty()) {
             return Result.denied(HttpStatus.NOT_FOUND);
         }
-        if (!found.get().getUserId().equals(userId)) {
-            return Result.denied(HttpStatus.FORBIDDEN);
+        Session session = found.get();
+        // Owner always has access.
+        if (session.getUserId().equals(userId)) {
+            return Result.granted(session);
         }
-        return Result.granted(found.get());
+        // Guest user may access the designated demo session.
+        if (guestSessionId != null && !guestSessionId.isBlank()
+                && sessionId.toString().equals(guestSessionId)) {
+            return Result.granted(session);
+        }
+        return Result.denied(HttpStatus.FORBIDDEN);
     }
 
     /** Outcome of an ownership check: either a granted session or a denial status. */

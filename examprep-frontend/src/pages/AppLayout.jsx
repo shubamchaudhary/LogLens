@@ -15,12 +15,17 @@ export default function AppLayout() {
   const [currentId, setCurrentId] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const isGuest = user?.isGuest === true;
+  const guestSessionId = user?.guestSessionId;
+
   const loadSessions = useCallback(async (selectId) => {
     try {
       const { data } = await sessionAPI.list();
       const list = data || [];
       setSessions(list);
       setCurrentId((prev) => {
+        // Guest mode: always land on the demo session.
+        if (isGuest && guestSessionId) return guestSessionId;
         if (selectId) return selectId;
         if (prev && list.some((s) => s.id === prev)) return prev;
         return list.length ? list[0].id : null;
@@ -30,7 +35,7 @@ export default function AppLayout() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isGuest, guestSessionId]);
 
   useEffect(() => {
     loadSessions();
@@ -82,28 +87,33 @@ export default function AppLayout() {
         sessions={sessions}
         currentId={currentId}
         onSelect={setCurrentId}
-        onCreate={handleCreate}
-        onRename={handleRename}
-        onDelete={handleDelete}
-        email={user?.email}
+        onCreate={isGuest ? undefined : handleCreate}
+        onRename={isGuest ? undefined : handleRename}
+        onDelete={isGuest ? undefined : handleDelete}
+        email={isGuest ? 'Guest (Demo)' : user?.email}
         onLogout={logout}
+        isGuest={isGuest}
       />
 
       {current ? (
-        <SessionWorkspace key={current.id} session={current} onStatusChange={patchSession} />
+        <SessionWorkspace key={current.id} session={current} onStatusChange={patchSession} isGuest={isGuest} />
       ) : (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h2 className="text-lg font-semibold text-gray-800">No session selected</h2>
             <p className="text-sm text-gray-500 mt-1 mb-4">
-              Create a session to upload logs and run the analysis pipeline.
+              {isGuest
+                ? 'The demo session is loading...'
+                : 'Create a session to upload logs and run the analysis pipeline.'}
             </p>
-            <button
-              onClick={handleCreate}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
-            >
-              New session
-            </button>
+            {!isGuest && (
+              <button
+                onClick={handleCreate}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
+              >
+                New session
+              </button>
+            )}
           </div>
         </div>
       )}

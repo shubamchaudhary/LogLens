@@ -13,6 +13,7 @@ export default function SessionSidebar({
   onDelete,
   email,
   onLogout,
+  isGuest,
 }) {
   const rename = (e, s) => {
     e.stopPropagation();
@@ -22,7 +23,7 @@ export default function SessionSidebar({
 
   const remove = (e, s) => {
     e.stopPropagation();
-    if (window.confirm(`Delete “${s.title}”? This removes its analysis permanently.`)) {
+    if (window.confirm(`Delete "${s.title}"? This removes its analysis permanently.`)) {
       onDelete(s.id);
     }
   };
@@ -32,21 +33,28 @@ export default function SessionSidebar({
       <div className="p-4 border-b border-gray-800">
         <h1 className="text-lg font-bold">ChunkAI</h1>
         <p className="text-xs text-gray-400">Log intelligence</p>
+        {isGuest && (
+          <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-emerald-600 rounded-full text-white">
+            Demo Mode
+          </span>
+        )}
       </div>
 
-      <div className="p-3">
-        <button
-          onClick={onCreate}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium bg-indigo-600 rounded-lg hover:bg-indigo-700"
-        >
-          <span className="text-base leading-none">＋</span> New session
-        </button>
-      </div>
+      {!isGuest && (
+        <div className="p-3">
+          <button
+            onClick={onCreate}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium bg-indigo-600 rounded-lg hover:bg-indigo-700"
+          >
+            <span className="text-base leading-none">＋</span> New session
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto px-2 space-y-1">
         {sessions.length === 0 && (
           <p className="text-xs text-gray-500 text-center mt-6 px-2">
-            No sessions yet. Create one to upload logs.
+            {isGuest ? 'Loading demo session...' : 'No sessions yet. Create one to upload logs.'}
           </p>
         )}
         {sessions.map((s) => (
@@ -59,22 +67,24 @@ export default function SessionSidebar({
           >
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm font-medium truncate">{s.title}</span>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={(e) => rename(e, s)}
-                  title="Rename"
-                  className="text-gray-400 hover:text-white text-xs px-1"
-                >
-                  ✎
-                </button>
-                <button
-                  onClick={(e) => remove(e, s)}
-                  title="Delete"
-                  className="text-gray-400 hover:text-red-400 text-xs px-1"
-                >
-                  🗑
-                </button>
-              </div>
+              {!isGuest && (
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => rename(e, s)}
+                    title="Rename"
+                    className="text-gray-400 hover:text-white text-xs px-1"
+                  >
+                    ✎
+                  </button>
+                  <button
+                    onClick={(e) => remove(e, s)}
+                    title="Delete"
+                    className="text-gray-400 hover:text-red-400 text-xs px-1"
+                  >
+                    🗑
+                  </button>
+                </div>
+              )}
             </div>
             <div className="mt-1">
               <StatusBadge status={s.analysisStatus} />
@@ -91,7 +101,7 @@ export default function SessionSidebar({
           onClick={onLogout}
           className="w-full px-3 py-2 text-sm font-medium text-gray-200 bg-gray-800 rounded-lg hover:bg-gray-700"
         >
-          Log out
+          {isGuest ? 'Exit Demo' : 'Log out'}
         </button>
       </div>
     </div>
