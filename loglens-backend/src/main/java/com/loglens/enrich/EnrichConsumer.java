@@ -54,8 +54,11 @@ import java.util.regex.Pattern;
 @Slf4j
 public class EnrichConsumer {
 
-    /** attempt >= this → give up and dead-letter (spec: 3). */
+    /** attempt >= this → give up and dead-letter (spec: 3 for enrichment). */
     private static final int MAX_ATTEMPTS = 3;
+    /** Embedding batches get more retries — free-tier quota resets every minute
+     *  and there can be 100+ batches competing for limited RPM/TPM budget. */
+    private static final int MAX_EMBED_ATTEMPTS = 8;
     // Fixed token allowance for the findings-JSON completion, added to the
     // prompt estimate when pacing against the key's tokens-per-minute budget.
     private static final int OUTPUT_TOKEN_ESTIMATE = 512;
@@ -123,7 +126,9 @@ public class EnrichConsumer {
             process(request, partition);
             markEnriched(request.sessionId());
         } catch (RateLimitException e) {
-            if (request.attempt() >= MAX_ATTEMPTS) {
+            int maxAttempts = EnrichRequest.EMBED_BATCH.equals(request.kind())
+                ? MAX_EMBED_ATTEMPTS : MAX_ATTEMPTS;
+            if (request.attempt() >= maxAttempts) {
                 log.warn("Work {} ({}) still rate-limited at attempt {} → DLQ: {}",
                     request.workId(), request.kind(), request.attempt(), e.getMessage());
                 deadLetter(request);
