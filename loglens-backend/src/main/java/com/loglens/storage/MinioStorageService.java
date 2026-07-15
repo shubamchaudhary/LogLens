@@ -18,6 +18,15 @@ import java.util.UUID;
  * MinIO-backed {@link FileStorageService}. Objects are keyed
  * {@code {sessionId}/{documentId}} inside a single staging bucket that is
  * auto-created on startup. File URLs are {@code s3://{bucket}/{key}}.
+ *
+ * <p><b>NOTE for future readers/agents:</b> despite the class/client name,
+ * this talks to any S3-compatible endpoint via the generic {@code io.minio}
+ * Java SDK — it is not tied to the MinIO server product. Locally (docker-compose)
+ * it points at a real MinIO container. In production (Render) it points at
+ * Backblaze B2's S3-compatible API instead (MinIO has no free hosted/managed
+ * offering, so B2 is used there — see {@code loglens.minio.*} / {@code MINIO_*}
+ * env vars in application-production.properties). Do not assume "MinIO" in
+ * logs/config/class names means the MinIO server is actually running in prod.
  */
 @Service
 @Slf4j

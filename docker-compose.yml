@@ -49,8 +49,12 @@ services:
       timeout: 10s
       retries: 10
 
-  # ── MinIO — S3-compatible staging blob store ────────────────────────────────
+  # ── MinIO — S3-compatible staging blob store (LOCAL DEV ONLY) ───────────────
   # Uploads land here; the chunker streams them, then they are deleted.
+  # NOTE: production (Render) does NOT run this container or MinIO at all — it
+  # points the same S3-compatible client at Backblaze B2 instead (no free
+  # hosted MinIO offering exists). See loglens.minio.* / MINIO_* env vars in
+  # application-production.properties.
   minio:
     image: minio/minio
     container_name: loglens-minio

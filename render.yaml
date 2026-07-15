@@ -46,7 +46,7 @@ services:
       - key: MINIO_SECRET_KEY
         sync: false
       - key: MINIO_BUCKET
-        value: staging
+        value: loglens-prod
       - key: ORCHESTRATOR_URL
         sync: false
       - key: GUEST_SESSION_ID
