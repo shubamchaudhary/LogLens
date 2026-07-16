@@ -34,6 +34,28 @@ public class GeminiClient {
     private final AtomicInteger embedKeyCursor = new AtomicInteger();
     private volatile List<String> cachedEmbedKeys;
 
+    // Global embedding pace gate. Embedding batches ride the CHAT provider's
+    // Kafka lanes, so N lane threads submit concurrently with no coordination
+    // against the EMBEDDING provider's per-minute budgets — bursts bunch onto
+    // one account (shared cursor) and 429-storm. Serializing all embedding
+    // calls at embeddingMinIntervalMs also makes the round-robin spread
+    // perfectly even: each account sees one call every (interval × keyCount).
+    private final Object embedPaceGate = new Object();
+    private long lastEmbedCallMs = 0;
+
+    /** Blocks until at least embeddingMinIntervalMs since the previous
+     *  embedding call, process-wide (all lanes, both embed methods). */
+    private void paceEmbeddingCall() {
+        synchronized (embedPaceGate) {
+            long wait = lastEmbedCallMs + config.getEmbeddingMinIntervalMs()
+                - System.currentTimeMillis();
+            if (wait > 0) {
+                sleepQuietly(wait);
+            }
+            lastEmbedCallMs = System.currentTimeMillis();
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Batch Embedding  (primary embedding method — up to 80 texts per API call)
     // ─────────────────────────────────────────────────────────────────────────
@@ -69,6 +91,7 @@ public class GeminiClient {
         Set<String> dailyExhausted = new HashSet<>();
 
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            paceEmbeddingCall();
             String url = String.format("%s/models/%s:batchEmbedContents?key=%s",
                 config.getBaseUrl(), config.getEmbeddingModel(), keyToUse);
             try {
@@ -167,6 +190,7 @@ public class GeminiClient {
         Set<String> dailyExhausted = new HashSet<>();
 
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            paceEmbeddingCall();
             String url = String.format("%s/models/%s:embedContent?key=%s",
                 config.getBaseUrl(), config.getEmbeddingModel(), keyToUse);
             try {

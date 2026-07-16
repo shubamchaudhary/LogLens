@@ -26,6 +26,12 @@ public class GeminiConfig {
     // On a 429 the embedding call rotates to the next key and waits this long
     // before retrying, cycling across all keys instead of failing the batch.
     private long rateLimitRetryDelayMs = 5000;
+    // Process-wide minimum gap between ANY two embedding calls (all Kafka lanes
+    // share it). Embedding batches ride the CHAT provider's lanes, so without a
+    // global gate 5 lane threads submit ~100+ calls/min against a sustainable
+    // ~18/min (5 accounts × 30K TPM ÷ ~8K tokens/batch) and 429-storm.
+    // 3500ms → ~17 calls/min → ~27K TPM/account worst case, just under the cap.
+    private long embeddingMinIntervalMs = 3500;
     private int maxOutputTokens = 8192; // Max for Gemini 2.5 Flash
     private int maxContextChunks = 150; // Increased to 150 for enhanced RAG
     private int maxConversationHistory = 50; // Max Q&A pairs in conversation history
