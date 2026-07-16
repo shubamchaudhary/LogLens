@@ -3,6 +3,7 @@ package com.loglens.llm.client;
 import com.loglens.llm.model.BatchEmbeddingResponse;
 import com.loglens.llm.model.EmbeddingResponse;
 import com.loglens.llm.model.GenerationResponse;
+import com.loglens.llm.key.EmbeddingKeyPool;
 import com.loglens.llm.worker.RateLimitException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Component
@@ -25,35 +25,18 @@ public class GeminiClient {
 
     private final GeminiConfig config;
     private final WebClient.Builder webClientBuilder;
+    // Proactive per-key RPM+TPM budget keeper for embedding calls: a key is
+    // handed out only with budget to spare (no 429s by construction); on a 429
+    // anyway, the key is benched (15s per-minute / ~1h daily) and we rotate.
+    private final EmbeddingKeyPool embeddingKeyPool;
 
-    // Round-robin cursor + cached key list for embedding calls. Embeddings run on
-    // the chat provider's Kafka lanes, so without this every batch resolved to the
-    // SAME Gemini key (resolveKey → first key) and exhausted its quota while the
-    // other configured keys sat idle. Spreading calls across all N keys multiplies
-    // the effective embedding quota by N.
-    private final AtomicInteger embedKeyCursor = new AtomicInteger();
-    private volatile List<String> cachedEmbedKeys;
-
-    // Global embedding pace gate. Embedding batches ride the CHAT provider's
-    // Kafka lanes, so N lane threads submit concurrently with no coordination
-    // against the EMBEDDING provider's per-minute budgets — bursts bunch onto
-    // one account (shared cursor) and 429-storm. Serializing all embedding
-    // calls at embeddingMinIntervalMs also makes the round-robin spread
-    // perfectly even: each account sees one call every (interval × keyCount).
-    private final Object embedPaceGate = new Object();
-    private long lastEmbedCallMs = 0;
-
-    /** Blocks until at least embeddingMinIntervalMs since the previous
-     *  embedding call, process-wide (all lanes, both embed methods). */
-    private void paceEmbeddingCall() {
-        synchronized (embedPaceGate) {
-            long wait = lastEmbedCallMs + config.getEmbeddingMinIntervalMs()
-                - System.currentTimeMillis();
-            if (wait > 0) {
-                sleepQuietly(wait);
-            }
-            lastEmbedCallMs = System.currentTimeMillis();
+    /** ~4 chars/token for log text; tiny per-text overhead for request framing. */
+    private static long estimateEmbedTokens(List<String> texts) {
+        long chars = 0;
+        for (String t : texts) {
+            chars += t == null ? 0 : t.length();
         }
+        return chars / 4 + texts.size() * 8L;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -79,19 +62,21 @@ public class GeminiClient {
 
         Map<String, Object> requestBody = Map.of("requests", requests);
 
-        int keyCount = Math.max(1, embeddingKeys().size());
-        // On a 429 we rotate keys and wait, cycling through every key several
-        // times before giving up to the Kafka retry lane — a 429 must not fail
-        // the batch. Daily-quota 429s (no retryDelay) are tracked per key so we
-        // fail fast once EVERY key is daily-exhausted instead of burning ~45s.
-        int maxAttempts = Math.max(config.getMaxRetries(), keyCount * 5);
-        String keyToUse = resolveEmbeddingKey(apiKey);
+        long estTokens = estimateEmbedTokens(texts);
+        int keyCount = Math.max(1, embeddingKeyPool.keyCount());
+        // With proactive budgeting, provider 429s are the exception, not the
+        // pacing mechanism — a few rotations suffice. Pool acquire() itself
+        // throws RateLimitException when everything is saturated ≥90s, which
+        // propagates to the Kafka retry lane (work is never dropped).
+        int maxAttempts = Math.max(config.getMaxRetries(), keyCount * 3);
         Exception lastException = null;
         boolean lastWasRateLimit = false;
         Set<String> dailyExhausted = new HashSet<>();
 
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
-            paceEmbeddingCall();
+            // Explicit key (embedding==chat provider path) bypasses the pool.
+            String keyToUse = (apiKey != null && !apiKey.isEmpty())
+                ? apiKey : embeddingKeyPool.acquire(estTokens);
             String url = String.format("%s/models/%s:batchEmbedContents?key=%s",
                 config.getBaseUrl(), config.getEmbeddingModel(), keyToUse);
             try {
@@ -113,26 +98,20 @@ public class GeminiClient {
                     lastException = e;
                     lastWasRateLimit = true;
                     if (isDailyExhaustion(e)) {
+                        embeddingKeyPool.reportDailyExhausted(keyToUse);
                         dailyExhausted.add(keyToUse);
                         if (dailyExhausted.size() >= keyCount) {
                             log.warn("batchEmbedContents: all {} key(s) daily-exhausted "
-                                + "(no retryDelay) — failing fast to retry lane", keyCount);
+                                + "— deferring to retry lane", keyCount);
                             break;
                         }
-                        keyToUse = resolveEmbeddingKey(apiKey);  // try another key, no sleep
-                        log.warn("batchEmbedContents 429 daily-exhausted ({}/{} keys) — "
-                            + "rotating immediately", dailyExhausted.size(), keyCount);
-                        continue;
+                    } else {
+                        // Shouldn't happen under proactive budgeting; bench the
+                        // key 15s and let the next acquire() pick a healthy one.
+                        embeddingKeyPool.reportRateLimited(keyToUse);
+                        log.warn("batchEmbedContents unexpected 429 (attempt {}/{}) — key benched",
+                            attempt + 1, maxAttempts);
                     }
-                    // Per-minute (RPM/TPM) 429: rotate AND pace. Sleeping only on
-                    // same-key wraps let a 5-key cycle finish in ~a second, burning
-                    // all attempts inside the same saturated TPM minute; a short
-                    // sleep every rotation makes 25 attempts span ~50s, guaranteeing
-                    // the retry crosses into a fresh minute window.
-                    keyToUse = resolveEmbeddingKey(apiKey);
-                    log.warn("batchEmbedContents 429 (attempt {}/{}) — rotating key, waiting {}ms",
-                        attempt + 1, maxAttempts, config.getRateLimitRetryDelayMs());
-                    sleepQuietly(config.getRateLimitRetryDelayMs());
                     continue;
                 }
                 if (status == 403) {
@@ -175,9 +154,9 @@ public class GeminiClient {
     // ─────────────────────────────────────────────────────────────────────────
 
     public float[] generateEmbedding(String text, String apiKey) {
-        int keyCount = Math.max(1, embeddingKeys().size());
-        int maxAttempts = Math.max(config.getMaxRetries(), keyCount * 5);
-        String keyToUse = resolveEmbeddingKey(apiKey);
+        long estTokens = estimateEmbedTokens(List.of(text == null ? "" : text));
+        int keyCount = Math.max(1, embeddingKeyPool.keyCount());
+        int maxAttempts = Math.max(config.getMaxRetries(), keyCount * 3);
 
         Map<String, Object> request = Map.of(
             "model", "models/" + config.getEmbeddingModel(),
@@ -190,7 +169,8 @@ public class GeminiClient {
         Set<String> dailyExhausted = new HashSet<>();
 
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
-            paceEmbeddingCall();
+            String keyToUse = (apiKey != null && !apiKey.isEmpty())
+                ? apiKey : embeddingKeyPool.acquire(estTokens);
             String url = String.format("%s/models/%s:embedContent?key=%s",
                 config.getBaseUrl(), config.getEmbeddingModel(), keyToUse);
             try {
@@ -209,22 +189,17 @@ public class GeminiClient {
                     lastException = e;
                     lastWasRateLimit = true;
                     if (isDailyExhaustion(e)) {
+                        embeddingKeyPool.reportDailyExhausted(keyToUse);
                         dailyExhausted.add(keyToUse);
                         if (dailyExhausted.size() >= keyCount) {
-                            log.warn("embedContent: all {} key(s) daily-exhausted "
-                                + "(no retryDelay) — failing fast", keyCount);
+                            log.warn("embedContent: all {} key(s) daily-exhausted — giving up", keyCount);
                             break;
                         }
-                        keyToUse = resolveEmbeddingKey(apiKey);  // try another key, no sleep
-                        log.warn("embedContent 429 daily-exhausted ({}/{} keys) — rotating immediately",
-                            dailyExhausted.size(), keyCount);
-                        continue;
+                    } else {
+                        embeddingKeyPool.reportRateLimited(keyToUse);
+                        log.warn("embedContent unexpected 429 (attempt {}/{}) — key benched",
+                            attempt + 1, maxAttempts);
                     }
-                    // Per-minute 429: rotate AND pace (see batchGenerateEmbeddings).
-                    keyToUse = resolveEmbeddingKey(apiKey);
-                    log.warn("embedContent 429 (attempt {}/{}) — rotating key, waiting {}ms",
-                        attempt + 1, maxAttempts, config.getRateLimitRetryDelayMs());
-                    sleepQuietly(config.getRateLimitRetryDelayMs());
                     continue;
                 }
                 if (status == 403) {
@@ -343,36 +318,6 @@ public class GeminiClient {
             if (i < embedding.length - 1) sb.append(",");
         }
         return sb.append("]").toString();
-    }
-
-    /**
-     * Cached, parsed embedding key pool. Cached so we don't re-parse (and
-     * re-log) {@link GeminiConfig#getAllApiKeys()} on every embedding call.
-     */
-    private List<String> embeddingKeys() {
-        List<String> k = cachedEmbedKeys;
-        if (k == null) {
-            k = config.getAllApiKeys();
-            cachedEmbedKeys = k;
-            log.info("Gemini embedding key pool: {} key(s), round-robin", k.size());
-        }
-        return k;
-    }
-
-    /**
-     * Resolves the Gemini key for an embedding call. An explicit key (used only
-     * when embedding provider == chat provider) is honoured as-is; otherwise the
-     * next key in the pool is chosen round-robin so load and quota spread across
-     * all N configured keys. Each call advances the cursor, so re-calling it on a
-     * 429 hands back a different key.
-     */
-    private String resolveEmbeddingKey(String apiKey) {
-        if (apiKey != null && !apiKey.isEmpty()) return apiKey;
-        List<String> keys = embeddingKeys();
-        if (keys.isEmpty()) {
-            throw new RuntimeException("No Gemini API key configured. Set GEMINI_API_KEYS env var.");
-        }
-        return keys.get(Math.floorMod(embedKeyCursor.getAndIncrement(), keys.size()));
     }
 
     /**
