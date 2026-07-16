@@ -44,7 +44,8 @@ import java.util.regex.Pattern;
  *
  * <p>Error policy (global decision: at-least-once, idempotent): a 429 re-releases
  * the item to {@code llm.enrich.retry.60s} with {@code attempt+1} (the thread
- * never sleeps 60s); once {@code attempt >= MAX_ATTEMPTS} — or on any
+ * never sleeps 60s); once {@code attempt >= MAX_RATE_LIMIT_ATTEMPTS} (~24h of
+ * hourly-probed retrying — rate-limited work is effectively never dropped) — or on any
  * non-retryable error — the item is dead-lettered. <em>Every</em> terminal
  * outcome (success or DLQ) bumps {@code enriched_windows} so a single failed item
  * can never wedge session completion. Offsets are committed manually only after
@@ -54,11 +55,11 @@ import java.util.regex.Pattern;
 @Slf4j
 public class EnrichConsumer {
 
-    /** attempt >= this → give up and dead-letter (spec: 3 for enrichment). */
-    private static final int MAX_ATTEMPTS = 3;
-    /** Embedding batches get more retries — free-tier quota resets every minute
-     *  and there can be 100+ batches competing for limited RPM/TPM budget. */
-    private static final int MAX_EMBED_ATTEMPTS = 8;
+    /** Rate-limited work is NEVER dropped (owner: completeness over speed) — it
+     *  cycles the 60s retry lane until quota returns, even across a daily-quota
+     *  reset. 1440 attempts ≈ 24h of retrying; only after that does it DLQ.
+     *  Non-retryable errors still dead-letter immediately (separate catch). */
+    private static final int MAX_RATE_LIMIT_ATTEMPTS = 1440;
     // Fixed token allowance for the findings-JSON completion, added to the
     // prompt estimate when pacing against the key's tokens-per-minute budget.
     private static final int OUTPUT_TOKEN_ESTIMATE = 512;
@@ -126,8 +127,7 @@ public class EnrichConsumer {
             process(request, partition);
             markEnriched(request.sessionId());
         } catch (RateLimitException e) {
-            int maxAttempts = EnrichRequest.EMBED_BATCH.equals(request.kind())
-                ? MAX_EMBED_ATTEMPTS : MAX_ATTEMPTS;
+            int maxAttempts = MAX_RATE_LIMIT_ATTEMPTS;
             if (request.attempt() >= maxAttempts) {
                 log.warn("Work {} ({}) still rate-limited at attempt {} → DLQ: {}",
                     request.workId(), request.kind(), request.attempt(), e.getMessage());
@@ -252,13 +252,10 @@ public class EnrichConsumer {
             texts.add(c.content());
         }
 
-        apiKeyManager.getSlot(partition).enforceRateLimit();
-        List<float[]> vectors;
-        try {
-            vectors = llmGateway.embedBatch(texts, apiKey);
-        } finally {
-            apiKeyManager.getSlot(partition).markCallMade();
-        }
+        // No lane pacing here: the lane slot budgets the CHAT provider (Groq),
+        // but this call spends the EMBEDDING provider's quota — EmbeddingKeyPool
+        // inside the client does the per-Gemini-key RPM+TPM budgeting.
+        List<float[]> vectors = llmGateway.embedBatch(texts, apiKey);
 
         int n = Math.min(vectors.size(), chunks.size());
         if (vectors.size() != chunks.size()) {
