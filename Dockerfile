@@ -9,16 +9,6 @@ RUN ./gradlew :loglens-backend:build -x test
 FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
 
-# Install fonts for PDF processing (fixes "Using fallback font LiberationSans for Helvetica" warnings)
-RUN apk update && \
-    apk add --no-cache \
-    fontconfig \
-    ttf-liberation \
-    ttf-dejavu \
-    ttf-droid \
-    ttf-freefont \
-    && fc-cache -f -v
-
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 COPY --from=build /app/loglens-backend/build/libs/loglens-backend-1.0.0-SNAPSHOT.jar app.jar

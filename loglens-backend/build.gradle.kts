@@ -36,15 +36,6 @@ dependencies {
     // ── Object storage (MinIO staging blobs) ──────────────────────────────────
     implementation("io.minio:minio:8.5.17")
 
-    // ── Document processing ───────────────────────────────────────────────────
-    implementation("org.apache.poi:poi:5.2.5")           // Excel / old PPT
-    implementation("org.apache.poi:poi-ooxml:5.2.5")     // PPTX / DOCX
-    implementation("org.apache.poi:poi-scratchpad:5.2.5") // Legacy PPT
-    implementation("org.apache.pdfbox:pdfbox:3.0.1")     // PDF text extraction
-
-    // ── OCR ───────────────────────────────────────────────────────────────────
-    implementation("net.sourceforge.tess4j:tess4j:5.10.0")
-
     // ── Test ──────────────────────────────────────────────────────────────────
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
