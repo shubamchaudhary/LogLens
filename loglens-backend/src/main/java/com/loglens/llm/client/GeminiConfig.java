@@ -36,6 +36,18 @@ public class GeminiConfig {
     private long cooldown429Ms = 15000;
     // ...and this long (minutes) after a per-day quota 429 (re-probed hourly).
     private long dailyCooldownMinutes = 60;
+    // A single request whose token count exceeds the provider's per-minute
+    // bucket (30K TPM) can NEVER succeed — it 429s instantly on every key,
+    // forever. Batches are therefore split by estimated tokens, capped well
+    // under the bucket, and each text is capped so one stack-trace-dense
+    // window can't sink a whole request. Only the text sent for embedding is
+    // truncated; the stored chunk is untouched.
+    private long embeddingMaxRequestTokens = 10000;
+    private int embeddingMaxTextChars = 8000;
+    // Fail-fast ceiling for one embed call: past this, defer to the Kafka
+    // retry lane instead of blocking toward max.poll.interval (being kicked
+    // from the group fails the ack and duplicates in-flight work).
+    private long embeddingMaxInCallMillis = 240000;
     private int maxOutputTokens = 8192; // Max for Gemini 2.5 Flash
     private int maxContextChunks = 150; // Increased to 150 for enhanced RAG
     private int maxConversationHistory = 50; // Max Q&A pairs in conversation history

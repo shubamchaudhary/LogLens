@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -52,6 +53,51 @@ public class GeminiClient {
     public List<float[]> batchGenerateEmbeddings(List<String> texts, String apiKey) {
         if (texts == null || texts.isEmpty()) return List.of();
 
+        // Per-text cap: a window dense with stack traces can exceed the model's
+        // input limit on its own. The vector from the leading slice retrieves the
+        // chunk just as well; the full text in Postgres is never touched.
+        int maxChars = config.getEmbeddingMaxTextChars();
+        List<String> bounded = new ArrayList<>(texts.size());
+        for (String t : texts) {
+            String s = t == null ? "" : t;
+            bounded.add(s.length() > maxChars ? s.substring(0, maxChars) : s);
+        }
+
+        // Per-request token cap: a request whose tokens exceed the provider's
+        // per-minute bucket can NEVER succeed — it 429s instantly on every key,
+        // forever (observed in prod: count-based batches of 10 fat windows were
+        // rejected once a minute for two days while a tiny probe succeeded).
+        // Batch by tokens, not count, so every request fits a fresh bucket.
+        long maxTokens = config.getEmbeddingMaxRequestTokens();
+        List<List<String>> groups = new ArrayList<>();
+        List<String> current = new ArrayList<>();
+        long currentTokens = 0;
+        for (String t : bounded) {
+            long est = estimateEmbedTokens(List.of(t));
+            if (!current.isEmpty() && currentTokens + est > maxTokens) {
+                groups.add(current);
+                current = new ArrayList<>();
+                currentTokens = 0;
+            }
+            current.add(t);
+            currentTokens += est;
+        }
+        if (!current.isEmpty()) groups.add(current);
+
+        if (groups.size() > 1) {
+            log.info("Embed batch of {} texts (~{} est tokens) split into {} requests under the {}-token cap",
+                bounded.size(), estimateEmbedTokens(bounded), groups.size(), maxTokens);
+        }
+
+        List<float[]> out = new ArrayList<>(bounded.size());
+        for (List<String> group : groups) {
+            out.addAll(sendEmbedBatch(group, apiKey));
+        }
+        return out;
+    }
+
+    /** One batchEmbedContents request with key rotation and bounded in-call time. */
+    private List<float[]> sendEmbedBatch(List<String> texts, String apiKey) {
         List<Map<String, Object>> requests = texts.stream()
             .map(text -> Map.<String, Object>of(
                 "model", "models/" + config.getEmbeddingModel(),
@@ -73,7 +119,20 @@ public class GeminiClient {
         boolean lastWasRateLimit = false;
         Set<String> dailyExhausted = new HashSet<>();
 
+        // Fail-fast ceiling: pool waits + benches across many attempts can hold
+        // a Kafka record longer than max.poll.interval, which gets the consumer
+        // kicked from the group — the subsequent ack then FAILS and the record is
+        // redelivered on top of its retry-lane copy, duplicating work. Deferring
+        // to the retry lane before that point costs one 60s delay and keeps the
+        // consumer group stable.
+        long deadline = System.currentTimeMillis() + config.getEmbeddingMaxInCallMillis();
+
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            if (lastWasRateLimit && System.currentTimeMillis() > deadline) {
+                log.warn("batchEmbedContents exceeded {}ms in-call budget after {} attempt(s) — deferring to retry lane",
+                    config.getEmbeddingMaxInCallMillis(), attempt);
+                break;
+            }
             // Explicit key (embedding==chat provider path) bypasses the pool.
             String keyToUse = (apiKey != null && !apiKey.isEmpty())
                 ? apiKey : embeddingKeyPool.acquire(estTokens);
@@ -108,9 +167,11 @@ public class GeminiClient {
                     } else {
                         // Shouldn't happen under proactive budgeting; bench the
                         // key 15s and let the next acquire() pick a healthy one.
+                        // ALWAYS log the body — it names the violated quotaId,
+                        // without which this failure mode is undebuggable.
                         embeddingKeyPool.reportRateLimited(keyToUse);
-                        log.warn("batchEmbedContents unexpected 429 (attempt {}/{}) — key benched",
-                            attempt + 1, maxAttempts);
+                        log.warn("batchEmbedContents unexpected 429 (attempt {}/{}) — key benched; body: {}",
+                            attempt + 1, maxAttempts, e.getResponseBodyAsString());
                     }
                     continue;
                 }
@@ -154,7 +215,12 @@ public class GeminiClient {
     // ─────────────────────────────────────────────────────────────────────────
 
     public float[] generateEmbedding(String text, String apiKey) {
-        long estTokens = estimateEmbedTokens(List.of(text == null ? "" : text));
+        // Same per-text cap as the batch path (questions are short; this only
+        // matters if a caller ever embeds raw log content directly).
+        String s = text == null ? "" : text;
+        int maxChars = config.getEmbeddingMaxTextChars();
+        text = s.length() > maxChars ? s.substring(0, maxChars) : s;
+        long estTokens = estimateEmbedTokens(List.of(text));
         int keyCount = Math.max(1, embeddingKeyPool.keyCount());
         int maxAttempts = Math.max(config.getMaxRetries(), keyCount * 3);
 
@@ -197,8 +263,8 @@ public class GeminiClient {
                         }
                     } else {
                         embeddingKeyPool.reportRateLimited(keyToUse);
-                        log.warn("embedContent unexpected 429 (attempt {}/{}) — key benched",
-                            attempt + 1, maxAttempts);
+                        log.warn("embedContent unexpected 429 (attempt {}/{}) — key benched; body: {}",
+                            attempt + 1, maxAttempts, e.getResponseBodyAsString());
                     }
                     continue;
                 }
