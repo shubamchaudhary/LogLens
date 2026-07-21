@@ -10,17 +10,16 @@ work runs **off the request path, behind a durable queue** — so the system is 
 never loses work, and scales its reasoning cost with the number of *incidents*, not the
 size of the logs.
 
-🔗 **Live:** [deeploglens.vercel.app](https://deeploglens.vercel.app) ·
-📖 **Deep design walkthrough:** [docs/current-design-walkthrough.md](docs/current-design-walkthrough.md)
+🔗 **Live:** [deeploglens.vercel.app](https://deeploglens.vercel.app)
 
 ---
 
 ## Why it exists
 
-An on-call engineer at 2 AM with 900,000 log lines has a real, expensive problem. The
-naive fix — "paste the logs into an LLM and ask what broke" — fails, because an LLM
-**cannot count**, **cannot see all the logs at once**, and **will confidently invent**
-numbers and errors. LogLens is built around *trust*:
+Making sense of a large log archive is a real, expensive problem. The naive fix —
+"paste the logs into an LLM and ask what broke" — fails, because an LLM **cannot
+count**, **cannot see all the logs at once**, and **will confidently invent** numbers
+and errors. LogLens is built around *trust*:
 
 - **Numbers come from code, not the model.** Deterministic parsers compute every count,
   rate, and latency. LLMs never count anything.
@@ -101,29 +100,12 @@ flowchart TD
 
 ---
 
-## What I deliberately did NOT use (removal is a design signal)
-
-| Cut | Why it isn't needed |
-|---|---|
-| **Elasticsearch** | Evidence lookup is by id; keyword search is session-scoped Postgres GIN; semantic is per-session pgvector. One fewer stateful cluster. |
-| **A dedicated vector DB** (Pinecone/Weaviate) | Adds a second store to keep in sync with Postgres for zero gain; pgvector gives isolated ANN *and* transactional joins to the metadata. |
-| **RabbitMQ / SQS** | No log-replay and no partition-ordering-per-key — both of which the rate-limit design depends on. |
-| **A DB-as-queue poller** (the v1 approach) | Deleted ~250 lines of 3-second polling + lease columns when Kafka replaced it: push, exactly-one delivery, offsets survive crashes. |
-| **Kafka exactly-once transactions** | At-least-once + idempotent handlers give equivalent correctness for these write shapes, far more simply. |
-| **Microservices** | Two deployables total (Java monolith + Python AI sidecar), and only because the LangGraph ecosystem is Python. |
-
-*Full reasoning for every choice — and the rejected alternatives — is in the
-[design walkthrough](docs/current-design-walkthrough.md).*
-
----
-
 ## Repository layout
 
 ```
 loglens-backend/     Spring Boot: auth, upload, Kafka ingest + enrich workers, query APIs
 rag-orchestrator/    Python FastAPI + LangGraph: report graph + corrective-RAG Q&A graph
 loglens-frontend/    React + Vite UI
-docs/                design walkthrough, partitioned-ingest spec, interview defense notes
 docker-compose.yml   local stack: Postgres+pgvector, Kafka, MinIO
 ```
 
@@ -147,14 +129,3 @@ cd loglens-frontend && npm install && npm run dev
 
 Set `GROQ_API_KEYS` and `GEMINI_API_KEYS` (comma-separated for the multi-key rate-limit
 pool). The whole stack runs on free tiers at **$0**.
-
----
-
-## Further reading
-
-- **[Design walkthrough](docs/current-design-walkthrough.md)** — end-to-end, every hop,
-  every table, every decision, and *why the obvious alternative was rejected*.
-- **[Partitioned-ingest spec](docs/04-partitioned-ingest-spec.md)** — the memory-bounded
-  ingest redesign.
-- **[Design defense with numbers](docs/interview/02-design-defense.md)** ·
-  **[Honest trade-offs](docs/interview/03-honest-tradeoffs.md)**
