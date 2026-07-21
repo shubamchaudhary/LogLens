@@ -1,4 +1,4 @@
-# LogLens — LangGraph-Based Log Intelligence Pipeline
+# LogLens — LangGraph-Based Log Intelligence RAG Pipeline
 
 **Turn a GB-scale log archive into a grounded, cited incident report you can
 interrogate in plain English.**
