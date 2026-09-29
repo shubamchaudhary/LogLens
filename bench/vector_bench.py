@@ -17,7 +17,7 @@ Layouts
   shared_hnsw_forced   same, but only the HNSW walk + post-filter is possible
   shared_iterative     same + pgvector 0.8 hnsw.iterative_scan = relaxed_order
   shared_btree_exact   one table, B-tree on session_id, exact distance sort
-  partial_hnsw         one table, one partial HNSW index per queried session
+  partial_hnsw         a copy of the table with one partial HNSW index per queried session
   partitioned          PARTITION BY LIST (session_id), HNSW per partition
   per_session_table    LogLens's layout: its own table + HNSW per session
 
@@ -102,7 +102,7 @@ def load_layouts(conn, vecs, meta, query_sessions, m=16, efc=64):
     # Docker's default /dev/shm is 64 MB; parallel HNSW builds need more. Build single-threaded.
     q(conn, "SET max_parallel_maintenance_workers = 0")
     q(conn, "SET maintenance_work_mem = '512MB'")
-    q(conn, "DROP TABLE IF EXISTS vb_shared, vb_part CASCADE")
+    q(conn, "DROP TABLE IF EXISTS vb_shared, vb_shared_p, vb_part CASCADE")
     for s in set(sess):
         q(conn, f"DROP TABLE IF EXISTS vb_s_{s}")
     q(conn, "CREATE TABLE vb_shared (id int PRIMARY KEY, session_id text NOT NULL, embedding vector(384))")
@@ -117,11 +117,15 @@ def load_layouts(conn, vecs, meta, query_sessions, m=16, efc=64):
     info["shared_hnsw"] = {"build_s": round(time.time() - t0, 2), "index_bytes": table_size(conn, "vb_shared_hnsw"),
                            "rows": len(rows)}
     q(conn, "ANALYZE vb_shared")
-    # partial indexes for the queried sessions only (one per session in real use)
+    # partial indexes for the queried sessions only (one per session in real use), on a copy of
+    # the table so the plain shared layout can't use them
+    q(conn, "DROP TABLE IF EXISTS vb_shared_p")
+    q(conn, "CREATE TABLE vb_shared_p AS SELECT * FROM vb_shared")
     t0 = time.time()
     for s in query_sessions:
-        q(conn, f"CREATE INDEX vb_partial_{s} ON vb_shared USING hnsw (embedding vector_cosine_ops) "
+        q(conn, f"CREATE INDEX vb_partial_{s} ON vb_shared_p USING hnsw (embedding vector_cosine_ops) "
                 f"WITH (m={m}, ef_construction={efc}) WHERE session_id = '{s}'")
+    q(conn, "ANALYZE vb_shared_p")
     info["partial_hnsw"] = {"build_s_total": round(time.time() - t0, 2),
                             "index_bytes": {s: table_size(conn, f"vb_partial_{s}") for s in query_sessions}}
     # list partitioning
@@ -146,12 +150,21 @@ def load_layouts(conn, vecs, meta, query_sessions, m=16, efc=64):
     return info
 
 
-def exact_topk(vecs, meta, session, qv, k=10):
+def exact_truth(vecs, meta, session, qv, k=10):
+    """True similarity of every row of the session + the k-th best similarity.
+
+    Log lines repeat, so many rows tie with the k-th best (133 on average for a 1,000-row
+    session here). Recall therefore counts a returned row as correct when its true
+    similarity reaches the k-th best, instead of comparing with one arbitrary top-k set."""
     sess = meta["session_of"]
     idx = [i for i in range(len(sess)) if sess[i] == session and not meta["is_query"][i]]
     sims = vecs[idx] @ qv
-    order = np.argsort(-sims)[:k]
-    return [idx[i] for i in order]
+    return dict(zip(idx, sims.tolist())), float(np.sort(sims)[::-1][k - 1])
+
+
+def tie_aware_recall(ids, truth, k=10, eps=1e-5):
+    sim_of, kth = truth
+    return min(k, sum(1 for i in ids if i in sim_of and sim_of[i] >= kth - eps)) / k
 
 
 LAYOUT_SQL = {
@@ -165,7 +178,7 @@ LAYOUT_SQL = {
     "shared_btree_exact": ("SELECT id FROM vb_shared WHERE session_id = %s ORDER BY embedding <=> %s LIMIT 10",
                            {"enable_indexscan": "off", "enable_seqscan": "off"}),
     # enable_sort=off: the B-tree plan needs a Sort for ORDER BY distance, the partial HNSW doesn't
-    "partial_hnsw": ("SELECT id FROM vb_shared WHERE session_id = %s ORDER BY embedding <=> %s LIMIT 10",
+    "partial_hnsw": ("SELECT id FROM vb_shared_p WHERE session_id = %s ORDER BY embedding <=> %s LIMIT 10",
                      {"enable_bitmapscan": "off", "enable_seqscan": "off", "enable_sort": "off"}),
     "partitioned": ("SELECT id FROM vb_part WHERE session_id = %s ORDER BY embedding <=> %s LIMIT 10", {}),
     "per_session_table": ("SELECT id FROM vb_s_{s} ORDER BY embedding <=> %s LIMIT 10", {}),
@@ -187,14 +200,14 @@ def run_queries(conn, layout, session, queries, ef):
             ids = [r[0] for r in conn.execute(sql.format(s=session), (qv,)).fetchall()]
         elif layout == "partial_hnsw":
             ids = [r[0] for r in conn.execute(
-                f"SELECT id FROM vb_shared WHERE session_id = '{session}' ORDER BY embedding <=> %s LIMIT 10",
+                f"SELECT id FROM vb_shared_p WHERE session_id = '{session}' ORDER BY embedding <=> %s LIMIT 10",
                 (qv,)).fetchall()]
         else:
             ids = [r[0] for r in conn.execute(sql, (session, qv)).fetchall()]
         lat.append((time.perf_counter() - t0) * 1000)
         res.append(ids)
     plan = conn.execute("EXPLAIN " + (sql.format(s=session) if layout == "per_session_table" else
-                                      (f"SELECT id FROM vb_shared WHERE session_id = '{session}' ORDER BY embedding <=> %s LIMIT 10"
+                                      (f"SELECT id FROM vb_shared_p WHERE session_id = '{session}' ORDER BY embedding <=> %s LIMIT 10"
                                        if layout == "partial_hnsw" else sql)),
                         ((queries[0],) if layout in ("per_session_table", "partial_hnsw") else (session, queries[0]))
                         ).fetchall()
@@ -219,7 +232,7 @@ def main():
     for s in query_sessions:
         qidx = [i for i in range(len(sess)) if sess[i] == s and meta["is_query"][i]][:args.queries]
         queries = [vecs[i] for i in qidx]
-        truth = [set(exact_topk(vecs, meta, s, vecs[i])) for i in qidx]
+        truth = [exact_truth(vecs, meta, s, vecs[i]) for i in qidx]
         share = sum(1 for i in range(len(sess)) if sess[i] == s and not meta["is_query"][i]) / \
             sum(1 for x in meta["is_query"] if not x)
         for layout in LAYOUT_SQL:
@@ -228,7 +241,7 @@ def main():
                     continue
                 run_queries(conn, layout, s, queries[:5], ef)  # warm
                 ids, lat, plan = run_queries(conn, layout, s, queries, ef)
-                rec = statistics.mean(len(set(r) & t) / 10 for r, t in zip(ids, truth))
+                rec = statistics.mean(tie_aware_recall(r, t) for r, t in zip(ids, truth))
                 results.append({"session": s, "session_share": round(share, 4), "layout": layout, "ef_search": ef,
                                 "recall_at_10": round(rec, 3),
                                 "avg_rows_returned": round(statistics.mean(len(r) for r in ids), 2),
