@@ -88,6 +88,8 @@ def app_errors(app: App, since: int) -> list[str]:
 def main():
     subprocess.run(["bash", "-c", "fuser -k 8080/tcp 8081/tcp 2>/dev/null"], check=False)
     time.sleep(2)
+    from ingest_bench import clean_slate
+    clean_slate()  # skip any backlog an interrupted run left in Kafka
     files = make_inputs()
     App.EXTRA = ["--loglens.embedding.enabled=false"]
     results = []

@@ -47,7 +47,7 @@ def main():
          "**Hardware:** 4 vCPU Intel Xeon @ 2.10 GHz, 15 GB RAM, one VM shared by app + Postgres + Kafka + MinIO. "
          "**JVM:** OpenJDK 21.0.10, SerialGC (as in the production Dockerfile).",
          "", "Reproduce: `docker compose up -d`, `bench/fetch_model.sh`, `python bench/llm_stub.py --embed bge &`, then "
-         "`bash bench/run_all.sh`. Data: `evals/generate_corpus.py` (seeded; 20 lines/s Spring-style logs).", ""]
+         "`bash bench/run_all.sh` (the ingest runs, then `run_rest.sh`; finished steps are skipped). Data: `evals/generate_corpus.py` (seeded; 20 lines/s Spring-style logs).", ""]
 
     ing = load("ingest.json")
     if ing:
@@ -116,17 +116,29 @@ def main():
           "`replay_ingest_before_part_fix`: data unchanged, but the replay later flipped 4 DONE sessions to FAILED "
           "(fixed in `c5ea7d9`, see `ExactlyOnceIT.replayAfterTheStagedBlobIsDeletedIsASilentNoOp`).", ""]
 
-    rob = load("robustness.json")
-    if rob:
-        L += ["## Robustness (-Xmx256m)", "", "| Case | Bytes | Outcome | Error / notes | JVM alive |", "|---|---|---|---|---|"]
-        for x in rob["results"]:
-            if x["case"] == "poison_message":
-                L.append(f"| poison message (not JSON) on log.ingest.parts | - | next upload: {x['next_upload_status']} | "
-                         f"DLQ offsets {x['dlq_offsets_before']} -> {x['dlq_offsets_after']} | yes |")
-            else:
-                note = (x.get("error") or "; ".join(x.get("app_errors", [])[:1]) or "").replace("|", "/")[:160]
-                L.append(f"| {x['case']} | {x['bytes']:,} | {x['status']} (chunks {x['chunks']}, lines {x['lines_stored']}) "
-                         f"| {note} | {x['jvm_alive']} |")
+    def rob_cell(x):
+        if x is None:
+            return "-"
+        if x["case"] == "poison_message":
+            return (f"DLQ offsets {x['dlq_offsets_before']} -> {x['dlq_offsets_after']}; "
+                    f"next upload {x['next_upload_status']}")
+        note = (x.get("error") or "; ".join(x.get("app_errors", [])[:1]) or "").replace("|", "/")[:140]
+        return (f"**{x['status']}** in {x['seconds']} s, chunks {x['chunks']}, lines {x['lines_stored']}"
+                f"{', JVM died' if not x['jvm_alive'] else ''}{': ' + note if note else ''}")
+
+    before, after = load("robustness_before.json"), load("robustness_after.json")
+    if before or after:
+        idx = lambda d: {x["case"]: x for x in (d or {}).get("results", [])}
+        b, a = idx(before), idx(after)
+        L += ["## Robustness: bad inputs (-Xmx256m)", "",
+              "Before = jar built at `c5ea7d9`; after = current code (`73c1fbd` line caps, NUL handling, gzip "
+              "check, chunk caps + the NUL-safe failure marker). A good outcome is a clear final state: parsed "
+              "(ENRICHING/CORRELATING/DONE) or FAILED with a reason, never stuck.", "",
+              "| Case | Bytes | Before | After |", "|---|---|---|---|"]
+        for case in list(dict.fromkeys(list(b) + list(a))):
+            size = (b.get(case) or a.get(case)).get("bytes")
+            L.append(f"| {case} | {f'{size:,}' if size is not None else '-'} | {rob_cell(b.get(case))} | "
+                     f"{rob_cell(a.get(case))} |")
         L.append("")
 
     L += ["## Other measured numbers", "",
