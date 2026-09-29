@@ -84,10 +84,24 @@ CREATE TABLE IF NOT EXISTS ingest_parts (
     PRIMARY KEY (document_id, part_idx)
 );
 
+-- ============================================================
+-- ENRICH_WORK_DONE — per-work-item marker for the LLM enrichment lane.
+-- Inserted in the SAME transaction as the item's findings/embeddings and the
+-- sessions.enriched_windows increment: a redelivered or replayed work item
+-- hits the PK conflict and writes nothing (no double occurrence_count, no
+-- double completion count, no second LLM call thanks to a pre-check).
+-- ============================================================
+CREATE TABLE IF NOT EXISTS enrich_work_done (
+    work_id    UUID PRIMARY KEY,
+    session_id UUID NOT NULL,
+    done_at    TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_enrich_work_session ON enrich_work_done(session_id);
+
 -- ── Applying to an EXISTING (v2) database — run these once: ──────────────────
 -- ALTER TABLE documents ADD COLUMN IF NOT EXISTS total_parts  INTEGER NOT NULL DEFAULT 0;
 -- ALTER TABLE documents ADD COLUMN IF NOT EXISTS parsed_parts INTEGER NOT NULL DEFAULT 0;
--- (then CREATE TABLE ingest_parts above)
+-- (then CREATE TABLE ingest_parts and enrich_work_done above)
 
 -- ============================================================
 -- LOG_METRICS — Layer-1 parser output. One row = one exact
@@ -203,11 +217,11 @@ CREATE TRIGGER trg_sessions_updated BEFORE UPDATE ON sessions
 --     content      TEXT NOT NULL,
 --     embedding    vector(768),
 --     is_anomalous BOOLEAN DEFAULT FALSE,
---     created_at   TIMESTAMPTZ DEFAULT NOW()
+--     created_at   TIMESTAMPTZ DEFAULT NOW(),
+--     content_tsv  tsvector GENERATED ALWAYS AS (to_tsvector('simple', content)) STORED
 -- );
 -- CREATE INDEX idx_lc_{tid}_hnsw ON log_chunks_s_{tid}
 --     USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64);
--- CREATE INDEX idx_lc_{tid}_fts  ON log_chunks_s_{tid}
---     USING gin (to_tsvector('simple', content));
+-- CREATE INDEX idx_lc_{tid}_fts  ON log_chunks_s_{tid} USING gin (content_tsv);
 -- CREATE INDEX idx_lc_{tid}_time ON log_chunks_s_{tid} (time_bucket);
 -- Session deletion: DROP TABLE IF EXISTS log_chunks_s_{tid};

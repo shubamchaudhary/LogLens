@@ -18,6 +18,8 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -49,6 +51,14 @@ import java.util.UUID;
  * outcome (success or DLQ) bumps {@code enriched_windows} so a single failed item
  * can never wedge session completion. Offsets are committed manually only after
  * that bookkeeping.
+ *
+ * <p><b>Exactly-once effect.</b> Kafka redelivers after a crash between the DB
+ * write and the offset commit, and a replay re-sends everything. The slow part
+ * (LLM / embedding calls) runs outside any transaction and only COLLECTS results;
+ * then ONE transaction inserts the {@code enrich_work_done} marker for the
+ * {@code workId}, writes findings/embeddings and bumps {@code enriched_windows}.
+ * A redelivered item loses the marker insert and writes nothing, and a work id
+ * already in the ledger is skipped before any LLM call is made.
  */
 @Component
 @Slf4j
@@ -77,6 +87,15 @@ public class EnrichConsumer {
     private final ObjectMapper objectMapper;
     private final long windowSeconds;
     private final int maxContentChars;
+    private final EnrichWorkLedger ledger;
+    private final TransactionTemplate txTemplate;
+
+    /** What one work item produced, collected outside the transaction. */
+    record Outcome(List<FindingsWriter.Finding> findings, List<SessionChunkRepository.ChunkEmbedding> embeddings,
+                   boolean sessionGone) {
+        static final Outcome EMPTY = new Outcome(List.of(), List.of(), false);
+        static final Outcome SESSION_GONE = new Outcome(List.of(), List.of(), true);
+    }
 
     public EnrichConsumer(
         ApiKeyManager apiKeyManager,
@@ -89,7 +108,9 @@ public class EnrichConsumer {
         KafkaTemplate<String, Object> kafkaTemplate,
         ObjectMapper objectMapper,
         @Value("${loglens.window-seconds:60}") long windowSeconds,
-        @Value("${loglens.enrich.max-content-chars:5000}") int maxContentChars
+        @Value("${loglens.enrich.max-content-chars:5000}") int maxContentChars,
+        EnrichWorkLedger ledger,
+        PlatformTransactionManager txManager
     ) {
         this.apiKeyManager = apiKeyManager;
         this.llmGateway = llmGateway;
@@ -102,6 +123,8 @@ public class EnrichConsumer {
         this.objectMapper = objectMapper;
         this.windowSeconds = windowSeconds;
         this.maxContentChars = maxContentChars;
+        this.ledger = ledger;
+        this.txTemplate = new TransactionTemplate(txManager);
     }
 
     @KafkaListener(
@@ -112,15 +135,19 @@ public class EnrichConsumer {
                          @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
                          Acknowledgment ack) {
         try {
-            process(request, partition);
-            markEnriched(request.sessionId());
+            if (ledger.isDone(request.workId())) {
+                log.info("Work {} ({}) already committed — skipping redelivery, no LLM call",
+                    request.workId(), request.kind());
+                return;
+            }
+            commit(request, process(request, partition));
         } catch (RateLimitException e) {
             int maxAttempts = MAX_RATE_LIMIT_ATTEMPTS;
             if (request.attempt() >= maxAttempts) {
                 log.warn("Work {} ({}) still rate-limited at attempt {} → DLQ: {}",
                     request.workId(), request.kind(), request.attempt(), e.getMessage());
                 deadLetter(request);
-                markEnriched(request.sessionId());
+                commit(request, Outcome.EMPTY);
             } else {
                 long notBefore = System.currentTimeMillis() + RETRY_DELAY_MS;
                 kafkaTemplate.send(KafkaTopics.LLM_ENRICH_RETRY_60S,
@@ -132,39 +159,71 @@ public class EnrichConsumer {
             log.error("Work {} ({}) failed non-retryably → DLQ: {}",
                 request.workId(), request.kind(), e.toString());
             deadLetter(request);
-            markEnriched(request.sessionId());
+            commit(request, Outcome.EMPTY);
         } finally {
             ack.acknowledge();
         }
     }
 
-    private void process(EnrichRequest request, int partition) {
+    private Outcome process(EnrichRequest request, int partition) {
         // A session deleted after its work was enqueued leaves a Kafka backlog
         // whose per-session chunk table is already dropped; skip it quietly
         // instead of dead-lettering every item with a bad-SQL-grammar error.
         if (!sessionRepository.existsById(request.sessionId())) {
             log.warn("Session {} no longer exists — skipping {} work {}",
                 request.sessionId(), request.kind(), request.workId());
-            return;
+            return Outcome.SESSION_GONE;
         }
         // Modulo guards against a topic wider than the active provider's key
         // count (Kafka partitions can never be lowered on an existing volume).
         int lane = partition % apiKeyManager.getSlotCount();
         String apiKey = apiKeyManager.getApiKey(lane);
-        switch (request.kind()) {
+        return switch (request.kind()) {
             case EnrichRequest.ENRICH_WINDOW -> enrichWindow(request, lane, apiKey);
             case EnrichRequest.EMBED_BATCH -> embedBatch(request, lane, apiKey);
-            default -> log.warn("Unknown enrich kind '{}' for work {} — skipping",
-                request.kind(), request.workId());
-        }
+            default -> {
+                log.warn("Unknown enrich kind '{}' for work {} — skipping", request.kind(), request.workId());
+                yield Outcome.EMPTY;
+            }
+        };
     }
 
-    private void enrichWindow(EnrichRequest request, int partition, String apiKey) {
+    /**
+     * The only write path: marker + results + completion counter in ONE short
+     * transaction, so a redelivery can never double-count or double-write.
+     */
+    private void commit(EnrichRequest request, Outcome outcome) {
+        if (outcome.sessionGone()) {
+            return;
+        }
+        Boolean won = txTemplate.execute(status -> {
+            if (!ledger.claim(request.workId(), request.sessionId())) {
+                return Boolean.FALSE;
+            }
+            for (FindingsWriter.Finding f : outcome.findings()) {
+                findingsWriter.upsert(f);
+            }
+            if (!outcome.embeddings().isEmpty()) {
+                chunkRepository.updateEmbeddings(request.sessionId(), outcome.embeddings());
+            }
+            sessionRepository.incrementEnrichedWindows(request.sessionId());
+            return Boolean.TRUE;
+        });
+        if (Boolean.TRUE.equals(won)) {
+            log.info("{} work {} committed → {} finding(s), {} embedding(s)",
+                request.kind(), request.workId(), outcome.findings().size(), outcome.embeddings().size());
+        } else {
+            log.info("{} work {} already committed by another delivery — skipped", request.kind(), request.workId());
+        }
+        completion.checkAndTrigger(request.sessionId());
+    }
+
+    private Outcome enrichWindow(EnrichRequest request, int partition, String apiKey) {
         List<SessionChunkRepository.ChunkContent> chunks =
             chunkRepository.readChunks(request.sessionId(), request.chunkIds());
         if (chunks.isEmpty()) {
             log.warn("ENRICH_WINDOW work {} has no resolvable chunks — skipping", request.workId());
-            return;
+            return Outcome.EMPTY;
         }
 
         StringBuilder content = new StringBuilder();
@@ -190,7 +249,7 @@ public class EnrichConsumer {
 
         Instant rangeStart = minBucket;
         Instant rangeEnd = maxBucket == null ? null : maxBucket.plusSeconds(windowSeconds);
-        int written = 0;
+        List<FindingsWriter.Finding> findings = new ArrayList<>();
         for (String segment : segments) {
             String user = EnrichPrompts.user(segment, metricContext);
 
@@ -213,26 +272,22 @@ public class EnrichConsumer {
                 String severity = clampSeverity(text(node, "severity"));
                 Double confidence = confidence(node);
                 String fingerprint = EnrichPrompts.fingerprint(category, title);
-                findingsWriter.upsert(new FindingsWriter.Finding(
+                findings.add(new FindingsWriter.Finding(
                     request.sessionId(), category, severity, title, explanation,
                     request.chunkIds(), rangeStart, rangeEnd, fingerprint, confidence));
-                written++;
             }
         }
-        if (segments.size() > 1) {
-            log.info("ENRICH_WINDOW work {} → {} finding(s) upserted across {} segments",
-                request.workId(), written, segments.size());
-        } else {
-            log.info("ENRICH_WINDOW work {} → {} finding(s) upserted", request.workId(), written);
-        }
+        log.info("ENRICH_WINDOW work {} → {} finding(s) from {} LLM call(s), committing",
+            request.workId(), findings.size(), segments.size());
+        return new Outcome(findings, List.of(), false);
     }
 
-    private void embedBatch(EnrichRequest request, int partition, String apiKey) {
+    private Outcome embedBatch(EnrichRequest request, int partition, String apiKey) {
         List<SessionChunkRepository.ChunkContent> chunks =
             chunkRepository.readChunks(request.sessionId(), request.chunkIds());
         if (chunks.isEmpty()) {
             log.warn("EMBED_BATCH work {} has no resolvable chunks — skipping", request.workId());
-            return;
+            return Outcome.EMPTY;
         }
 
         List<String> texts = new ArrayList<>(chunks.size());
@@ -255,8 +310,7 @@ public class EnrichConsumer {
             updates.add(new SessionChunkRepository.ChunkEmbedding(
                 chunks.get(i).chunkId(), llmGateway.toVectorString(vectors.get(i))));
         }
-        int updated = chunkRepository.updateEmbeddings(request.sessionId(), updates);
-        log.info("EMBED_BATCH work {} → {} embeddings written", request.workId(), updated);
+        return new Outcome(List.of(), updates, false);
     }
 
     /**
@@ -268,10 +322,6 @@ public class EnrichConsumer {
      */
     private static long estimateTokens(String system, String user) {
         return (system.length() + user.length()) / 4L + OUTPUT_TOKEN_ESTIMATE;
-    }
-
-    private void markEnriched(UUID sessionId) {        sessionRepository.incrementEnrichedWindows(sessionId);
-        completion.checkAndTrigger(sessionId);
     }
 
     private void deadLetter(EnrichRequest request) {
