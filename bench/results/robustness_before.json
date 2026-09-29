@@ -1,0 +1,111 @@
+{
+  "date": "2026-09-29T23:39:31+00:00",
+  "commit": "ad1d16e",
+  "heap": "256m",
+  "results": [
+    {
+      "case": "malformed_lines.log",
+      "bytes": 47574,
+      "status": "CORRELATING",
+      "error": null,
+      "seconds": 1.2,
+      "jvm_alive": true,
+      "chunks": 10,
+      "lines_stored": 686,
+      "app_errors": []
+    },
+    {
+      "case": "non_utf8.log",
+      "bytes": 34209,
+      "status": "CORRELATING",
+      "error": null,
+      "seconds": 0.6,
+      "jvm_alive": true,
+      "chunks": 10,
+      "lines_stored": 601,
+      "app_errors": []
+    },
+    {
+      "case": "nul_bytes.log",
+      "bytes": 34206,
+      "status": "PARSING",
+      "error": null,
+      "seconds": 300.4,
+      "jvm_alive": true,
+      "chunks": 0,
+      "lines_stored": 0,
+      "app_errors": [
+        "org.springframework.kafka.KafkaException: Seek to current after exception",
+        "Caused by: org.springframework.kafka.listener.ListenerExecutionFailedException: Listener method 'public void com.loglens.ingest.PartConsumer.onPart(com.loglens.common.messages.IngestPartRequest,org.springframework.kafka.support.Acknowledgment)' threw exception",
+        "Suppressed: org.springframework.kafka.listener.ListenerExecutionFailedException: Restored Stack Trace",
+        "Caused by: org.springframework.dao.DataIntegrityViolationException: PreparedStatementCallback; SQL [INSERT INTO log_chunks_s_b80bcba8_dd82_4d1e_a5eb_09d3ef9b5bc8 (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES (?, ?, ?,",
+        "Caused by: java.sql.BatchUpdateException: Batch entry 5 INSERT INTO log_chunks_s_b80bcba8_dd82_4d1e_a5eb_09d3ef9b5bc8 (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES ('a4f672b3-9b51-4165-9026-f983ab5cfff0'::uuid, 'a4722",
+        "Caused by: org.postgresql.util.PSQLException: ERROR: invalid byte sequence for encoding \"UTF8\": 0x00"
+      ]
+    },
+    {
+      "case": "empty.log",
+      "bytes": 0,
+      "status": "DONE",
+      "error": null,
+      "seconds": 0.6,
+      "jvm_alive": true,
+      "chunks": 0,
+      "lines_stored": 0,
+      "app_errors": []
+    },
+    {
+      "case": "archive.log.gz",
+      "bytes": 2649,
+      "status": "PARSING",
+      "error": null,
+      "seconds": 300.2,
+      "jvm_alive": true,
+      "chunks": 0,
+      "lines_stored": 0,
+      "app_errors": [
+        "org.springframework.kafka.KafkaException: Seek to current after exception",
+        "Caused by: org.springframework.kafka.listener.ListenerExecutionFailedException: Listener method 'public void com.loglens.ingest.PartConsumer.onPart(com.loglens.common.messages.IngestPartRequest,org.springframework.kafka.support.Acknowledgment)' threw exception",
+        "Suppressed: org.springframework.kafka.listener.ListenerExecutionFailedException: Restored Stack Trace",
+        "Caused by: org.springframework.dao.DataIntegrityViolationException: PreparedStatementCallback; SQL [INSERT INTO log_chunks_s_5bddc4c7_8d35_4105_99b2_a2ca0ebccbac (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES (?, ?, ?,",
+        "Caused by: java.sql.BatchUpdateException: Batch entry 0 INSERT INTO log_chunks_s_5bddc4c7_8d35_4105_99b2_a2ca0ebccbac (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES ('296dad90-bf51-4491-9153-abda0bda326f'::uuid, '75c5b",
+        "Caused by: org.postgresql.util.PSQLException: ERROR: invalid byte sequence for encoding \"UTF8\": 0x00"
+      ]
+    },
+    {
+      "case": "huge_single_line.log",
+      "bytes": 104857634,
+      "status": "CHUNKING",
+      "error": null,
+      "seconds": 301.5,
+      "jvm_alive": true,
+      "chunks": 0,
+      "lines_stored": 0,
+      "app_errors": [
+        "java.lang.OutOfMemoryError: Java heap space",
+        "java.util.concurrent.CompletionException: java.lang.OutOfMemoryError: Java heap space",
+        "Caused by: java.lang.OutOfMemoryError: Java heap space"
+      ]
+    },
+    {
+      "case": "busy_minute.log",
+      "bytes": 14148619,
+      "status": "CREATED",
+      "error": null,
+      "seconds": 300.8,
+      "jvm_alive": true,
+      "chunks": 0,
+      "lines_stored": 0,
+      "app_errors": []
+    },
+    {
+      "case": "poison_message",
+      "dlq_offsets_before": "log.ingest.dlq:0:304",
+      "dlq_offsets_after": "log.ingest.dlq:0:305",
+      "next_upload_status": "CREATED",
+      "app_errors": [
+        "com.fasterxml.jackson.core.JsonParseException: Unrecognized token 'this': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')"
+      ]
+    }
+  ]
+}
