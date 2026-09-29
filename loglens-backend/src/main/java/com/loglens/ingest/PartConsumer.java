@@ -90,6 +90,13 @@ public class PartConsumer {
         UUID documentId = part.documentId();
         long length = part.byteEndExclusive() - part.byteStart();
 
+        if (partRepository.isProcessed(documentId, part.partIdx())) {
+            log.info("Part {}:{} already processed — skipping before any read (redelivery/replay)",
+                documentId, part.partIdx());
+            finalizer.tryFinalize(sessionId, documentId, part.fileUrl());
+            return;
+        }
+
         // --- slow work OUTSIDE any transaction: ranged read + chunk + parse ---
         List<String> lines = readSlice(part.fileUrl(), part.byteStart(), length);
         long lineOffset = part.firstLineNumber() - 1; // slice line 1 → global firstLineNumber

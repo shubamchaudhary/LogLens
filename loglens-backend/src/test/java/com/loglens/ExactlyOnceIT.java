@@ -212,6 +212,24 @@ class ExactlyOnceIT {
     }
 
     @Test
+    void replayAfterTheStagedBlobIsDeletedIsASilentNoOp() {
+        Setup s = newSession();
+        for (IngestPartRequest p : s.parts()) {
+            partConsumer.onPart(p, ack);
+        }
+        Map<String, Object> before = state(s.sid());
+        // the finalizer deleted the staged file: any read now fails
+        when(storage.openStream(anyString(), anyLong(), anyLong()))
+            .thenThrow(new com.loglens.storage.StorageException("object gone", null));
+        for (IngestPartRequest p : s.parts()) {
+            partConsumer.onPart(p, ack);   // must not throw -> no retries, no DLQ, no FAILED session
+        }
+        assertEquals(before, state(s.sid()));
+        assertEquals("COMPLETED", jdbc.queryForObject(
+            "SELECT processing_status FROM documents WHERE id = ?", String.class, s.did()));
+    }
+
+    @Test
     void enrichItemDeliveredTwiceCallsTheLlmOnceAndCountsOnce() {
         Setup s = newSession();
         for (IngestPartRequest p : s.parts()) {
