@@ -1,0 +1,1969 @@
+{
+  "meta": {
+    "eval": "retrieval",
+    "label": "embed_digest",
+    "date": "2026-09-29T22:24:23+00:00",
+    "commit": "7d139bc-dirty",
+    "session": "967e9545-301b-497e-9602-9043aa52dd0c",
+    "embed_model": "bge-small-en-v1.5 (ONNX, 384-d) (stand-in for gemini-embedding-001)",
+    "questions": 51,
+    "chunks": 360,
+    "embedded_chunks": 360,
+    "avg_chunk_chars": 15765,
+    "retrieve_limit": 30,
+    "rrf_k": 60,
+    "llm_calls_made": 0,
+    "cost_usd": 0.0,
+    "golden_set_sha256": "7e06e81c6b1af0dece49815c072a28bcaeecb35d4dac20c6e127e4ac2a90381b",
+    "prompt_version": "2026-09-29.2"
+  },
+  "results": {
+    "summary": {
+      "vector_only": {
+        "recall@5": 0.4,
+        "recall@10": 0.488,
+        "recall@30": 0.568,
+        "mrr": 0.305,
+        "ndcg@10": 0.337,
+        "gold_lines_in_retrieved_chunks": 0.571,
+        "gold_lines_visible_to_generator": 0.332,
+        "gold_lines_visible_to_grader": 0.307,
+        "p50_ms": 21.01,
+        "p95_ms": 45.55
+      },
+      "fts_only": {
+        "recall@5": 0.675,
+        "recall@10": 0.779,
+        "recall@30": 0.846,
+        "mrr": 0.612,
+        "ndcg@10": 0.625,
+        "gold_lines_in_retrieved_chunks": 0.848,
+        "gold_lines_visible_to_generator": 0.447,
+        "gold_lines_visible_to_grader": 0.384,
+        "p50_ms": 22.14,
+        "p95_ms": 34.53
+      },
+      "hybrid_rrf": {
+        "recall@5": 0.604,
+        "recall@10": 0.79,
+        "recall@30": 0.895,
+        "mrr": 0.437,
+        "ndcg@10": 0.497,
+        "gold_lines_in_retrieved_chunks": 0.897,
+        "gold_lines_visible_to_generator": 0.461,
+        "gold_lines_visible_to_grader": 0.396,
+        "p50_ms": 43.44,
+        "p95_ms": 56.88
+      }
+    },
+    "by_type": {
+      "comparison": {
+        "vector_only": {
+          "recall@10": 0.5,
+          "mrr": 0.182
+        },
+        "fts_only": {
+          "recall@10": 0.444,
+          "mrr": 0.556
+        },
+        "hybrid_rrf": {
+          "recall@10": 0.778,
+          "mrr": 0.25
+        },
+        "n": 3
+      },
+      "count": {
+        "vector_only": {
+          "recall@10": 0.672,
+          "mrr": 0.791
+        },
+        "fts_only": {
+          "recall@10": 0.777,
+          "mrr": 0.875
+        },
+        "hybrid_rrf": {
+          "recall@10": 0.768,
+          "mrr": 1.0
+        },
+        "n": 8
+      },
+      "entity": {
+        "vector_only": {
+          "recall@10": 0.606,
+          "mrr": 0.296
+        },
+        "fts_only": {
+          "recall@10": 0.879,
+          "mrr": 0.333
+        },
+        "hybrid_rrf": {
+          "recall@10": 0.879,
+          "mrr": 0.354
+        },
+        "n": 11
+      },
+      "first": {
+        "vector_only": {
+          "recall@10": 0.8,
+          "mrr": 0.25
+        },
+        "fts_only": {
+          "recall@10": 1.0,
+          "mrr": 0.717
+        },
+        "hybrid_rrf": {
+          "recall@10": 1.0,
+          "mrr": 0.296
+        },
+        "n": 5
+      },
+      "last": {
+        "vector_only": {
+          "recall@10": 1.0,
+          "mrr": 0.333
+        },
+        "fts_only": {
+          "recall@10": 1.0,
+          "mrr": 0.5
+        },
+        "hybrid_rrf": {
+          "recall@10": 1.0,
+          "mrr": 0.333
+        },
+        "n": 1
+      },
+      "root_cause": {
+        "vector_only": {
+          "recall@10": 0.778,
+          "mrr": 0.344
+        },
+        "fts_only": {
+          "recall@10": 1.0,
+          "mrr": 0.567
+        },
+        "hybrid_rrf": {
+          "recall@10": 0.889,
+          "mrr": 0.528
+        },
+        "n": 3
+      },
+      "time_range": {
+        "vector_only": {
+          "recall@10": 0.167,
+          "mrr": 0.333
+        },
+        "fts_only": {
+          "recall@10": 0.167,
+          "mrr": 0.057
+        },
+        "hybrid_rrf": {
+          "recall@10": 0.167,
+          "mrr": 0.126
+        },
+        "n": 3
+      },
+      "why": {
+        "vector_only": {
+          "recall@10": 0.206,
+          "mrr": 0.106
+        },
+        "fts_only": {
+          "recall@10": 0.765,
+          "mrr": 0.761
+        },
+        "hybrid_rrf": {
+          "recall@10": 0.765,
+          "mrr": 0.344
+        },
+        "n": 17
+      }
+    },
+    "per_question": [
+      {
+        "id": "q001",
+        "type": "why",
+        "gold_chunks": 2,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 0.5,
+          "recall@10": 0.5,
+          "recall@30": 0.5,
+          "mrr": 1.0,
+          "ndcg@10": 0.6131471927654584,
+          "gold_lines_in_retrieved_chunks": 0.5,
+          "gold_lines_visible_to_generator": 0.5,
+          "gold_lines_visible_to_grader": 0.5
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 0.5,
+          "recall@30": 0.5,
+          "mrr": 0.16666666666666666,
+          "ndcg@10": 0.21840743681816419,
+          "gold_lines_in_retrieved_chunks": 0.5,
+          "gold_lines_visible_to_generator": 0.5,
+          "gold_lines_visible_to_grader": 0.5
+        }
+      },
+      {
+        "id": "q002",
+        "type": "first",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        }
+      },
+      {
+        "id": "q003",
+        "type": "count",
+        "gold_chunks": 5,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.2,
+          "recall@30": 0.2,
+          "mrr": 0.125,
+          "ndcg@10": 0.10699313236726378,
+          "gold_lines_in_retrieved_chunks": 0.11372549019607843,
+          "gold_lines_visible_to_generator": 0.0196078431372549,
+          "gold_lines_visible_to_grader": 0.011764705882352941
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.09803921568627451,
+          "gold_lines_visible_to_grader": 0.058823529411764705
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.4,
+          "recall@10": 0.8,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 0.6855160796667416,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.09803921568627451,
+          "gold_lines_visible_to_grader": 0.058823529411764705
+        }
+      },
+      {
+        "id": "q004",
+        "type": "root_cause",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q005",
+        "type": "time_range",
+        "gold_chunks": 2,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q006",
+        "type": "entity",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 0.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.16666666666666666,
+          "ndcg@10": 0.3562071871080222,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 1.0,
+          "mrr": 0.07142857142857142,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q007",
+        "type": "why",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q008",
+        "type": "first",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        }
+      },
+      {
+        "id": "q009",
+        "type": "count",
+        "gold_chunks": 2,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.24390243902439024,
+          "gold_lines_visible_to_grader": 0.14634146341463414
+        },
+        "fts_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.24390243902439024,
+          "gold_lines_visible_to_grader": 0.14634146341463414
+        }
+      },
+      {
+        "id": "q010",
+        "type": "root_cause",
+        "gold_chunks": 3,
+        "vector_only": {
+          "recall@5": 0.3333333333333333,
+          "recall@10": 0.3333333333333333,
+          "recall@30": 0.3333333333333333,
+          "mrr": 0.2,
+          "ndcg@10": 0.18154179253735267,
+          "gold_lines_in_retrieved_chunks": 0.25,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 0.6666666666666666,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 0.9325210919548239,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.5,
+          "gold_lines_visible_to_grader": 0.5
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.6666666666666666,
+          "recall@10": 0.6666666666666666,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 0.6508205185601091,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.5,
+          "gold_lines_visible_to_grader": 0.5
+        }
+      },
+      {
+        "id": "q011",
+        "type": "entity",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q012",
+        "type": "why",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 1.0,
+          "mrr": 0.09090909090909091,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 1.0,
+          "mrr": 0.04,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        }
+      },
+      {
+        "id": "q013",
+        "type": "count",
+        "gold_chunks": 6,
+        "vector_only": {
+          "recall@5": 0.16666666666666666,
+          "recall@10": 0.3333333333333333,
+          "recall@30": 0.3333333333333333,
+          "mrr": 0.2,
+          "ndcg@10": 0.22485174766247445,
+          "gold_lines_in_retrieved_chunks": 0.38127090301003347,
+          "gold_lines_visible_to_generator": 0.026755852842809364,
+          "gold_lines_visible_to_grader": 0.020066889632107024
+        },
+        "fts_only": {
+          "recall@5": 0.8333333333333334,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0802675585284281,
+          "gold_lines_visible_to_grader": 0.06020066889632107
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.3333333333333333,
+          "recall@10": 0.3333333333333333,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 0.4935232796777481,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0802675585284281,
+          "gold_lines_visible_to_grader": 0.06020066889632107
+        }
+      },
+      {
+        "id": "q014",
+        "type": "count",
+        "gold_chunks": 4,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.07216494845360824,
+          "gold_lines_visible_to_grader": 0.041237113402061855
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.07216494845360824,
+          "gold_lines_visible_to_grader": 0.041237113402061855
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.07216494845360824,
+          "gold_lines_visible_to_grader": 0.041237113402061855
+        }
+      },
+      {
+        "id": "q015",
+        "type": "why",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        }
+      },
+      {
+        "id": "q016",
+        "type": "first",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        }
+      },
+      {
+        "id": "q017",
+        "type": "entity",
+        "gold_chunks": 3,
+        "vector_only": {
+          "recall@5": 0.6666666666666666,
+          "recall@10": 0.6666666666666666,
+          "recall@30": 0.6666666666666666,
+          "mrr": 1.0,
+          "ndcg@10": 0.7653606369886217,
+          "gold_lines_in_retrieved_chunks": 0.6666666666666666,
+          "gold_lines_visible_to_generator": 0.3333333333333333,
+          "gold_lines_visible_to_grader": 0.3333333333333333
+        },
+        "fts_only": {
+          "recall@5": 0.6666666666666666,
+          "recall@10": 0.6666666666666666,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 0.7653606369886217,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.6666666666666666,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.6666666666666666,
+          "recall@10": 0.6666666666666666,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 0.7653606369886217,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.6666666666666666,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        }
+      },
+      {
+        "id": "q018",
+        "type": "root_cause",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        }
+      },
+      {
+        "id": "q019",
+        "type": "count",
+        "gold_chunks": 6,
+        "vector_only": {
+          "recall@5": 0.8333333333333334,
+          "recall@10": 0.8333333333333334,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 0.892210845475489,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.11320754716981132,
+          "gold_lines_visible_to_grader": 0.06792452830188679
+        },
+        "fts_only": {
+          "recall@5": 0.8333333333333334,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.11320754716981132,
+          "gold_lines_visible_to_grader": 0.06792452830188679
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.8333333333333334,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.11320754716981132,
+          "gold_lines_visible_to_grader": 0.06792452830188679
+        }
+      },
+      {
+        "id": "q020",
+        "type": "time_range",
+        "gold_chunks": 2,
+        "vector_only": {
+          "recall@5": 0.5,
+          "recall@10": 0.5,
+          "recall@30": 0.5,
+          "mrr": 1.0,
+          "ndcg@10": 0.6131471927654584,
+          "gold_lines_in_retrieved_chunks": 0.5,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.5,
+          "mrr": 0.07142857142857142,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.5,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.5,
+          "recall@10": 0.5,
+          "recall@30": 0.5,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.3065735963827292,
+          "gold_lines_in_retrieved_chunks": 0.5,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q021",
+        "type": "entity",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        }
+      },
+      {
+        "id": "q022",
+        "type": "count",
+        "gold_chunks": 5,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.08438818565400844,
+          "gold_lines_visible_to_grader": 0.04219409282700422
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.08438818565400844,
+          "gold_lines_visible_to_grader": 0.04219409282700422
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.08438818565400844,
+          "gold_lines_visible_to_grader": 0.04219409282700422
+        }
+      },
+      {
+        "id": "q023",
+        "type": "entity",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.125,
+          "ndcg@10": 0.31546487678572877,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q024",
+        "type": "time_range",
+        "gold_chunks": 2,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.5,
+          "recall@30": 0.5,
+          "mrr": 0.1,
+          "ndcg@10": 0.17723928678404774,
+          "gold_lines_in_retrieved_chunks": 0.5,
+          "gold_lines_visible_to_generator": 0.5,
+          "gold_lines_visible_to_grader": 0.5
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.5,
+          "mrr": 0.045454545454545456,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.5,
+          "gold_lines_visible_to_generator": 0.5,
+          "gold_lines_visible_to_grader": 0.5
+        }
+      },
+      {
+        "id": "q025",
+        "type": "why",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q026",
+        "type": "entity",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 1.0,
+          "mrr": 0.08333333333333333,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "fts_only": {
+          "recall@5": 0.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.16666666666666666,
+          "ndcg@10": 0.3562071871080222,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.16666666666666666,
+          "ndcg@10": 0.3562071871080222,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        }
+      },
+      {
+        "id": "q027",
+        "type": "entity",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q028",
+        "type": "last",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q029",
+        "type": "why",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        }
+      },
+      {
+        "id": "q030",
+        "type": "entity",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.1111111111111111,
+          "ndcg@10": 0.3010299956639812,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        }
+      },
+      {
+        "id": "q031",
+        "type": "count",
+        "gold_chunks": 5,
+        "vector_only": {
+          "recall@5": 0.8,
+          "recall@10": 0.8,
+          "recall@30": 0.8,
+          "mrr": 1.0,
+          "ndcg@10": 0.8687949224876582,
+          "gold_lines_in_retrieved_chunks": 0.9076305220883534,
+          "gold_lines_visible_to_generator": 0.0642570281124498,
+          "gold_lines_visible_to_grader": 0.0321285140562249
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.08032128514056225,
+          "gold_lines_visible_to_grader": 0.040160642570281124
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.8,
+          "recall@10": 0.8,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 0.8687949224876582,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.08032128514056225,
+          "gold_lines_visible_to_grader": 0.040160642570281124
+        }
+      },
+      {
+        "id": "q032",
+        "type": "entity",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        }
+      },
+      {
+        "id": "q033",
+        "type": "first",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.16666666666666666,
+          "ndcg@10": 0.3562071871080222,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        }
+      },
+      {
+        "id": "q034",
+        "type": "comparison",
+        "gold_chunks": 2,
+        "vector_only": {
+          "recall@5": 0.5,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.25,
+          "ndcg@10": 0.46845052016107697,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "fts_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.5,
+          "recall@30": 1.0,
+          "mrr": 0.16666666666666666,
+          "ndcg@10": 0.21840743681816419,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.5,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.5109559939712153,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        }
+      },
+      {
+        "id": "q035",
+        "type": "comparison",
+        "gold_chunks": 2,
+        "vector_only": {
+          "recall@5": 0.5,
+          "recall@10": 0.5,
+          "recall@30": 0.5,
+          "mrr": 0.25,
+          "ndcg@10": 0.2640681225725909,
+          "gold_lines_in_retrieved_chunks": 0.5,
+          "gold_lines_visible_to_generator": 0.5,
+          "gold_lines_visible_to_grader": 0.5
+        },
+        "fts_only": {
+          "recall@5": 0.5,
+          "recall@10": 0.5,
+          "recall@30": 0.5,
+          "mrr": 0.5,
+          "ndcg@10": 0.38685280723454163,
+          "gold_lines_in_retrieved_chunks": 0.5,
+          "gold_lines_visible_to_generator": 0.5,
+          "gold_lines_visible_to_grader": 0.5
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.16666666666666666,
+          "ndcg@10": 0.41183384043543503,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        }
+      },
+      {
+        "id": "q036",
+        "type": "comparison",
+        "gold_chunks": 3,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.6666666666666666,
+          "mrr": 0.045454545454545456,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.8,
+          "gold_lines_visible_to_generator": 0.8,
+          "gold_lines_visible_to_grader": 0.8
+        },
+        "fts_only": {
+          "recall@5": 0.3333333333333333,
+          "recall@10": 0.3333333333333333,
+          "recall@30": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg@10": 0.46927872602275644,
+          "gold_lines_in_retrieved_chunks": 0.6,
+          "gold_lines_visible_to_generator": 0.6,
+          "gold_lines_visible_to_grader": 0.6
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.3333333333333333,
+          "recall@10": 0.3333333333333333,
+          "recall@30": 0.3333333333333333,
+          "mrr": 0.25,
+          "ndcg@10": 0.20210734650054757,
+          "gold_lines_in_retrieved_chunks": 0.6,
+          "gold_lines_visible_to_generator": 0.6,
+          "gold_lines_visible_to_grader": 0.6
+        }
+      },
+      {
+        "id": "q037",
+        "type": "count",
+        "gold_chunks": 47,
+        "vector_only": {
+          "recall@5": 0.10638297872340426,
+          "recall@10": 0.2127659574468085,
+          "recall@30": 0.6382978723404256,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 0.66,
+          "gold_lines_visible_to_generator": 0.66,
+          "gold_lines_visible_to_grader": 0.66
+        },
+        "fts_only": {
+          "recall@5": 0.10638297872340426,
+          "recall@10": 0.2127659574468085,
+          "recall@30": 0.6382978723404256,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 0.66,
+          "gold_lines_visible_to_generator": 0.66,
+          "gold_lines_visible_to_grader": 0.66
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.10638297872340426,
+          "recall@10": 0.2127659574468085,
+          "recall@30": 0.6382978723404256,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 0.66,
+          "gold_lines_visible_to_generator": 0.66,
+          "gold_lines_visible_to_grader": 0.66
+        }
+      },
+      {
+        "id": "q038",
+        "type": "why",
+        "gold_chunks": 3,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.3333333333333333,
+          "mrr": 0.043478260869565216,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.3333333333333333,
+          "gold_lines_visible_to_generator": 0.3333333333333333,
+          "gold_lines_visible_to_grader": 0.3333333333333333
+        },
+        "fts_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.6666666666666666,
+          "mrr": 0.09090909090909091,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.6666666666666666,
+          "gold_lines_visible_to_generator": 0.6666666666666666,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.6666666666666666,
+          "mrr": 0.0625,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.6666666666666666,
+          "gold_lines_visible_to_generator": 0.6666666666666666,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        }
+      },
+      {
+        "id": "q039",
+        "type": "entity",
+        "gold_chunks": 3,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.16666666666666666,
+          "ndcg@10": 0.4508533838815827,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "fts_only": {
+          "recall@5": 0.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.14285714285714285,
+          "ndcg@10": 0.4401191709229659,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.6666666666666666,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.5931729515195112,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        }
+      },
+      {
+        "id": "q040",
+        "type": "first",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.1111111111111111,
+          "ndcg@10": 0.3010299956639812,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q041",
+        "type": "entity",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.1,
+          "ndcg@10": 0.2890648263178879,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 1.0,
+          "gold_lines_visible_to_grader": 1.0
+        }
+      },
+      {
+        "id": "q042",
+        "type": "why",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q043",
+        "type": "why",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.16666666666666666,
+          "ndcg@10": 0.3562071871080222,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q044",
+        "type": "why",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 1.0,
+          "mrr": 0.09090909090909091,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q045",
+        "type": "why",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.2,
+          "ndcg@10": 0.38685280723454163,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q046",
+        "type": "why",
+        "gold_chunks": 2,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 0.5,
+          "recall@10": 0.5,
+          "recall@30": 0.5,
+          "mrr": 1.0,
+          "ndcg@10": 0.6131471927654584,
+          "gold_lines_in_retrieved_chunks": 0.3333333333333333,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 0.5,
+          "recall@30": 0.5,
+          "mrr": 0.16666666666666666,
+          "ndcg@10": 0.21840743681816419,
+          "gold_lines_in_retrieved_chunks": 0.3333333333333333,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q047",
+        "type": "why",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.3333333333333333,
+          "ndcg@10": 0.5,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q048",
+        "type": "why",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.25,
+          "ndcg@10": 0.43067655807339306,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q049",
+        "type": "why",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.5,
+          "ndcg@10": 0.6309297535714575,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      },
+      {
+        "id": "q050",
+        "type": "why",
+        "gold_chunks": 2,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.5,
+          "recall@30": 1.0,
+          "mrr": 0.16666666666666666,
+          "ndcg@10": 0.21840743681816419,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.6666666666666666,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        },
+        "fts_only": {
+          "recall@5": 0.5,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 0.8175295903539445,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.6666666666666666,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        },
+        "hybrid_rrf": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 0.9197207891481876,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.6666666666666666,
+          "gold_lines_visible_to_grader": 0.6666666666666666
+        }
+      },
+      {
+        "id": "q051",
+        "type": "why",
+        "gold_chunks": 1,
+        "vector_only": {
+          "recall@5": 0.0,
+          "recall@10": 0.0,
+          "recall@30": 0.0,
+          "mrr": 0.0,
+          "ndcg@10": 0.0,
+          "gold_lines_in_retrieved_chunks": 0.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "fts_only": {
+          "recall@5": 1.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 1.0,
+          "ndcg@10": 1.0,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        },
+        "hybrid_rrf": {
+          "recall@5": 0.0,
+          "recall@10": 1.0,
+          "recall@30": 1.0,
+          "mrr": 0.125,
+          "ndcg@10": 0.31546487678572877,
+          "gold_lines_in_retrieved_chunks": 1.0,
+          "gold_lines_visible_to_generator": 0.0,
+          "gold_lines_visible_to_grader": 0.0
+        }
+      }
+    ]
+  }
+}

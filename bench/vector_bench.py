@@ -98,6 +98,9 @@ def load_layouts(conn, vecs, meta, query_sessions, m=16, efc=64):
     sess = meta["session_of"]
     rows = [(i, sess[i], vecs[i]) for i in range(len(sess)) if not meta["is_query"][i]]
     info = {}
+    # Docker's default /dev/shm is 64 MB; parallel HNSW builds need more. Build single-threaded.
+    q(conn, "SET max_parallel_maintenance_workers = 0")
+    q(conn, "SET maintenance_work_mem = '512MB'")
     q(conn, "DROP TABLE IF EXISTS vb_shared, vb_part CASCADE")
     for s in set(sess):
         q(conn, f"DROP TABLE IF EXISTS vb_s_{s}")

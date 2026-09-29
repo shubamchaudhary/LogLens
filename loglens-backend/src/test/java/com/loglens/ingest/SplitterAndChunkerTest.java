@@ -118,6 +118,61 @@ class SplitterAndChunkerTest {
     }
 
     @Test
+    void aVeryBusyMinuteBecomesSeveralChunksWithTheSameBucket() {
+        List<String> lines = new ArrayList<>();
+        for (int i = 0; i < 5000; i++) {
+            lines.add("2026-07-15 09:00:" + String.format("%02d", i % 60) + " INFO gw - request " + i);
+        }
+        List<LogWindow> w = new TimeWindowChunker(60).chunk(lines, 0);
+        assertEquals(3, w.size(), "5000 lines in one minute -> chunks of at most 2000 lines");
+        assertTrue(w.stream().allMatch(x -> x.timeBucket().equals(Instant.parse("2026-07-15T09:00:00Z"))));
+        assertEquals(5000, w.stream().mapToInt(x -> x.lines().size()).sum());
+    }
+
+    @Test
+    void boundedLineReaderTruncatesHugeLinesAndStripsCr() throws Exception {
+        String huge = "x".repeat(PartConsumer.MAX_LINE_CHARS + 10);
+        java.io.BufferedReader r = new java.io.BufferedReader(new java.io.StringReader("a\r\n" + huge + "\nlast"));
+        assertEquals("a", PartConsumer.readBoundedLine(r));
+        String second = PartConsumer.readBoundedLine(r);
+        assertTrue(second.endsWith("...[truncated 10 chars]"));
+        assertEquals("last", PartConsumer.readBoundedLine(r));
+        assertEquals(null, PartConsumer.readBoundedLine(r));
+    }
+
+    @Test
+    void splitterRejectsGzipAndKeepsExactOffsetsPastAHugeLine() {
+        FileStorageService storage = mock(FileStorageService.class);
+        SessionRepository sessions = mock(SessionRepository.class);
+        DocumentRepository documents = mock(DocumentRepository.class);
+        UUID sid = UUID.randomUUID();
+        UUID did = UUID.randomUUID();
+        when(sessions.existsById(sid)).thenReturn(true);
+        when(documents.findById(did)).thenReturn(Optional.of(Document.builder().id(did).build()));
+        @SuppressWarnings("unchecked")
+        KafkaTemplate<String, Object> kafka = mock(KafkaTemplate.class);
+        IngestSplitter splitter = new IngestSplitter(sessions, documents, storage, new TimeWindowChunker(60),
+            mock(EnrichCompletion.class), kafka);
+        ReflectionTestUtils.setField(splitter, "partTargetBytes", 1024L * 1024);
+        ReflectionTestUtils.setField(splitter, "fallbackLinesPerPart", 5000);
+
+        when(storage.openStream(anyString())).thenAnswer(i -> new ByteArrayInputStream(new byte[]{0x1f, (byte) 0x8b, 8, 0}));
+        splitter.onIngest(new IngestRequest(sid, UUID.randomUUID(), did, "s3://x"), mock(Acknowledgment.class));
+        verify(documents).markFailed(eq(did), org.mockito.ArgumentMatchers.contains("not supported"));
+
+        byte[] big = ("2026-07-15 09:00:00 INFO - " + "y".repeat(3 * 1024 * 1024) + "\n2026-07-15 09:01:00 INFO - after\n")
+            .getBytes(StandardCharsets.UTF_8);
+        when(storage.openStream(anyString())).thenAnswer(i -> new ByteArrayInputStream(big));
+        UUID did2 = UUID.randomUUID();
+        when(documents.findById(did2)).thenReturn(Optional.of(Document.builder().id(did2).build()));
+        splitter.onIngest(new IngestRequest(sid, UUID.randomUUID(), did2, "s3://y"), mock(Acknowledgment.class));
+        ArgumentCaptor<Object> msgs = ArgumentCaptor.forClass(Object.class);
+        verify(kafka, atLeastOnce()).send(eq("log.ingest.parts"), anyString(), msgs.capture());
+        IngestPartRequest last = (IngestPartRequest) msgs.getAllValues().get(msgs.getAllValues().size() - 1);
+        assertEquals(big.length, last.byteEndExclusive(), "offsets stay exact even though the line was not buffered");
+    }
+
+    @Test
     void recordAwareSplitterKeepsAStackTraceInOneSegment() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 60; i++) {

@@ -26,7 +26,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(ROOT, "evals"))
-from chaos import App  # noqa: E402
+from chaos import App, kafka  # noqa: E402
 from client import Client, db_counts, watch  # noqa: E402
 from common import git_sha  # noqa: E402
 
@@ -46,7 +46,7 @@ class HeapSampler(threading.Thread):
             try:
                 out = subprocess.run(["jstat", "-gc", str(self.pid)], capture_output=True, text=True, timeout=5).stdout
                 hdr, val = out.strip().splitlines()[-2:]
-                d = dict(zip(hdr.split(), map(float, val.split())))
+                d = {k: float(v) for k, v in zip(hdr.split(), val.split()) if v not in ("-", "")}
                 used_kb = d["S0U"] + d["S1U"] + d["EU"] + d["OU"]
                 rss = int(re.search(r"VmRSS:\s+(\d+)", open(f"/proc/{self.pid}/status").read()).group(1))
                 self.samples.append((time.time(), used_kb / 1024, d["OU"] / 1024, rss / 1024))
@@ -68,12 +68,33 @@ def gc_pauses(gc_log: str, since_s: float) -> dict:
     return {"count": len(pauses), "total_ms": round(sum(ms), 1), "max_ms": round(ms[-1], 1),
             "p95_ms": round(ms[int(0.95 * len(ms)) - 1], 1),
             "full_gcs": sum(1 for p in pauses if p[0] == "Full"),
-            "max_heap_after_gc_mb": max(p[3] for p in pauses)}
+            "max_heap_before_gc_mb": max(p[2] for p in pauses),   # peak occupancy (GC log)
+            "max_heap_after_gc_mb": max(p[3] for p in pauses)}    # peak live set (GC log)
+
+
+def clean_slate() -> None:
+    """Measure one file at a time: drop leftover bench sessions and skip any stale
+    Kafka backlog (e.g. parts of an interrupted run) by moving every consumer group
+    to the latest offset while no consumer is running."""
+    import psycopg
+    from client import DB
+    with psycopg.connect(DB, autocommit=True) as c:
+        for (sid,) in c.execute("SELECT id FROM sessions WHERE title LIKE 'ingest-%'").fetchall():
+            c.execute(f"DROP TABLE IF EXISTS log_chunks_s_{str(sid).replace('-', '_')}")
+            c.execute("DELETE FROM sessions WHERE id = %s", (sid,))
+    for group in ["ingest-workers", "ingest-part-workers", "llm-workers", "llm-retry"]:
+        for _ in range(60):
+            out = kafka("kafka-consumer-groups.sh", "--bootstrap-server", "localhost:9092", "--group", group,
+                        "--all-topics", "--reset-offsets", "--to-latest", "--execute")
+            if "inactive" not in out and "Error" not in out:
+                break
+            time.sleep(3)
 
 
 def run_one(path: str, heap: str, conc: int, extra: list[str]) -> dict:
     subprocess.run(["bash", "-c", "fuser -k 8080/tcp 2>/dev/null"], check=False)
     time.sleep(2)
+    clean_slate()
     App.EXTRA = extra
     name = f"ingest-{os.path.basename(path)}-{heap}-c{conc}"
     app = App(name, heap=heap, conc=conc)

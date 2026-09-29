@@ -61,6 +61,13 @@ public class IngestSplitter {
     @Value("${loglens.ingest.fallback-lines-per-part:5000}")
     private int fallbackLinesPerPart;
 
+    /**
+     * Bytes of one line kept for timestamp detection. Longer lines are still
+     * counted byte-for-byte (offsets stay exact) but not buffered, so one huge
+     * line cannot grow the heap: the splitter stays O(1 MB), not O(longest line).
+     */
+    static final int MAX_LINE_BUFFER = 1 << 20;
+
     /** A computed virtual part: a byte range plus the global line number it starts at. */
     private record Part(long byteStart, long byteEndExclusive, long firstLineNumber) {
     }
@@ -151,10 +158,21 @@ public class IngestSplitter {
             ByteArrayOutputStream lineBuf = new ByteArrayOutputStream(256);
             int b;
             boolean pending = false; // bytes read for a line not yet flushed
+            long overflow = 0;       // bytes of the current line beyond MAX_LINE_BUFFER
+            in.mark(4);
+            byte[] magic = in.readNBytes(4);
+            in.reset();
+            if (magic.length >= 2 && (magic[0] & 0xff) == 0x1f && (magic[1] & 0xff) == 0x8b
+                || magic.length == 4 && magic[0] == 'P' && magic[1] == 'K' && magic[2] == 3 && magic[3] == 4) {
+                // Byte ranges of a compressed stream are meaningless; fail with a reason, not garbage.
+                throw new IllegalArgumentException(
+                    "Compressed archive (gzip/zip) is not supported: upload the plain-text log");
+            }
             while ((b = in.read()) != -1) {
                 pending = true;
                 if (b == '\n') {
-                    long byteLen = lineBuf.size() + 1L; // include the newline
+                    long byteLen = lineBuf.size() + overflow + 1L; // include the newline
+                    overflow = 0;
                     String text = lineBuf.toString(StandardCharsets.UTF_8);
                     lineBuf.reset();
                     // --- process one line ---
@@ -186,13 +204,15 @@ public class IngestSplitter {
                     linesSinceCut++;
                     lineNumber++;
                     pending = false;
-                } else {
+                } else if (lineBuf.size() < MAX_LINE_BUFFER) {
                     lineBuf.write(b);
+                } else {
+                    overflow++;
                 }
             }
             // Trailing line with no final newline.
-            if (pending && lineBuf.size() > 0) {
-                long byteLen = lineBuf.size();
+            if (pending && lineBuf.size() + overflow > 0) {
+                long byteLen = lineBuf.size() + overflow;
                 offset += byteLen;
                 bytesSinceCut += byteLen;
             }

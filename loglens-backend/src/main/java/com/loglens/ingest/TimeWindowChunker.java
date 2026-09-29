@@ -33,6 +33,14 @@ public class TimeWindowChunker {
 
     private static final int FALLBACK_WINDOW_LINES = 500;
 
+    /**
+     * A very busy minute becomes several chunks with the SAME time bucket. One
+     * 120k-line minute as a single chunk exceeded Postgres's 1 MB tsvector limit
+     * (the part failed) and an embedding only ever saw its first few KB.
+     */
+    static final int MAX_CHUNK_LINES = 2000;
+    static final int MAX_CHUNK_CHARS = 512 * 1024;
+
     private final long windowSeconds;
 
     /** Ordered timestamp patterns; group(1) is the timestamp text passed to {@link #parse}. */
@@ -109,15 +117,29 @@ public class TimeWindowChunker {
         for (int i = 1; i < n; i++) {
             Instant bucket = bucketOf(effective[i]);
             if (!bucket.equals(currentBucket)) {
-                windows.add(new LogWindow(currentBucket, windowStart + 1, i,
-                    new ArrayList<>(rawLines.subList(windowStart, i))));
+                addCapped(windows, currentBucket, rawLines, windowStart, i);
                 windowStart = i;
                 currentBucket = bucket;
             }
         }
-        windows.add(new LogWindow(currentBucket, windowStart + 1, n,
-            new ArrayList<>(rawLines.subList(windowStart, n))));
+        addCapped(windows, currentBucket, rawLines, windowStart, n);
         return windows;
+    }
+
+    /** Add lines [from, to) as one window, or several same-bucket windows if it is too big. */
+    private static void addCapped(List<LogWindow> out, Instant bucket, List<String> lines, int from, int to) {
+        int start = from;
+        int chars = 0;
+        for (int i = from; i < to; i++) {
+            int len = lines.get(i).length() + 1;
+            if (i > start && (i - start >= MAX_CHUNK_LINES || chars + len > MAX_CHUNK_CHARS)) {
+                out.add(new LogWindow(bucket, start + 1, i, new ArrayList<>(lines.subList(start, i))));
+                start = i;
+                chars = 0;
+            }
+            chars += len;
+        }
+        out.add(new LogWindow(bucket, start + 1, to, new ArrayList<>(lines.subList(start, to))));
     }
 
     private List<LogWindow> fallbackByLineCount(List<String> rawLines, long globalLineOffset) {
