@@ -90,6 +90,13 @@ public class PartConsumer {
         UUID documentId = part.documentId();
         long length = part.byteEndExclusive() - part.byteStart();
 
+        if (partRepository.isProcessed(documentId, part.partIdx())) {
+            log.info("Part {}:{} already processed — skipping before any read (redelivery/replay)",
+                documentId, part.partIdx());
+            finalizer.tryFinalize(sessionId, documentId, part.fileUrl());
+            return;
+        }
+
         // --- slow work OUTSIDE any transaction: ranged read + chunk + parse ---
         List<String> lines = readSlice(part.fileUrl(), part.byteStart(), length);
         long lineOffset = part.firstLineNumber() - 1; // slice line 1 → global firstLineNumber
@@ -147,18 +154,53 @@ public class PartConsumer {
         finalizer.tryFinalize(sessionId, documentId, part.fileUrl());
     }
 
+    /** Longest line kept per log line; the rest is dropped with a marker (a 100 MB line would OOM the part). */
+    static final int MAX_LINE_CHARS = 64 * 1024;
+
     private List<String> readSlice(String fileUrl, long offset, long length) {
         List<String> lines = new ArrayList<>();
         try (InputStream in = fileStorageService.openStream(fileUrl, offset, length);
              BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
             String line;
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
+            while ((line = readBoundedLine(reader)) != null) {
+                // Postgres TEXT cannot store NUL (0x00): one binary byte used to fail the whole part.
+                lines.add(line.indexOf('\u0000') >= 0 ? line.replace('\u0000', '\uFFFD') : line);
             }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed ranged read of " + fileUrl
                 + " [" + offset + "," + (offset + length) + ")", e);
         }
         return lines;
+    }
+
+    /** readLine() that never holds more than MAX_LINE_CHARS of one line. */
+    static String readBoundedLine(BufferedReader reader) throws IOException {
+        StringBuilder sb = null;
+        long dropped = 0;
+        int c;
+        while ((c = reader.read()) != -1) {
+            if (sb == null) {
+                sb = new StringBuilder(128);
+            }
+            if (c == '\n') {
+                break;
+            }
+            if (sb.length() < MAX_LINE_CHARS) {
+                sb.append((char) c);
+            } else {
+                dropped++;
+            }
+        }
+        if (sb == null) {
+            return null;
+        }
+        int len = sb.length();
+        if (len > 0 && sb.charAt(len - 1) == '\r') {
+            sb.setLength(len - 1);
+        }
+        if (dropped > 0) {
+            sb.append(" ...[truncated ").append(dropped).append(" chars]");
+        }
+        return sb.toString();
     }
 }

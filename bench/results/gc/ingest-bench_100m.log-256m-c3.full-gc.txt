@@ -1,0 +1,18 @@
+[1.922s][info][gc,start    ] GC(12) Pause Full (Metadata GC Threshold)
+[1.962s][info][gc             ] GC(12) Pause Full (Metadata GC Threshold) 24M->12M(61M) 39.178ms
+[3.700s][info][gc,start       ] GC(23) Pause Full (Metadata GC Threshold)
+[3.764s][info][gc             ] GC(23) Pause Full (Metadata GC Threshold) 31M->20M(61M) 64.884ms
+[5.624s][info][gc,start       ] GC(39) Pause Full (Metadata GC Threshold)
+[5.720s][info][gc             ] GC(39) Pause Full (Metadata GC Threshold) 36M->25M(61M) 95.138ms
+[9.106s][info][gc,start       ] GC(62) Pause Full (Metadata GC Threshold)
+[9.249s][info][gc             ] GC(62) Pause Full (Metadata GC Threshold) 54M->39M(94M) 142.835ms
+[21.203s][info][gc,start       ] GC(193) Pause Full (Allocation Failure)
+[21.362s][info][gc             ] GC(193) Pause Full (Allocation Failure) 65M->65M(158M) 158.937ms
+[29.081s][info][gc,start       ] GC(231) Pause Full (Allocation Failure)
+[29.238s][info][gc             ] GC(231) Pause Full (Allocation Failure) 110M->76M(184M) 157.480ms
+[36.290s][info][gc,start       ] GC(262) Pause Full (Allocation Failure)
+[36.452s][info][gc             ] GC(262) Pause Full (Allocation Failure) 138M->69M(184M) 161.979ms
+[48.374s][info][gc,start       ] GC(315) Pause Full (Allocation Failure)
+[48.564s][info][gc             ] GC(315) Pause Full (Allocation Failure) 136M->74M(184M) 189.541ms
+[60.078s][info][gc,start       ] GC(350) Pause Full (Allocation Failure)
+[60.240s][info][gc             ] GC(350) Pause Full (Allocation Failure) 131M->60M(184M) 161.914ms

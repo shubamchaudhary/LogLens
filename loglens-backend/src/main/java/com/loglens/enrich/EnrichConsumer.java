@@ -18,13 +18,14 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 /**
  * The LLM enrichment lane. Each partition of {@code llm.enrich.requests} maps to
@@ -50,6 +51,14 @@ import java.util.regex.Pattern;
  * outcome (success or DLQ) bumps {@code enriched_windows} so a single failed item
  * can never wedge session completion. Offsets are committed manually only after
  * that bookkeeping.
+ *
+ * <p><b>Exactly-once effect.</b> Kafka redelivers after a crash between the DB
+ * write and the offset commit, and a replay re-sends everything. The slow part
+ * (LLM / embedding calls) runs outside any transaction and only COLLECTS results;
+ * then ONE transaction inserts the {@code enrich_work_done} marker for the
+ * {@code workId}, writes findings/embeddings and bumps {@code enriched_windows}.
+ * A redelivered item loses the marker insert and writes nothing, and a work id
+ * already in the ledger is skipped before any LLM call is made.
  */
 @Component
 @Slf4j
@@ -66,17 +75,6 @@ public class EnrichConsumer {
     private static final Set<String> VALID_SEVERITY = Set.of("INFO", "WARN", "ERROR", "CRITICAL");
     private static final long RETRY_DELAY_MS = 60_000L;
 
-    /**
-     * A line begins a new logical record when it starts (after optional leading
-     * whitespace) with a recognisable timestamp. Mirrors the formats
-     * {@link com.loglens.ingest.TimeWindowChunker} recognises (ISO-8601 /
-     * {@code yyyy-MM-dd HH:mm:ss} / syslog) so record-aware splitting agrees
-     * with chunking. Lines without a leading timestamp (stack frames,
-     * {@code Caused by:}, {@code ... N more}) are continuations.
-     */
-    private static final Pattern RECORD_START = Pattern.compile(
-        "^\\s*(?:\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}"
-        + "|[A-Z][a-z]{2}\\s+\\d{1,2}\\s+\\d{2}:\\d{2}:\\d{2})");
 
     private final ApiKeyManager apiKeyManager;
     private final LlmGateway llmGateway;
@@ -89,6 +87,15 @@ public class EnrichConsumer {
     private final ObjectMapper objectMapper;
     private final long windowSeconds;
     private final int maxContentChars;
+    private final EnrichWorkLedger ledger;
+    private final TransactionTemplate txTemplate;
+
+    /** What one work item produced, collected outside the transaction. */
+    record Outcome(List<FindingsWriter.Finding> findings, List<SessionChunkRepository.ChunkEmbedding> embeddings,
+                   boolean sessionGone) {
+        static final Outcome EMPTY = new Outcome(List.of(), List.of(), false);
+        static final Outcome SESSION_GONE = new Outcome(List.of(), List.of(), true);
+    }
 
     public EnrichConsumer(
         ApiKeyManager apiKeyManager,
@@ -101,7 +108,9 @@ public class EnrichConsumer {
         KafkaTemplate<String, Object> kafkaTemplate,
         ObjectMapper objectMapper,
         @Value("${loglens.window-seconds:60}") long windowSeconds,
-        @Value("${loglens.enrich.max-content-chars:5000}") int maxContentChars
+        @Value("${loglens.enrich.max-content-chars:5000}") int maxContentChars,
+        EnrichWorkLedger ledger,
+        PlatformTransactionManager txManager
     ) {
         this.apiKeyManager = apiKeyManager;
         this.llmGateway = llmGateway;
@@ -114,6 +123,8 @@ public class EnrichConsumer {
         this.objectMapper = objectMapper;
         this.windowSeconds = windowSeconds;
         this.maxContentChars = maxContentChars;
+        this.ledger = ledger;
+        this.txTemplate = new TransactionTemplate(txManager);
     }
 
     @KafkaListener(
@@ -124,15 +135,19 @@ public class EnrichConsumer {
                          @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
                          Acknowledgment ack) {
         try {
-            process(request, partition);
-            markEnriched(request.sessionId());
+            if (ledger.isDone(request.workId())) {
+                log.info("Work {} ({}) already committed — skipping redelivery, no LLM call",
+                    request.workId(), request.kind());
+                return;
+            }
+            commit(request, process(request, partition));
         } catch (RateLimitException e) {
             int maxAttempts = MAX_RATE_LIMIT_ATTEMPTS;
             if (request.attempt() >= maxAttempts) {
                 log.warn("Work {} ({}) still rate-limited at attempt {} → DLQ: {}",
                     request.workId(), request.kind(), request.attempt(), e.getMessage());
                 deadLetter(request);
-                markEnriched(request.sessionId());
+                commit(request, Outcome.EMPTY);
             } else {
                 long notBefore = System.currentTimeMillis() + RETRY_DELAY_MS;
                 kafkaTemplate.send(KafkaTopics.LLM_ENRICH_RETRY_60S,
@@ -144,39 +159,71 @@ public class EnrichConsumer {
             log.error("Work {} ({}) failed non-retryably → DLQ: {}",
                 request.workId(), request.kind(), e.toString());
             deadLetter(request);
-            markEnriched(request.sessionId());
+            commit(request, Outcome.EMPTY);
         } finally {
             ack.acknowledge();
         }
     }
 
-    private void process(EnrichRequest request, int partition) {
+    private Outcome process(EnrichRequest request, int partition) {
         // A session deleted after its work was enqueued leaves a Kafka backlog
         // whose per-session chunk table is already dropped; skip it quietly
         // instead of dead-lettering every item with a bad-SQL-grammar error.
         if (!sessionRepository.existsById(request.sessionId())) {
             log.warn("Session {} no longer exists — skipping {} work {}",
                 request.sessionId(), request.kind(), request.workId());
-            return;
+            return Outcome.SESSION_GONE;
         }
         // Modulo guards against a topic wider than the active provider's key
         // count (Kafka partitions can never be lowered on an existing volume).
         int lane = partition % apiKeyManager.getSlotCount();
         String apiKey = apiKeyManager.getApiKey(lane);
-        switch (request.kind()) {
+        return switch (request.kind()) {
             case EnrichRequest.ENRICH_WINDOW -> enrichWindow(request, lane, apiKey);
             case EnrichRequest.EMBED_BATCH -> embedBatch(request, lane, apiKey);
-            default -> log.warn("Unknown enrich kind '{}' for work {} — skipping",
-                request.kind(), request.workId());
-        }
+            default -> {
+                log.warn("Unknown enrich kind '{}' for work {} — skipping", request.kind(), request.workId());
+                yield Outcome.EMPTY;
+            }
+        };
     }
 
-    private void enrichWindow(EnrichRequest request, int partition, String apiKey) {
+    /**
+     * The only write path: marker + results + completion counter in ONE short
+     * transaction, so a redelivery can never double-count or double-write.
+     */
+    private void commit(EnrichRequest request, Outcome outcome) {
+        if (outcome.sessionGone()) {
+            return;
+        }
+        Boolean won = txTemplate.execute(status -> {
+            if (!ledger.claim(request.workId(), request.sessionId())) {
+                return Boolean.FALSE;
+            }
+            for (FindingsWriter.Finding f : outcome.findings()) {
+                findingsWriter.upsert(f);
+            }
+            if (!outcome.embeddings().isEmpty()) {
+                chunkRepository.updateEmbeddings(request.sessionId(), outcome.embeddings());
+            }
+            sessionRepository.incrementEnrichedWindows(request.sessionId());
+            return Boolean.TRUE;
+        });
+        if (Boolean.TRUE.equals(won)) {
+            log.info("{} work {} committed → {} finding(s), {} embedding(s)",
+                request.kind(), request.workId(), outcome.findings().size(), outcome.embeddings().size());
+        } else {
+            log.info("{} work {} already committed by another delivery — skipped", request.kind(), request.workId());
+        }
+        completion.checkAndTrigger(request.sessionId());
+    }
+
+    private Outcome enrichWindow(EnrichRequest request, int partition, String apiKey) {
         List<SessionChunkRepository.ChunkContent> chunks =
             chunkRepository.readChunks(request.sessionId(), request.chunkIds());
         if (chunks.isEmpty()) {
             log.warn("ENRICH_WINDOW work {} has no resolvable chunks — skipping", request.workId());
-            return;
+            return Outcome.EMPTY;
         }
 
         StringBuilder content = new StringBuilder();
@@ -198,11 +245,11 @@ public class EnrichConsumer {
         }
 
         List<String> metricContext = metricsWriter.metricContext(request.sessionId(), buckets);
-        List<String> segments = splitContent(content.toString(), maxContentChars);
+        List<String> segments = RecordAwareSplitter.split(content.toString(), maxContentChars);
 
         Instant rangeStart = minBucket;
         Instant rangeEnd = maxBucket == null ? null : maxBucket.plusSeconds(windowSeconds);
-        int written = 0;
+        List<FindingsWriter.Finding> findings = new ArrayList<>();
         for (String segment : segments) {
             String user = EnrichPrompts.user(segment, metricContext);
 
@@ -225,26 +272,22 @@ public class EnrichConsumer {
                 String severity = clampSeverity(text(node, "severity"));
                 Double confidence = confidence(node);
                 String fingerprint = EnrichPrompts.fingerprint(category, title);
-                findingsWriter.upsert(new FindingsWriter.Finding(
+                findings.add(new FindingsWriter.Finding(
                     request.sessionId(), category, severity, title, explanation,
                     request.chunkIds(), rangeStart, rangeEnd, fingerprint, confidence));
-                written++;
             }
         }
-        if (segments.size() > 1) {
-            log.info("ENRICH_WINDOW work {} → {} finding(s) upserted across {} segments",
-                request.workId(), written, segments.size());
-        } else {
-            log.info("ENRICH_WINDOW work {} → {} finding(s) upserted", request.workId(), written);
-        }
+        log.info("ENRICH_WINDOW work {} → {} finding(s) from {} LLM call(s), committing",
+            request.workId(), findings.size(), segments.size());
+        return new Outcome(findings, List.of(), false);
     }
 
-    private void embedBatch(EnrichRequest request, int partition, String apiKey) {
+    private Outcome embedBatch(EnrichRequest request, int partition, String apiKey) {
         List<SessionChunkRepository.ChunkContent> chunks =
             chunkRepository.readChunks(request.sessionId(), request.chunkIds());
         if (chunks.isEmpty()) {
             log.warn("EMBED_BATCH work {} has no resolvable chunks — skipping", request.workId());
-            return;
+            return Outcome.EMPTY;
         }
 
         List<String> texts = new ArrayList<>(chunks.size());
@@ -267,118 +310,7 @@ public class EnrichConsumer {
             updates.add(new SessionChunkRepository.ChunkEmbedding(
                 chunks.get(i).chunkId(), llmGateway.toVectorString(vectors.get(i))));
         }
-        int updated = chunkRepository.updateEmbeddings(request.sessionId(), updates);
-        log.info("EMBED_BATCH work {} → {} embeddings written", request.workId(), updated);
-    }
-
-    /**
-     * Splits a window's log content into segments each within {@code max}
-     * characters so a large window is fully analyzed rather than truncated —
-     * every segment is enriched in its own LLM call and duplicate insights fold
-     * together via the {@code (session_id, fingerprint)} upsert.
-     *
-     * <p>Bounding each call also keeps it under a provider's per-request token
-     * budget: Groq's {@code llama-3.1-8b-instant} free tier caps at 6000
-     * tokens/minute and rejects an oversized prompt with a non-retryable 413.
-     * {@code loglens.enrich.max-content-chars} leaves headroom for the system
-     * prompt, metric context, and the model's output. Bursts that trip the
-     * per-minute ceiling surface as a 429 and are handled by the retry lane.
-     *
-     * <p>Splitting is <b>record-aware</b>: lines are first grouped into logical
-     * records (a timestamped line plus its continuation lines — stack frames,
-     * {@code Caused by:}, {@code ... N more} — which carry no timestamp), then
-     * whole records are greedily packed up to {@code max} so a multi-line event
-     * (e.g. a stack trace) is never split across two calls and its reasoning is
-     * never lost. A single record larger than {@code max} is hard-split on line
-     * boundaries as a last resort so no content is ever dropped.
-     */
-    private List<String> splitContent(String content, int max) {
-        List<String> segments = new ArrayList<>();
-        if (max <= 0 || content.length() <= max) {
-            segments.add(content);
-            return segments;
-        }
-        StringBuilder seg = new StringBuilder();
-        for (String record : groupRecords(content)) {
-            if (record.length() > max) {
-                if (seg.length() > 0) {
-                    segments.add(seg.toString());
-                    seg.setLength(0);
-                }
-                hardSplit(record, max, segments);
-                continue;
-            }
-            int extra = record.length() + (seg.length() > 0 ? 1 : 0);
-            if (seg.length() + extra > max && seg.length() > 0) {
-                segments.add(seg.toString());
-                seg.setLength(0);
-            }
-            if (seg.length() > 0) {
-                seg.append('\n');
-            }
-            seg.append(record);
-        }
-        if (seg.length() > 0) {
-            segments.add(seg.toString());
-        }
-        return segments;
-    }
-
-    /**
-     * Groups raw lines into logical records. A line starts a new record when it
-     * begins with a recognisable timestamp ({@link #RECORD_START}); a line
-     * without one is a continuation of the current record (stack frame,
-     * {@code Caused by:}, {@code ... N more}, or a plain multi-line message).
-     */
-    private static List<String> groupRecords(String content) {
-        List<String> records = new ArrayList<>();
-        StringBuilder cur = new StringBuilder();
-        for (String line : content.split("\n", -1)) {
-            if (RECORD_START.matcher(line).find() && cur.length() > 0) {
-                records.add(cur.toString());
-                cur.setLength(0);
-            }
-            if (cur.length() > 0) {
-                cur.append('\n');
-            }
-            cur.append(line);
-        }
-        if (cur.length() > 0) {
-            records.add(cur.toString());
-        }
-        return records;
-    }
-
-    /**
-     * Fallback for a single logical record larger than the cap (rare — e.g. a
-     * huge stack trace). Splits on line boundaries; a single line longer than
-     * {@code max} is chopped so nothing is dropped.
-     */
-    private static void hardSplit(String record, int max, List<String> out) {
-        StringBuilder seg = new StringBuilder();
-        for (String rawLine : record.split("\n", -1)) {
-            String line = rawLine;
-            while (line.length() > max) {
-                if (seg.length() > 0) {
-                    out.add(seg.toString());
-                    seg.setLength(0);
-                }
-                out.add(line.substring(0, max));
-                line = line.substring(max);
-            }
-            int extra = line.length() + (seg.length() > 0 ? 1 : 0);
-            if (seg.length() + extra > max && seg.length() > 0) {
-                out.add(seg.toString());
-                seg.setLength(0);
-            }
-            if (seg.length() > 0) {
-                seg.append('\n');
-            }
-            seg.append(line);
-        }
-        if (seg.length() > 0) {
-            out.add(seg.toString());
-        }
+        return new Outcome(List.of(), updates, false);
     }
 
     /**
@@ -390,10 +322,6 @@ public class EnrichConsumer {
      */
     private static long estimateTokens(String system, String user) {
         return (system.length() + user.length()) / 4L + OUTPUT_TOKEN_ESTIMATE;
-    }
-
-    private void markEnriched(UUID sessionId) {        sessionRepository.incrementEnrichedWindows(sessionId);
-        completion.checkAndTrigger(sessionId);
     }
 
     private void deadLetter(EnrichRequest request) {

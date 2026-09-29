@@ -1,0 +1,231 @@
+{
+  "date": "2026-09-29T22:16:42+00:00",
+  "commit": "c5ea7d9",
+  "file": "eval_mediumnoise.log",
+  "bytes": 5675836,
+  "part_target_bytes": 262144,
+  "runs": [
+    {
+      "scenario": "baseline",
+      "session": "272a4ac9-6294-4cdb-b4ea-bfe376f07feb",
+      "events": [],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 77,
+        "metric_rows": 4260,
+        "metric_count_sum": 139485,
+        "findings": 5,
+        "finding_occurrences": 315,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 113,
+        "enriched_windows": 113,
+        "status": "DONE"
+      },
+      "redelivery_skip_logs": 0,
+      "jar": "current build"
+    },
+    {
+      "scenario": "crash_after_part_commit",
+      "session": "0ed90bdf-6dc5-41fb-8bf8-28555b211bc0",
+      "events": [
+        "kill -9 #1 right after a part committed",
+        "kill -9 #2 right after a part committed",
+        "kill -9 #3 right after a part committed"
+      ],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 77,
+        "metric_rows": 4260,
+        "metric_count_sum": 139485,
+        "findings": 5,
+        "finding_occurrences": 315,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 113,
+        "enriched_windows": 113,
+        "status": "DONE"
+      },
+      "redelivery_skip_logs": 11,
+      "jar": "current build"
+    },
+    {
+      "scenario": "crash_after_enrich_commit",
+      "session": "66e4617d-bc66-49dd-b3d9-9f5ebd719c9e",
+      "events": [
+        "kill -9 #1 right after an ENRICH_WINDOW upsert",
+        "kill -9 #2 right after an ENRICH_WINDOW upsert",
+        "kill -9 #3 right after an ENRICH_WINDOW upsert"
+      ],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 77,
+        "metric_rows": 4260,
+        "metric_count_sum": 139485,
+        "findings": 5,
+        "finding_occurrences": 315,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 113,
+        "enriched_windows": 113,
+        "status": "DONE"
+      },
+      "redelivery_skip_logs": 0,
+      "jar": "current build"
+    },
+    {
+      "scenario": "replay_ingest_before_part_fix",
+      "session": "b8866a0b-d2ee-4b2e-999f-21707d537958",
+      "events": [
+        "rewound ingest-part-workers on log.ingest.parts to earliest"
+      ],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 77,
+        "metric_rows": 4260,
+        "metric_count_sum": 139485,
+        "findings": 5,
+        "finding_occurrences": 315,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 113,
+        "enriched_windows": 113,
+        "status": "DONE"
+      },
+      "reset_output": [
+        "GROUP                          TOPIC                          PARTITION  NEW-OFFSET     ingest-part-workers            log.ingest.parts               1          0              ingest-part-workers            log.ingest.parts               0          0              ingest-part-workers            log.ingest.parts               3          0              ingest-part-workers            log.ingest.parts               2          0              ingest-part-workers            log.ingest.parts               5          0              ingest-part-workers            log.ingest.parts               4          0"
+      ],
+      "reset_output_lines": 2,
+      "before_replay": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 77,
+        "metric_rows": 4260,
+        "metric_count_sum": 139485,
+        "findings": 5,
+        "finding_occurrences": 315,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 113,
+        "enriched_windows": 113,
+        "status": "DONE"
+      },
+      "skip_logs": 0,
+      "redelivery_skip_logs": 0,
+      "jar": "current build",
+      "note": "jar with enrich ledger but WITHOUT the skip-before-read fix (c5ea7d9): the replay later flipped DONE sessions to FAILED"
+    },
+    {
+      "scenario": "replay_ingest",
+      "session": "7f983977-2cce-4087-b376-042e6126758d",
+      "events": [
+        "rewound ingest-part-workers on log.ingest.parts to earliest"
+      ],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 77,
+        "metric_rows": 4260,
+        "metric_count_sum": 139485,
+        "findings": 5,
+        "finding_occurrences": 315,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 113,
+        "enriched_windows": 113,
+        "status": "DONE"
+      },
+      "reset_output": [
+        "GROUP                          TOPIC                          PARTITION  NEW-OFFSET     ingest-part-workers            log.ingest.parts               1          0              ingest-part-workers            log.ingest.parts               0          0              ingest-part-workers            log.ingest.parts               3          0              ingest-part-workers            log.ingest.parts               2          0              ingest-part-workers            log.ingest.parts               5          0              ingest-part-workers            log.ingest.parts               4          0"
+      ],
+      "reset_output_lines": 2,
+      "before_replay": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 77,
+        "metric_rows": 4260,
+        "metric_count_sum": 139485,
+        "findings": 5,
+        "finding_occurrences": 315,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 113,
+        "enriched_windows": 113,
+        "status": "DONE"
+      },
+      "skip_logs": 266,
+      "redelivery_skip_logs": 266,
+      "jar": "current build"
+    },
+    {
+      "scenario": "replay_enrich",
+      "session": "cea050cf-3fc4-4907-9520-5dcf960939b5",
+      "events": [
+        "rewound llm-workers on llm.enrich.requests to earliest"
+      ],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 77,
+        "metric_rows": 4260,
+        "metric_count_sum": 139485,
+        "findings": 5,
+        "finding_occurrences": 315,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 113,
+        "enriched_windows": 113,
+        "status": "DONE"
+      },
+      "reset_output": [
+        "GROUP                          TOPIC                          PARTITION  NEW-OFFSET     llm-workers                    llm.enrich.requests            2          0              llm-workers                    llm.enrich.requests            3          0              llm-workers                    llm.enrich.requests            0          0              llm-workers                    llm.enrich.requests            1          0"
+      ],
+      "reset_output_lines": 2,
+      "before_replay": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 77,
+        "metric_rows": 4260,
+        "metric_count_sum": 139485,
+        "findings": 5,
+        "finding_occurrences": 315,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 113,
+        "enriched_windows": 113,
+        "status": "DONE"
+      },
+      "skip_logs": 1970,
+      "redelivery_skip_logs": 1970,
+      "jar": "current build"
+    },
+    {
+      "scenario": "rebalance",
+      "session": "94ce946c-1707-49bd-ba26-af07f2ba9e8c",
+      "events": [
+        "two instances in the consumer groups before upload",
+        "instance 1 kill -9 right after one of its parts committed; group rebalanced to instance 2"
+      ],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 77,
+        "metric_rows": 4260,
+        "metric_count_sum": 139485,
+        "findings": 5,
+        "finding_occurrences": 315,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 113,
+        "enriched_windows": 113,
+        "status": "DONE"
+      },
+      "redelivery_skip_logs": 1,
+      "jar": "current build"
+    }
+  ]
+}

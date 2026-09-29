@@ -1,0 +1,6 @@
+{
+  "_why": "Set from the first robust-mode run (2026-09-29, eval_mediumnoise: F1 0.901, incident recall 1.0, call reduction 77.8%). The eval is deterministic (seeded data, no LLM), so any drop is a real behaviour change, not noise; the small margin only absorbs intentional re-tuning, which must update this file in the same PR.",
+  "anomaly_gating": {
+    "eval_mediumnoise": {"window.f1": 0.88, "incident_recall": 1.0, "gating.call_reduction": 0.75}
+  }
+}

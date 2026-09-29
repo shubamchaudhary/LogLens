@@ -51,7 +51,7 @@ def grade_node(state: DrilldownState) -> DrilldownState:
     docs = state.get("docs", [])
     if not docs:
         return {"graded": []}
-    verdict = llm.chat_json(prompts.GRADE_SYSTEM, prompts.grade_user(state["question"], docs))
+    verdict = llm.chat_json_object(prompts.GRADE_SYSTEM, prompts.grade_user(state["question"], docs), ("relevant_ids",))
     keep = {str(x) for x in verdict.get("relevant_ids", [])}
     graded = [d for d in docs if str(d["chunk_id"]) in keep]
     log.info("[%s] graded %d/%d chunk(s) relevant", state["session_id"], len(graded), len(docs))
@@ -59,9 +59,10 @@ def grade_node(state: DrilldownState) -> DrilldownState:
 
 
 def rewrite_node(state: DrilldownState) -> DrilldownState:
-    data = llm.chat_json(
+    data = llm.chat_json_object(
         prompts.REWRITE_SYSTEM,
         prompts.rewrite_user(state["original_question"], state["question"]),
+        ("question",),
     )
     new_q = str(data.get("question") or state["question"]).strip()
     log.info("[%s] rewrote question (attempt %d): %s",
@@ -77,7 +78,7 @@ def generate_node(state: DrilldownState) -> DrilldownState:
     if not docs:
         return {"answer": "No relevant log evidence was found for this question.",
                 "citations": []}
-    data = llm.chat_json(prompts.GENERATE_SYSTEM, prompts.generate_user(state["question"], docs))
+    data = llm.chat_json_object(prompts.GENERATE_SYSTEM, prompts.generate_user(state["question"], docs), ("answer",))
     valid_ids = {str(d["chunk_id"]) for d in docs}
     citations = [str(c) for c in data.get("citations", []) if str(c) in valid_ids]
     return {"answer": str(data.get("answer", "")).strip(), "citations": citations}

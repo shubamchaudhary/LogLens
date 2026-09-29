@@ -41,7 +41,13 @@ public class KafkaFailureMarker {
                 }
             } else if (KafkaTopics.LOG_INGEST_PARTS.equals(record.topic()) && record.value() != null) {
                 IngestPartRequest part = parse(record.value(), IngestPartRequest.class);
-                if (part != null) {
+                if (part != null && documentRepository.findById(part.documentId())
+                        .map(d -> d.getProcessingStatus() == com.loglens.common.constants.ProcessingStatus.COMPLETED)
+                        .orElse(false)) {
+                    // A late failure of an already-finalized document must not undo a finished session.
+                    log.warn("Ignoring failure of part {} for COMPLETED document {}: {}",
+                        part.partIdx(), part.documentId(), rootMessage(ex));
+                } else if (part != null) {
                     String message = truncate("Part " + part.partIdx() + " failed: " + rootMessage(ex), 1000);
                     sessionRepository.setFailed(part.sessionId(), message);
                     documentRepository.markFailed(part.documentId(), message);
@@ -80,7 +86,13 @@ public class KafkaFailureMarker {
         return msg != null ? msg : cause.getClass().getSimpleName();
     }
 
-    private static String truncate(String s, int max) {
-        return s.length() <= max ? s : s.substring(0, max);
+    /**
+     * Truncates and makes the reason storable: Postgres text rejects NUL (0x00), and a
+     * failure caused by a NUL byte echoes that byte in its own message. Without this the
+     * FAILED update itself fails and the session is left in PARSING forever.
+     */
+    static String truncate(String s, int max) {
+        String safe = s.replace('\u0000', '�');
+        return safe.length() <= max ? safe : safe.substring(0, max);
     }
 }

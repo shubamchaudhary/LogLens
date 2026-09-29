@@ -1,4 +1,42 @@
 """Prompt text for both graphs. Kept in one place so the model contract is auditable."""
+import re
+
+PROMPT_VERSION = "2026-09-29.2"  # bump on any prompt change; eval reports record it
+
+_STOP = frozenset("a an the and or of to in on at by for from with as is are was were be been do does did what "
+                  "which who when where why how many much any there it its this that around about during first "
+                  "last time happen happened went wrong".split())
+
+
+def focus_snippet(content: str, question: str, max_chars: int) -> str:
+    """The lines of a chunk most relevant to the question, in log order, within max_chars.
+
+    A chunk is a whole 60 s window (often 10-20 KB). Showing the model only its
+    first max_chars hid the evidence: the retrieval eval found ~11% of gold lines
+    visible that way. Lines are scored by how many question terms they contain;
+    WARN/ERROR/exception lines get a small boost; the top lines are then emitted
+    in their original order, so the budget is spent on evidence, not on the
+    window's first few INFO lines.
+    """
+    if len(content) <= max_chars:
+        return content
+    terms = {t for t in re.findall(r"[a-z0-9_.]+", question.lower()) if len(t) > 1 and t not in _STOP}
+    lines = content.split("\n")
+    scored = []
+    for i, ln in enumerate(lines):
+        low = ln.lower()
+        score = sum(1 for t in terms if t in low)
+        if re.search(r"\b(ERROR|FATAL|WARN|WARNING)\b|Exception|Error:", ln):
+            score += 0.5
+        scored.append((score, i))
+    picked, used = [], 0
+    for score, i in sorted(scored, key=lambda x: (-x[0], x[1])):
+        cost = len(lines[i]) + 1
+        if used + cost > max_chars:
+            continue
+        picked.append(i)
+        used += cost
+    return "\n".join(lines[i] for i in sorted(picked))
 
 # ── Graph 1: correlate a cluster of findings into one incident ──────────────
 CORRELATE_SYSTEM = (
@@ -96,7 +134,7 @@ GRADE_SYSTEM = (
 def grade_user(question: str, docs: list[dict]) -> str:
     lines = [f"QUESTION: {question}", "", "CHUNKS:"]
     for d in docs:
-        snippet = (d.get("content") or "")[:500]
+        snippet = focus_snippet(d.get("content") or "", question, 500)
         lines.append(f"[id={d.get('chunk_id')}] {snippet}")
     return "\n".join(lines)
 
@@ -145,6 +183,6 @@ def generate_user(question: str, docs: list[dict]) -> str:
     lines = [f"QUESTION: {question}", "", "EVIDENCE CHUNKS:"]
     for d in docs:
         rng = f"lines {d.get('line_start')}-{d.get('line_end')}"
-        snippet = (d.get("content") or "")[:800]
+        snippet = focus_snippet(d.get("content") or "", question, 800)
         lines.append(f"[id={d.get('chunk_id')} {rng}]\n{snippet}\n")
     return "\n".join(lines)

@@ -1,0 +1,176 @@
+{
+  "date": "2026-09-29T21:25:04+00:00",
+  "commit": "d0e01c1-dirty",
+  "file": "eval_mediumnoise.log",
+  "bytes": 5675836,
+  "part_target_bytes": 262144,
+  "runs": [
+    {
+      "scenario": "baseline",
+      "session": "a3cb193d-298e-4152-996e-3cb5527e7d16",
+      "events": [],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 155,
+        "metric_rows": 3173,
+        "metric_count_sum": 134485,
+        "findings": 5,
+        "finding_occurrences": 621,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 191,
+        "enriched_windows": 191,
+        "status": "DONE"
+      },
+      "redelivery_skip_logs": 0
+    },
+    {
+      "scenario": "crash_after_part_commit",
+      "session": "bb2d6a85-39d6-4fa0-85fc-587a70793789",
+      "events": [
+        "kill -9 #1 right after a part committed",
+        "kill -9 #2 right after a part committed",
+        "kill -9 #3 right after a part committed"
+      ],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 155,
+        "metric_rows": 3173,
+        "metric_count_sum": 134485,
+        "findings": 5,
+        "finding_occurrences": 621,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 191,
+        "enriched_windows": 191,
+        "status": "DONE"
+      },
+      "redelivery_skip_logs": 4
+    },
+    {
+      "scenario": "rebalance",
+      "session": "895d55e3-8e11-47b0-82f9-6961266a55b7",
+      "events": [
+        "second instance joined mid-ingest (partitions rebalanced)",
+        "first instance kill -9 mid-ingest"
+      ],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 155,
+        "metric_rows": 3173,
+        "metric_count_sum": 134485,
+        "findings": 5,
+        "finding_occurrences": 621,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 191,
+        "enriched_windows": 191,
+        "status": "DONE"
+      },
+      "redelivery_skip_logs": 0
+    },
+    {
+      "scenario": "replay_ingest",
+      "session": "43d25ee3-7df6-4597-a601-b916607c904c",
+      "events": [
+        "rewound ingest-part-workers on log.ingest.parts to earliest"
+      ],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 155,
+        "metric_rows": 3173,
+        "metric_count_sum": 134485,
+        "findings": 5,
+        "finding_occurrences": 621,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 191,
+        "enriched_windows": 191,
+        "status": "DONE"
+      },
+      "reset_output_lines": 2,
+      "before_replay": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 155,
+        "metric_rows": 3173,
+        "metric_count_sum": 134485,
+        "findings": 5,
+        "finding_occurrences": 621,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 191,
+        "enriched_windows": 191,
+        "status": "DONE"
+      },
+      "skip_logs": 0,
+      "redelivery_skip_logs": 0
+    },
+    {
+      "scenario": "crash_after_enrich_commit",
+      "session": "96afc97e-69ab-40c0-80a2-e4d8a191d751",
+      "events": [
+        "kill -9 #1 right after an ENRICH_WINDOW upsert",
+        "kill -9 #2 right after an ENRICH_WINDOW upsert",
+        "kill -9 #3 right after an ENRICH_WINDOW upsert"
+      ],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 155,
+        "metric_rows": 3173,
+        "metric_count_sum": 134485,
+        "findings": 5,
+        "finding_occurrences": 657,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 191,
+        "enriched_windows": 191,
+        "status": "DONE"
+      },
+      "redelivery_skip_logs": 0
+    },
+    {
+      "scenario": "replay_enrich",
+      "session": "1dbfcb0b-1d86-4aaa-8b25-11b9d2975bd8",
+      "events": [
+        "rewound llm-workers on llm.enrich.requests to earliest"
+      ],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 155,
+        "metric_rows": 3173,
+        "metric_count_sum": 134485,
+        "findings": 5,
+        "finding_occurrences": 621,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 191,
+        "enriched_windows": 191,
+        "status": "DONE"
+      },
+      "reset_output_lines": 2,
+      "before_replay": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 155,
+        "metric_rows": 3173,
+        "metric_count_sum": 134485,
+        "findings": 5,
+        "finding_occurrences": 621,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 191,
+        "enriched_windows": 191,
+        "status": "DONE"
+      },
+      "skip_logs": 0,
+      "redelivery_skip_logs": 0
+    }
+  ]
+}

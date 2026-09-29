@@ -26,7 +26,7 @@ import urllib.error
 import urllib.request
 from functools import lru_cache
 from itertools import count
-from typing import Any
+from typing import Any, Optional
 
 from . import config
 
@@ -143,10 +143,47 @@ def chat_json(system: str, user: str) -> Any:
     return _extract_json(chat(system, user))
 
 
+class BadModelOutput(RuntimeError):
+    """The model did not return the JSON object the prompt asked for, even after one repair."""
+
+
+def _as_object(data: Any, required: tuple[str, ...]) -> Optional[dict]:
+    # Models sometimes wrap the object in a list: [{"narrative": ...}]
+    if isinstance(data, list) and len(data) == 1 and isinstance(data[0], dict):
+        data = data[0]
+    if isinstance(data, dict) and all(k in data for k in required):
+        return data
+    return None
+
+
+def chat_json_object(system: str, user: str, required: tuple[str, ...]) -> dict:
+    """Structured output with a contract: a JSON OBJECT that has `required` keys.
+
+    Graph 1 used to call `.get` on whatever came back; a JSON array crashed the
+    whole session. Now: accept a one-element list, validate keys, and on failure
+    ask ONCE more with the exact contract restated. Two misses -> BadModelOutput.
+    """
+    try:
+        obj = _as_object(chat_json(system, user), required)
+    except json.JSONDecodeError:
+        obj = None
+    if obj is not None:
+        return obj
+    repair = (user + "\n\nYour previous reply was not valid. Reply with ONE JSON object only, "
+              "with exactly these keys: " + ", ".join(required) + ".")
+    try:
+        obj = _as_object(chat_json(system, repair), required)
+    except json.JSONDecodeError:
+        obj = None
+    if obj is None:
+        raise BadModelOutput(f"model did not return an object with keys {required}")
+    return obj
+
+
 # ── Embeddings ───────────────────────────────────────────────────────────────
 
 _GEMINI_EMBED_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/models/{model}:embedContent?key={key}"
+    config.GEMINI_BASE_URL + "/models/{model}:embedContent?key={key}"
 )
 
 # Round-robin cursor for embedding keys, shared across drill-down calls.

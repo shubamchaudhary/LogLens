@@ -39,6 +39,7 @@ public class IngestFinalizer {
     private final EnrichProducer enrichProducer;
     private final EnrichCompletion enrichCompletion;
     private final FileStorageService fileStorageService;
+    private final AnomalyDetector anomalyDetector;
 
     /**
      * Called by every part after its transaction commits. The atomic claim makes
@@ -50,9 +51,12 @@ public class IngestFinalizer {
         }
         log.info("Finalizing ingest: session={} document={}", sessionId, documentId);
 
-        // 1. Global latency-outlier rule (SQL percentile_cont) — flags the chunks
-        //    a per-part pass could not, before we decide what to enrich.
-        int flagged = chunkRepository.flagLatencyOutliers(sessionId);
+        // 1. Corpus-wide rules a single part cannot compute (robust mode: count and
+        //    latency spikes vs the session median/MAD + rare signatures; legacy:
+        //    3x p95 latency) — before we decide what to enrich.
+        int flagged = anomalyDetector.isRobust()
+            ? chunkRepository.flagRobustOutliers(sessionId)
+            : chunkRepository.flagLatencyOutliers(sessionId);
 
         // 2. Enrichment fan-out from the FINAL anomaly state. Set the counter target
         //    (additive for multi-document sessions) and flip to ENRICHING BEFORE

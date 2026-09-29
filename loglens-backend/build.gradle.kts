@@ -2,6 +2,12 @@ plugins {
     id("org.springframework.boot")
 }
 
+// Testcontainers 1.19 (Boot 3.2's default) speaks Docker API 1.32, which Docker
+// Engine 29+ rejects ("client version 1.32 is too old"); 1.21.4 negotiates.
+extra["testcontainers.version"] = "1.21.4"
+// its commons-compress needs commons-lang3 >= 3.15 (Boot 3.2 pins 3.13)
+extra["commons-lang3.version"] = "3.17.0"
+
 // All dependencies from loglens-api, loglens-core, loglens-data, loglens-llm, loglens-common
 // merged into this single module.
 
@@ -40,4 +46,41 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("com.h2database:h2")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:postgresql")
+}
+
+// Unit tests by default; Docker-backed integration tests (Testcontainers) with -Pintegration
+tasks.withType<Test> {
+    useJUnitPlatform {
+        if (!project.hasProperty("integration")) {
+            excludeTags("integration")
+        }
+    }
+    testLogging { events("passed", "failed", "skipped") }
+}
+
+// ── Eval harness: run the production Layer-1 path over a log file (no LLM) ──
+// ./gradlew :loglens-backend:evalWindows -Pin=<file.log> -Pout=<windows.json>
+tasks.register<JavaExec>("evalWindows") {
+    group = "verification"
+    description = "Chunk + parse + anomaly-flag a log file with production code; write per-window JSON."
+    dependsOn("testClasses")
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("com.loglens.ingest.WindowEvalCli")
+    args = listOfNotNull(
+        project.findProperty("in") as String?,
+        project.findProperty("out") as String?,
+        (project.findProperty("windowSeconds") as String?) ?: "60",
+        (project.findProperty("maxChars") as String?) ?: "5000",
+        (project.findProperty("mode") as String?) ?: "robust")
+}
+
+// Writes the test runtime classpath so eval/bench scripts can call `java -cp` directly
+tasks.register("printTestClasspath") {
+    dependsOn("testClasses")
+    doLast {
+        file("build/test-classpath.txt").writeText(sourceSets["test"].runtimeClasspath.asPath)
+    }
 }

@@ -78,15 +78,17 @@ def insert_incident(
     finding_ids: list[Any],
     narrative: str,
     root_cause: Optional[str],
+    grounded: Optional[bool] = None,
+    judge_reason: Optional[str] = None,
 ) -> None:
     sql = (
         "INSERT INTO incidents "
-        "(session_id, time_range_start, time_range_end, finding_ids, narrative, root_cause_hypothesis) "
-        "VALUES (%s, %s, %s, %s, %s, %s)"
+        "(session_id, time_range_start, time_range_end, finding_ids, narrative, root_cause_hypothesis, "
+        "grounded, judge_reason) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
     )
     ids = [str(x) for x in finding_ids]
     with connect() as conn, conn.cursor() as cur:
-        cur.execute(sql, (session_id, time_start, time_end, ids, narrative, root_cause))
+        cur.execute(sql, (session_id, time_start, time_end, ids, narrative, root_cause, grounded, judge_reason))
 
 
 def upsert_report(session_id: str, content_md: str, content_json: str) -> None:
@@ -150,6 +152,40 @@ def _rrf_fuse(
     return ordered[:limit]
 
 
+# Question words that carry no evidence. The 'simple' text-search config keeps
+# every word, so without this list a question like "Which upstream provider
+# throttled payment requests?" requires the chunk to contain "which" too.
+_STOPWORDS = frozenset("""
+a an the and or of to in on at by for from with as is are was were be been being do does did done
+what which who whom whose when where why how many much any some there their it its this that these those
+around about during between before after first last time times happen happened went wrong
+please show list tell me my our we you your i can could would should will shall may might
+""".split())
+
+_TSV_COLUMN_CACHE: dict[str, bool] = {}
+
+
+def lexical_terms(question: str) -> list[str]:
+    """Distinct, lower-cased, non-stopword terms of a question, in order."""
+    seen: list[str] = []
+    for t in re.findall(r"[A-Za-z0-9_.]+", question.lower()):
+        t = t.strip(".")
+        if len(t) < 2 or t in _STOPWORDS or t in seen:
+            continue
+        seen.append(t)
+    return seen
+
+
+def _tsv_expr(table: str) -> str:
+    """Stored `content_tsv` column when the table has one (new sessions), else the expression."""
+    if table not in _TSV_COLUMN_CACHE:
+        with connect() as conn, conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM information_schema.columns WHERE table_name = %s AND column_name = 'content_tsv'",
+                        (table,))
+            _TSV_COLUMN_CACHE[table] = cur.fetchone() is not None
+    return "content_tsv" if _TSV_COLUMN_CACHE[table] else "to_tsvector('simple', content)"
+
+
 def retrieve_chunks(
     session_id: str,
     query_embedding: Optional[list[float]],
@@ -159,9 +195,12 @@ def retrieve_chunks(
     """
     Hybrid retrieval over one session's chunk table, fused with Reciprocal Rank
     Fusion (RRF): pgvector kNN on the embedded question AND GIN full-text on the
-    raw question are each ranked independently, then merged by RRF so a chunk
-    strong on either signal (and especially both) ranks highest. Falls back to
-    FTS-only when no embedding is available.
+    question's meaningful terms are each ranked independently, then merged by
+    RRF so a chunk strong on either signal (and especially both) ranks highest.
+
+    The lexical leg ORs the question's terms (stopwords removed). It used to AND
+    every word via websearch_to_tsquery, which matched nothing for natural
+    questions, so "hybrid" silently ran as vector-only (retrieval eval, LL-04).
     """
     table = chunk_table(session_id)  # validated UUID -> safe
     ranked_lists: list[list[dict[str, Any]]] = []
@@ -178,39 +217,22 @@ def retrieve_chunks(
             cur.execute(knn_sql, (vec, limit))
             ranked_lists.append(cur.fetchall())
 
-    # Retriever 2 — lexical (full-text), ranked by ts_rank so RRF gets real ranks.
-    fts_sql = (
-        f"SELECT chunk_id, line_start, line_end, time_bucket, content "
-        f"FROM {table} "
-        f"WHERE to_tsvector('simple', content) @@ websearch_to_tsquery('simple', %s) "
-        f"ORDER BY ts_rank(to_tsvector('simple', content), "
-        f"websearch_to_tsquery('simple', %s)) DESC "
-        f"LIMIT %s"
-    )
-    with connect() as conn, conn.cursor() as cur:
-        cur.execute(fts_sql, (query_text, query_text, limit))
-        ranked_lists.append(cur.fetchall())
-
-    fused = _rrf_fuse(ranked_lists, limit)
-    if fused:
-        return fused
-
-    # websearch_to_tsquery AND-matches every term, so a long natural-language
-    # question can match nothing on both nets. Fall back to an OR of the terms.
-    terms = re.findall(r"[A-Za-z0-9_]+", query_text)
+    # Retriever 2 — lexical (full-text) over the OR of meaningful terms, ranked
+    # by ts_rank so RRF gets real ranks. Terms are passed as tsquery lexemes
+    # (quoted) so punctuation in log tokens cannot break the query syntax.
+    terms = lexical_terms(query_text)
     if terms:
-        or_query = " | ".join(terms)
-        or_sql = (
-            f"SELECT chunk_id, line_start, line_end, time_bucket, content, "
-            f"NULL::float8 AS score "
+        tsv = _tsv_expr(table)
+        or_query = " | ".join("'" + t.replace("'", "") + "'" for t in terms)
+        fts_sql = (
+            f"SELECT chunk_id, line_start, line_end, time_bucket, content "
             f"FROM {table} "
-            f"WHERE to_tsvector('simple', content) @@ to_tsquery('simple', %s) "
-            f"ORDER BY ts_rank(to_tsvector('simple', content), "
-            f"to_tsquery('simple', %s)) DESC "
+            f"WHERE {tsv} @@ to_tsquery('simple', %s) "
+            f"ORDER BY ts_rank({tsv}, to_tsquery('simple', %s)) DESC "
             f"LIMIT %s"
         )
         with connect() as conn, conn.cursor() as cur:
-            cur.execute(or_sql, (or_query, or_query, limit))
-            return cur.fetchall()
+            cur.execute(fts_sql, (or_query, or_query, limit))
+            ranked_lists.append(cur.fetchall())
 
-    return []
+    return _rrf_fuse(ranked_lists, limit)

@@ -65,6 +65,7 @@ GROQ_EMBED_MODEL: str = os.environ.get("ORCH_GROQ_EMBED_MODEL", "nomic-embed-tex
 # question embedding survives a single key's daily quota exhaustion.
 GEMINI_API_KEY: str = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or ""
 GEMINI_API_KEYS: list[str] = _keys("GEMINI_API_KEYS", "GEMINI_API_KEY") or _keys("GOOGLE_API_KEYS", "GOOGLE_API_KEY")
+GEMINI_BASE_URL: str = os.environ.get("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta")
 GEN_MODEL: str = os.environ.get("ORCH_GEN_MODEL", "gemini-3.1-flash-lite")
 EMBED_MODEL: str = os.environ.get("ORCH_EMBED_MODEL", "gemini-embedding-001")
 # schema-v2 stores chunk vectors as vector(768). nomic-embed-text-v1_5 is

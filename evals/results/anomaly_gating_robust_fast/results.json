@@ -1,0 +1,225 @@
+{
+  "meta": {
+    "eval": "anomaly_gating",
+    "mode": "robust",
+    "date": "2026-09-29T22:02:12+00:00",
+    "commit": "42bdb4a",
+    "fast": true,
+    "llm_calls_made": 0,
+    "cost_usd": 0.0,
+    "config": {
+      "window_seconds": 60,
+      "max_content_chars": 5000,
+      "warn_threshold": 5,
+      "latency_multiplier": 3.0
+    }
+  },
+  "results": {
+    "synthetic": [
+      {
+        "dataset": "eval_mediumnoise",
+        "noise": "medium",
+        "lines": 43703,
+        "log_hours": 6.0,
+        "window": {
+          "tp": 68,
+          "fp": 9,
+          "fn": 6,
+          "precision": 0.883,
+          "recall": 0.919,
+          "f1": 0.901
+        },
+        "false_alarms_per_hour": 1.5,
+        "incident_recall": 1.0,
+        "incidents": [
+          {
+            "kind": "db_pool_exhaustion",
+            "detectable_by_design": true,
+            "windows": 9,
+            "flagged_windows": 7,
+            "detected": true,
+            "delay_s": 0,
+            "reasons": {
+              "HARD:SqlParser": 7,
+              "RARE_SIGNATURE": 7,
+              "LATENCY:API|api_latency_ms": 5,
+              "SPIKE:API|api_5xx": 5,
+              "SPIKE:ERRORS|errors": 5,
+              "SPIKE:ERRORS|exceptions": 5,
+              "SPIKE:LEVEL|warn_lines": 3
+            }
+          },
+          {
+            "kind": "payment_latency",
+            "detectable_by_design": true,
+            "windows": 8,
+            "flagged_windows": 8,
+            "detected": true,
+            "delay_s": 0,
+            "reasons": {
+              "LATENCY:API|api_latency_ms": 8
+            }
+          },
+          {
+            "kind": "oom_crash",
+            "detectable_by_design": true,
+            "windows": 7,
+            "flagged_windows": 5,
+            "detected": true,
+            "delay_s": 0,
+            "reasons": {
+              "RARE_SIGNATURE": 5,
+              "LATENCY:PERFORMANCE|gc_pause_ms": 4,
+              "SPIKE:LEVEL|warn_lines": 4,
+              "HARD:PerformanceParser": 2,
+              "SPIKE:ERRORS|errors": 2,
+              "SPIKE:ERRORS|exceptions": 2
+            }
+          },
+          {
+            "kind": "auth_silent",
+            "detectable_by_design": false,
+            "windows": 6,
+            "flagged_windows": 6,
+            "detected": true,
+            "delay_s": 0,
+            "reasons": {
+              "SPIKE:AUTH|auth_401": 6
+            }
+          },
+          {
+            "kind": "deadlock",
+            "detectable_by_design": true,
+            "windows": 4,
+            "flagged_windows": 4,
+            "detected": true,
+            "delay_s": 0,
+            "reasons": {
+              "HARD:SqlParser": 4,
+              "RARE_SIGNATURE": 4,
+              "SPIKE:ERRORS|errors": 3,
+              "LATENCY:DATABASE|sql_latency_ms": 2
+            }
+          },
+          {
+            "kind": "bad_deploy",
+            "detectable_by_design": true,
+            "windows": 8,
+            "flagged_windows": 6,
+            "detected": true,
+            "delay_s": 23,
+            "reasons": {
+              "HARD:LifecycleParser": 6,
+              "RARE_SIGNATURE": 6,
+              "SPIKE:ERRORS|errors": 6,
+              "LATENCY:DATABASE|sql_latency_ms": 1
+            }
+          },
+          {
+            "kind": "thread_pool",
+            "detectable_by_design": true,
+            "windows": 5,
+            "flagged_windows": 5,
+            "detected": true,
+            "delay_s": 0,
+            "reasons": {
+              "HARD:PerformanceParser": 5,
+              "RARE_SIGNATURE": 5,
+              "SPIKE:ERRORS|errors": 5,
+              "SPIKE:ERRORS|exceptions": 5
+            }
+          },
+          {
+            "kind": "slow_sql",
+            "detectable_by_design": true,
+            "windows": 7,
+            "flagged_windows": 7,
+            "detected": true,
+            "delay_s": 0,
+            "reasons": {
+              "LATENCY:DATABASE|sql_latency_ms": 7
+            }
+          },
+          {
+            "kind": "kafka_lag",
+            "detectable_by_design": true,
+            "windows": 6,
+            "flagged_windows": 6,
+            "detected": true,
+            "delay_s": 0,
+            "reasons": {
+              "RARE_SIGNATURE": 6,
+              "SPIKE:LEVEL|warn_lines": 6
+            }
+          },
+          {
+            "kind": "disk_full",
+            "detectable_by_design": true,
+            "windows": 4,
+            "flagged_windows": 4,
+            "detected": true,
+            "delay_s": 0,
+            "reasons": {
+              "RARE_SIGNATURE": 4,
+              "SPIKE:ERRORS|errors": 4
+            }
+          },
+          {
+            "kind": "rate_limited_upstream",
+            "detectable_by_design": true,
+            "windows": 5,
+            "flagged_windows": 5,
+            "detected": true,
+            "delay_s": 0,
+            "reasons": {
+              "RARE_SIGNATURE": 5,
+              "SPIKE:LEVEL|warn_lines": 5
+            }
+          },
+          {
+            "kind": "cert_expiry",
+            "detectable_by_design": true,
+            "windows": 5,
+            "flagged_windows": 5,
+            "detected": true,
+            "delay_s": 0,
+            "reasons": {
+              "RARE_SIGNATURE": 5,
+              "SPIKE:ERRORS|errors": 5,
+              "SPIKE:ERRORS|exceptions": 5
+            }
+          }
+        ],
+        "gating": {
+          "windows": 360,
+          "flagged_windows": 77,
+          "flagged_share": 0.214,
+          "llm_calls_gated": 315,
+          "llm_calls_ungated": 1418,
+          "call_reduction": 0.778,
+          "est_tokens_gated": 612961,
+          "est_tokens_ungated": 2675313,
+          "token_reduction": 0.771,
+          "reasons": {
+            "RARE_SIGNATURE": 47,
+            "SPIKE:ERRORS|errors": 30,
+            "SPIKE:LEVEL|warn_lines": 19,
+            "SPIKE:ERRORS|exceptions": 17,
+            "LATENCY:API|api_latency_ms": 13,
+            "LATENCY:DATABASE|sql_latency_ms": 12,
+            "HARD:SqlParser": 11,
+            "LATENCY:PERFORMANCE|gc_pause_ms": 10,
+            "HARD:PerformanceParser": 7,
+            "SPIKE:AUTH|auth_401": 6,
+            "HARD:LifecycleParser": 6,
+            "SPIKE:API|api_5xx": 5
+          }
+        }
+      }
+    ],
+    "heldout": [],
+    "loghub": [],
+    "owner_sample": null,
+    "volume_sensitivity": []
+  }
+}

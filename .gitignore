@@ -63,3 +63,16 @@ __pycache__/
 
 # Local upload staging
 uploads/
+
+# Eval/bench local artefacts
+evals/.models/
+evals/results/**/windows/
+evals/datasets/synthetic/
+evals/datasets/loghub/prepared/
+evals/.cache/
+bench/.work/
+
+# Private interview notes (never commit)
+interview-notes/
+!evals/datasets/loghub/*.log
+!evals/datasets/owner_sample_10k.log
