@@ -86,7 +86,13 @@ public class KafkaFailureMarker {
         return msg != null ? msg : cause.getClass().getSimpleName();
     }
 
-    private static String truncate(String s, int max) {
-        return s.length() <= max ? s : s.substring(0, max);
+    /**
+     * Truncates and makes the reason storable: Postgres text rejects NUL (0x00), and a
+     * failure caused by a NUL byte echoes that byte in its own message. Without this the
+     * FAILED update itself fails and the session is left in PARSING forever.
+     */
+    static String truncate(String s, int max) {
+        String safe = s.replace('\u0000', '�');
+        return safe.length() <= max ? safe : safe.substring(0, max);
     }
 }

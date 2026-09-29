@@ -42,7 +42,9 @@ class Client:
         r.raise_for_status()
         pre = r.json()
         with open(path, "rb") as f:
-            requests.put(pre["uploadUrl"], data=f).raise_for_status()
+            # requests streams a 0-byte file with chunked encoding, which S3/MinIO reject (411);
+            # a browser sends Content-Length: 0, so do the same.
+            requests.put(pre["uploadUrl"], data=f if size else b"").raise_for_status()
         r = requests.post(f"{self.api}/sessions/{session_id}/documents/{pre['documentId']}/confirm",
                           json={"fileName": name}, headers=self.h)
         r.raise_for_status()

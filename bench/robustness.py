@@ -134,7 +134,7 @@ def main():
     app.stop()
     out = {"date": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "commit": git_sha(),
            "heap": "256m", "results": results}
-    json.dump(out, open(os.path.join(HERE, "results", "robustness.json"), "w"), indent=2)
+    json.dump(out, open(os.environ.get("ROBUST_OUT", os.path.join(HERE, "results", "robustness.json")), "w"), indent=2)
 
 
 if __name__ == "__main__":

@@ -14,6 +14,20 @@ def load(name):
     return json.load(open(p)) if os.path.exists(p) else None
 
 
+def full_gc_live_set(run) -> tuple[int | None, int | None]:
+    """Max and median heap AFTER full GCs (the live set) from the run's unified GC log."""
+    import re
+    import statistics
+    name = f"ingest-{run['file']}-{run['heap_xmx']}-c{run['part_concurrency']}"
+    path = os.path.join(HERE, ".work", f"chaos-{name}.gc.log")
+    if not os.path.exists(path):  # committed extract: only the full-GC lines
+        path = os.path.join(R, "gc", f"{name}.full-gc.log")
+    if not os.path.exists(path):
+        return None, None
+    after = [int(m.group(1)) for m in re.finditer(r"Pause Full \((?!Metadata)[^)]*\) \d+M->(\d+)M", open(path).read())]
+    return (max(after), int(statistics.median(after))) if after else (None, None)
+
+
 def chaos_rows(doc, label):
     out = []
     for r in (doc or {}).get("runs", []):
@@ -40,21 +54,29 @@ def main():
         runs = [r for r in ing["runs"] if r["heap_xmx"] == "256m"]
         L += ["## Ingest throughput and heap (fixed -Xmx256m, part-concurrency 3)", "",
               "Timed from upload confirm until the session reaches ENRICHING (every part parsed + committed, "
-              "finalizer done). Heap sampled every 250 ms with `jstat -gc` (S0U+S1U+EU+OU).", "",
-              "| File | Bytes | Lines | Chunks | Ingest s | MB/s | Lines/s | Peak heap MB | Peak old gen MB | Peak RSS MB | "
-              "GC pauses (count / max ms / total ms) | Status |",
+              "finalizer done). Heap sampled every 250 ms with `jstat -gc` (S0U+S1U+EU+OU). Embeddings off "
+              "(`--loglens.embedding.enabled=false`), so this is the parse-and-store path. The jar was built at "
+              "`c5ea7d9` (robust gate + exactly-once fixes, before the `73c1fbd` line caps); the `commit` field in "
+              "`ingest.json` is the checkout at run time.", "",
+              "| File | Bytes | Lines | Chunks | Ingest s | MB/s | Lines/s | Live set after full GC, max / median MB | "
+              "Peak heap used MB | Peak RSS MB | GC pauses (count / max ms / total ms) | Status |",
               "|---|---|---|---|---|---|---|---|---|---|---|---|"]
         for r in runs:
             g = r["gc"]
+            live_max, live_med = full_gc_live_set(r)
+            r["live_max"], r["live_med"] = live_max, live_med
             L.append(f"| {r['file']} | {r['bytes']:,} | {r['lines_ingested']:,} | {r['chunks']} | {r['ingest_s']} | "
-                     f"{r['mb_per_s']} | {r['lines_per_s']:,} | {r['peak_heap_used_mb']} | {r['peak_old_gen_mb']} | "
+                     f"{r['mb_per_s']} | {r['lines_per_s']:,} | {live_max} / {live_med} | {r['peak_heap_used_mb']} | "
                      f"{r['peak_rss_mb']} | {g.get('count')} / {g.get('max_ms')} / {g.get('total_ms')} | "
                      f"{r['final_status']} |")
+        L += ["", "*Live set* = heap still in use right after a full collection: what the process really holds. "
+                  "*Peak heap used* is occupancy just before a collection, so it mostly shows how far the JVM lets the "
+                  "heap fill under the 256 MB cap, not what is live.", ""]
         if runs:
             xs = ", ".join(f'"{r["file"].replace("bench_", "").replace(".log", "")}"' for r in runs)
-            ys = ", ".join(str(r["peak_heap_used_mb"]) for r in runs)
-            L += ["", "```mermaid", "xychart-beta", '  title "Peak heap vs input size at -Xmx256m"',
-                  f"  x-axis [{xs}]", '  y-axis "Peak heap MB" 0 --> 256', f"  bar [{ys}]", "```", ""]
+            ys = ", ".join(str(r["live_max"] or 0) for r in runs)
+            L += ["```mermaid", "xychart-beta", '  title "Live set after full GC vs input size, Xmx 256 MB"',
+                  f"  x-axis [{xs}]", '  y-axis "MB" 0 --> 256', f"  bar [{ys}]", "```", ""]
 
     par = load("parallelism.json")
     if par:

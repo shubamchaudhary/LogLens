@@ -12,8 +12,9 @@ and per ef_search: recall@10 against exact search over that session's rows,
 rows returned, p50/p95 latency, index build time and size.
 
 Layouts
-  shared_hnsw          one table, one HNSW, filter by session_id (default planner)
-  shared_hnsw_forced   same, planner forced onto the HNSW index
+  shared_hnsw          one table, one HNSW, filter by session_id (default planner: it
+                       may pick the B-tree + exact sort for small sessions)
+  shared_hnsw_forced   same, but only the HNSW walk + post-filter is possible
   shared_iterative     same + pgvector 0.8 hnsw.iterative_scan = relaxed_order
   shared_btree_exact   one table, B-tree on session_id, exact distance sort
   partial_hnsw         one table, one partial HNSW index per queried session
@@ -155,14 +156,17 @@ def exact_topk(vecs, meta, session, qv, k=10):
 
 LAYOUT_SQL = {
     "shared_hnsw": ("SELECT id FROM vb_shared WHERE session_id = %s ORDER BY embedding <=> %s LIMIT 10", {}),
-    "shared_hnsw_forced": ("SELECT id FROM vb_shared WHERE session_id = %s ORDER BY embedding <=> %s LIMIT 10",
-                           {"enable_bitmapscan": "off", "enable_seqscan": "off", "enable_indexscan": "on"}),
-    "shared_iterative": ("SELECT id FROM vb_shared WHERE session_id = %s ORDER BY embedding <=> %s LIMIT 10",
+    # `session_id || '' = $1` hides the predicate from the B-tree, so the only non-seq plan is the
+    # HNSW walk + filter: this is the post-filtering path we want to measure.
+    "shared_hnsw_forced": ("SELECT id FROM vb_shared WHERE session_id || '' = %s ORDER BY embedding <=> %s LIMIT 10",
+                           {"enable_bitmapscan": "off", "enable_seqscan": "off"}),
+    "shared_iterative": ("SELECT id FROM vb_shared WHERE session_id || '' = %s ORDER BY embedding <=> %s LIMIT 10",
                          {"hnsw.iterative_scan": "relaxed_order", "enable_bitmapscan": "off", "enable_seqscan": "off"}),
     "shared_btree_exact": ("SELECT id FROM vb_shared WHERE session_id = %s ORDER BY embedding <=> %s LIMIT 10",
                            {"enable_indexscan": "off", "enable_seqscan": "off"}),
+    # enable_sort=off: the B-tree plan needs a Sort for ORDER BY distance, the partial HNSW doesn't
     "partial_hnsw": ("SELECT id FROM vb_shared WHERE session_id = %s ORDER BY embedding <=> %s LIMIT 10",
-                     {"enable_bitmapscan": "off", "enable_seqscan": "off"}),
+                     {"enable_bitmapscan": "off", "enable_seqscan": "off", "enable_sort": "off"}),
     "partitioned": ("SELECT id FROM vb_part WHERE session_id = %s ORDER BY embedding <=> %s LIMIT 10", {}),
     "per_session_table": ("SELECT id FROM vb_s_{s} ORDER BY embedding <=> %s LIMIT 10", {}),
 }
