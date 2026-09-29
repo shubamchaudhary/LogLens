@@ -134,6 +134,56 @@ public class SessionChunkRepository {
         return jdbc.update(sql, sessionId, sessionId);
     }
 
+    /**
+     * Robust corpus rules ({@code loglens.anomaly.mode=robust}), the SQL twin of
+     * {@link com.loglens.ingest.RobustAnomalyRules}: count spikes by modified
+     * z-score (median + MAD) over every bucket of the session, latency spikes
+     * against the median, and rare WARN/ERROR signatures. One statement, run once
+     * by the finalizer over data already in Postgres. Returns chunks flagged.
+     */
+    @Transactional
+    public int flagRobustOutliers(UUID sessionId) {
+        String table = tableManager.tableName(sessionId); // validated UUID → safe
+        StringBuilder soft = new StringBuilder();
+        for (String key : com.loglens.ingest.RobustAnomalyRules.SOFT_METRICS) {
+            String[] p = key.split("\\|");
+            soft.append(soft.length() == 0 ? "" : ",").append("('").append(p[0]).append("','").append(p[1]).append("')");
+        }
+        double z = com.loglens.ingest.RobustAnomalyRules.Z;
+        double k = com.loglens.ingest.RobustAnomalyRules.MAD_SCALE;
+        String sql =
+            "WITH b AS (SELECT DISTINCT time_bucket FROM " + table + "), " +
+            "nb AS (SELECT count(*)::float8 AS n FROM b), " +
+            "soft(category, metric) AS (VALUES " + soft + "), " +
+            "grid AS (SELECT b.time_bucket, s.category, s.metric, COALESCE(m.count, 0)::float8 AS c " +
+            "  FROM b CROSS JOIN soft s LEFT JOIN log_metrics m ON m.session_id = ? " +
+            "  AND m.time_bucket = b.time_bucket AND m.category = s.category AND m.metric = s.metric), " +
+            "gmed AS (SELECT category, metric, percentile_cont(0.5) WITHIN GROUP (ORDER BY c) AS med " +
+            "  FROM grid GROUP BY 1, 2), " +
+            "gmad AS (SELECT g.category, g.metric, percentile_cont(0.5) WITHIN GROUP (ORDER BY abs(g.c - x.med)) AS mad " +
+            "  FROM grid g JOIN gmed x USING (category, metric) GROUP BY 1, 2), " +
+            "spike AS (SELECT g.time_bucket FROM grid g JOIN gmed USING (category, metric) JOIN gmad USING (category, metric) " +
+            "  WHERE g.c >= " + com.loglens.ingest.RobustAnomalyRules.MIN_COUNT +
+            "  AND g.c > gmed.med + " + z + " * GREATEST(" + k + " * gmad.mad, 1)), " +
+            "lat AS (SELECT time_bucket, category, metric, p95_ms::float8 AS v FROM log_metrics " +
+            "  WHERE session_id = ? AND p95_ms IS NOT NULL), " +
+            "lmed AS (SELECT category, metric, percentile_cont(0.5) WITHIN GROUP (ORDER BY v) AS med FROM lat GROUP BY 1, 2), " +
+            "lmad AS (SELECT l.category, l.metric, percentile_cont(0.5) WITHIN GROUP (ORDER BY abs(l.v - x.med)) AS mad " +
+            "  FROM lat l JOIN lmed x USING (category, metric) GROUP BY 1, 2), " +
+            "slow AS (SELECT l.time_bucket FROM lat l JOIN lmed USING (category, metric) JOIN lmad USING (category, metric) " +
+            "  WHERE l.v > " + com.loglens.ingest.RobustAnomalyRules.LATENCY_MIN_RATIO + " * lmed.med " +
+            "  AND l.v > lmed.med + " + z + " * GREATEST(" + k + " * lmad.mad, 1)), " +
+            "sig AS (SELECT metric, count(DISTINCT time_bucket) AS buckets FROM log_metrics " +
+            "  WHERE session_id = ? AND category = 'SIGNATURE' GROUP BY metric), " +
+            "rare AS (SELECT m.time_bucket FROM log_metrics m JOIN sig USING (metric) CROSS JOIN nb " +
+            "  WHERE m.session_id = ? AND m.category = 'SIGNATURE' " +
+            "  AND sig.buckets <= GREATEST(1, " + com.loglens.ingest.RobustAnomalyRules.RARE_SHARE + " * nb.n)), " +
+            "flag AS (SELECT time_bucket FROM spike UNION SELECT time_bucket FROM slow UNION SELECT time_bucket FROM rare) " +
+            "UPDATE " + table + " lc SET is_anomalous = true " +
+            "WHERE lc.is_anomalous = false AND lc.time_bucket IN (SELECT time_bucket FROM flag)";
+        return jdbc.update(sql, sessionId, sessionId, sessionId, sessionId);
+    }
+
     /** A chunk's stored text plus its window bucket, for building enrichment prompts. */
     public record ChunkContent(UUID chunkId, Instant timeBucket, String content) {
     }

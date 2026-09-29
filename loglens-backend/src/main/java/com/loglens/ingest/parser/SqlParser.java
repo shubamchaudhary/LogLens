@@ -27,6 +27,9 @@ public class SqlParser implements LogWindowParser {
         "(?i)(?:query|statement|lock)\\s*timeout|timeout.*(?:query|statement|sql)|SQLTimeoutException");
     private static final Pattern POOL = Pattern.compile(
         "(?i)connection\\s*pool|HikariPool|pool.*exhaust|unable to acquire.*connection|connection is not available");
+    /** Pool EXHAUSTION only — the broad POOL pattern also matches "HikariPool-1 - Starting...". */
+    private static final Pattern POOL_EXHAUSTED = Pattern.compile(
+        "(?i)pool.*exhaust|unable to acquire.*connection|connection is not available");
     private static final Pattern FAILURE = Pattern.compile(
         "(?i)SQLException|SQLState|constraint violation|could not (?:execute|extract|prepare)|ORA-\\d+|duplicate key");
     private static final Pattern SLOW = Pattern.compile(
@@ -95,6 +98,18 @@ public class SqlParser implements LogWindowParser {
             if (DEADLOCK.matcher(line).find()
                 || TIMEOUT.matcher(line).find()
                 || POOL.matcher(line).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isHardAnomaly(LogWindow window) {
+        for (String line : window.lines()) {
+            if (DEADLOCK.matcher(line).find()
+                || TIMEOUT.matcher(line).find()
+                || POOL_EXHAUSTED.matcher(line).find()) {
                 return true;
             }
         }

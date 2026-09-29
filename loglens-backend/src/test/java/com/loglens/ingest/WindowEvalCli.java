@@ -12,6 +12,7 @@ import com.loglens.ingest.parser.ErrorParser;
 import com.loglens.ingest.parser.LifecycleParser;
 import com.loglens.ingest.parser.LogWindowParser;
 import com.loglens.ingest.parser.PerformanceParser;
+import com.loglens.ingest.parser.SignatureParser;
 import com.loglens.ingest.parser.SqlParser;
 import com.loglens.ingest.parser.TrafficParser;
 
@@ -38,7 +39,7 @@ import java.util.Set;
  * splitter and token estimate the enrichment lane uses, so "calls with gating"
  * and "calls without gating" are exact counts for this code, not guesses.
  *
- * <p>Usage: {@code WindowEvalCli <input.log> <output.json> [windowSeconds] [maxContentChars]}
+ * <p>Usage: {@code WindowEvalCli <input.log> <output.json> [windowSeconds] [maxContentChars] [legacy|robust]}
  */
 public final class WindowEvalCli {
 
@@ -53,11 +54,12 @@ public final class WindowEvalCli {
         File out = new File(args[1]);
         long windowSeconds = args.length > 2 ? Long.parseLong(args[2]) : 60;
         int maxChars = args.length > 3 ? Integer.parseInt(args[3]) : 5000;
+        String mode = args.length > 4 ? args[4] : "robust";
 
         List<LogWindowParser> parsers = List.of(new ApiCallParser(), new SqlParser(), new ErrorParser(),
-            new PerformanceParser(), new AuthParser(), new LifecycleParser(), new TrafficParser());
+            new PerformanceParser(), new AuthParser(), new LifecycleParser(), new TrafficParser(), new SignatureParser());
         TimeWindowChunker chunker = new TimeWindowChunker(windowSeconds);
-        AnomalyDetector detector = new AnomalyDetector(parsers);
+        AnomalyDetector detector = new AnomalyDetector(parsers, mode);
 
         long t0 = System.nanoTime();
         List<String> lines = Files.readAllLines(in, StandardCharsets.UTF_8);
@@ -77,15 +79,18 @@ public final class WindowEvalCli {
             metrics.put(w, rows);
         }
         detector.detectLocal(windows);
-        Set<Instant> latencyBuckets = latencyOutlierBuckets(windows, metrics);
+        Map<Instant, List<String>> corpusFlags = detector.isRobust()
+            ? RobustAnomalyRules.flag(distinctBuckets(windows), mergedPerBucket(windows, metrics))
+            : legacyLatency(windows, metrics);
         long parseNanos = System.nanoTime() - t0;
 
         List<Map<String, Object>> records = new ArrayList<>();
         for (LogWindow w : windows) {
             List<String> reasons = new ArrayList<>(detector.explainLocal(w));
             boolean anomalous = w.isAnomalous();
-            if (latencyBuckets.contains(w.timeBucket())) {
-                reasons.add("LATENCY_P95");
+            List<String> corpus = corpusFlags.get(w.timeBucket());
+            if (corpus != null) {
+                reasons.addAll(new java.util.TreeSet<>(corpus));
                 anomalous = true;
             }
             String content = w.content();
@@ -118,10 +123,39 @@ public final class WindowEvalCli {
         doc.put("timestampRecognizedLines", tsRecognized);
         doc.put("windowSeconds", windowSeconds);
         doc.put("maxContentChars", maxChars);
+        doc.put("anomalyMode", detector.isRobust() ? "robust" : "legacy");
         doc.put("layer1Millis", parseNanos / 1_000_000);
         doc.put("windows", records);
         new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).writeValue(out, doc);
         System.out.println("windows=" + windows.size() + " lines=" + lines.size() + " -> " + out);
+    }
+
+    static Map<Instant, List<String>> legacyLatency(List<LogWindow> windows, Map<LogWindow, List<MetricRow>> metrics) {
+        Map<Instant, List<String>> out = new LinkedHashMap<>();
+        for (Instant b : latencyOutlierBuckets(windows, metrics)) {
+            out.put(b, List.of("LATENCY_P95"));
+        }
+        return out;
+    }
+
+    static List<Instant> distinctBuckets(List<LogWindow> windows) {
+        return new ArrayList<>(new java.util.LinkedHashSet<>(windows.stream().map(LogWindow::timeBucket).toList()));
+    }
+
+    /** Merge metric rows per bucket exactly like the log_metrics upsert (count +=, p95 = GREATEST). */
+    static Map<Instant, Map<String, RobustAnomalyRules.Agg>> mergedPerBucket(
+        List<LogWindow> windows, Map<LogWindow, List<MetricRow>> metrics) {
+        Map<Instant, Map<String, RobustAnomalyRules.Agg>> out = new HashMap<>();
+        for (LogWindow w : windows) {
+            Map<String, RobustAnomalyRules.Agg> m = out.computeIfAbsent(w.timeBucket(), k -> new HashMap<>());
+            for (MetricRow r : metrics.get(w)) {
+                m.merge(r.category() + "|" + r.metric(), new RobustAnomalyRules.Agg(r.count(), r.p95Ms()),
+                    (a, b) -> new RobustAnomalyRules.Agg(a.count() + b.count(),
+                        a.p95() == null && b.p95() == null ? null
+                            : Math.max(a.p95() == null ? 0 : a.p95(), b.p95() == null ? 0 : b.p95())));
+            }
+        }
+        return out;
     }
 
     /**

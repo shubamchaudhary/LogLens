@@ -28,4 +28,15 @@ public interface LogWindowParser {
     default boolean isAnomalous(LogWindow window) {
         return false;
     }
+
+    /**
+     * Robust mode ({@code loglens.anomaly.mode=robust}): only unambiguous,
+     * traffic-independent problems (OOM, deadlock, FATAL, failed health check)
+     * flag a window on their own. Volume-dependent signals (ERROR/WARN counts,
+     * 5xx, 401s, latency, rare signatures) are judged later against the whole
+     * session's baseline by the finalizer.
+     */
+    default boolean isHardAnomaly(LogWindow window) {
+        return false;
+    }
 }

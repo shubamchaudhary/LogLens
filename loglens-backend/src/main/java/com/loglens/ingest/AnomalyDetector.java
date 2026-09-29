@@ -3,6 +3,8 @@ package com.loglens.ingest;
 import com.loglens.ingest.model.LogWindow;
 import com.loglens.ingest.model.MetricRow;
 import com.loglens.ingest.parser.LogWindowParser;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -32,9 +34,27 @@ public class AnomalyDetector {
     private static final Pattern WARN = Pattern.compile("(?i)\\bWARN(?:ING)?\\b");
 
     private final List<LogWindowParser> parsers;
+    private final boolean robust;
 
     public AnomalyDetector(List<LogWindowParser> parsers) {
+        this(parsers, "robust");
+    }
+
+    /**
+     * {@code loglens.anomaly.mode}: {@code robust} (default) keeps only the
+     * traffic-independent "hard" rules here and leaves volume rules to the
+     * finalizer's session baseline ({@link RobustAnomalyRules}); {@code legacy}
+     * is the original rule set (any ERROR/exception line, 5+ WARN lines, 3x p95),
+     * kept behind the flag so both can be measured on the same build.
+     */
+    @Autowired
+    public AnomalyDetector(List<LogWindowParser> parsers, @Value("${loglens.anomaly.mode:robust}") String mode) {
         this.parsers = parsers;
+        this.robust = !"legacy".equalsIgnoreCase(mode == null ? "" : mode.trim());
+    }
+
+    public boolean isRobust() {
+        return robust;
     }
 
     /**
@@ -90,6 +110,19 @@ public class AnomalyDetector {
      * as a single SQL {@code percentile_cont} pass over {@code log_metrics}.
      */
     public void detectLocal(List<LogWindow> windows) {
+        if (robust) {
+            for (LogWindow w : windows) {
+                boolean hard = false;
+                for (LogWindowParser p : parsers) {
+                    if (p.isHardAnomaly(w)) {
+                        hard = true;
+                        break;
+                    }
+                }
+                w.setAnomalous(hard);
+            }
+            return;
+        }
         for (LogWindow w : windows) {
             boolean anomalous = false;
             for (LogWindowParser p : parsers) {
@@ -112,6 +145,14 @@ public class AnomalyDetector {
      */
     public List<String> explainLocal(LogWindow window) {
         List<String> reasons = new ArrayList<>();
+        if (robust) {
+            for (LogWindowParser p : parsers) {
+                if (p.isHardAnomaly(window)) {
+                    reasons.add("HARD:" + p.getClass().getSimpleName());
+                }
+            }
+            return reasons;
+        }
         for (LogWindowParser p : parsers) {
             if (p.isAnomalous(window)) {
                 reasons.add(p.getClass().getSimpleName());

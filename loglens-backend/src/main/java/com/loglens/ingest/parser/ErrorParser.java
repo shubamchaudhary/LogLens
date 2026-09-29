@@ -26,8 +26,14 @@ public class ErrorParser implements LogWindowParser {
 
     private static final String CAT = "ERRORS";
 
-    private static final Pattern ERROR_LEVEL = Pattern.compile("(?i)\\b(ERROR|FATAL|SEVERE)\\b");
-    private static final Pattern FATAL_LEVEL = Pattern.compile("(?i)\\b(FATAL|SEVERE)\\b");
+    // Level tokens are case-sensitive (plus logfmt/JSON "level=error"): the old
+    // (?i) match counted message text like "parity error corrected" (an INFO
+    // line) as an ERROR line. LEGACY_* keeps the old rule for loglens.anomaly.mode=legacy.
+    private static final Pattern ERROR_LEVEL = Pattern.compile(
+        "\\b(ERROR|FATAL|SEVERE|CRITICAL)\\b|(?i:\\blevel[=:]\\s*\"?(error|fatal|critical))");
+    private static final Pattern FATAL_LEVEL = Pattern.compile(
+        "\\b(FATAL|SEVERE|CRITICAL)\\b|(?i:\\blevel[=:]\\s*\"?(fatal|critical))");
+    private static final Pattern LEGACY_ERROR_LEVEL = Pattern.compile("(?i)\\b(ERROR|FATAL|SEVERE)\\b");
     private static final Pattern EXCEPTION = Pattern.compile(
         "\\b([\\w.$]+(?:Exception|Error|Throwable))\\b");
     private static final Pattern FRAME = Pattern.compile(
@@ -82,7 +88,18 @@ public class ErrorParser implements LogWindowParser {
     @Override
     public boolean isAnomalous(LogWindow window) {
         for (String line : window.lines()) {
-            if (ERROR_LEVEL.matcher(line).find() || EXCEPTION.matcher(line).find()) {
+            if (LEGACY_ERROR_LEVEL.matcher(line).find() || EXCEPTION.matcher(line).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Robust mode: only FATAL/SEVERE/CRITICAL lines are anomalous on their own. */
+    @Override
+    public boolean isHardAnomaly(LogWindow window) {
+        for (String line : window.lines()) {
+            if (FATAL_LEVEL.matcher(line).find()) {
                 return true;
             }
         }

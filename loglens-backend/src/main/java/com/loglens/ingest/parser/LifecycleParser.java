@@ -77,4 +77,9 @@ public class LifecycleParser implements LogWindowParser {
         }
         return false;
     }
+
+    @Override
+    public boolean isHardAnomaly(LogWindow window) {
+        return isAnomalous(window);
+    }
 }
