@@ -78,15 +78,17 @@ def insert_incident(
     finding_ids: list[Any],
     narrative: str,
     root_cause: Optional[str],
+    grounded: Optional[bool] = None,
+    judge_reason: Optional[str] = None,
 ) -> None:
     sql = (
         "INSERT INTO incidents "
-        "(session_id, time_range_start, time_range_end, finding_ids, narrative, root_cause_hypothesis) "
-        "VALUES (%s, %s, %s, %s, %s, %s)"
+        "(session_id, time_range_start, time_range_end, finding_ids, narrative, root_cause_hypothesis, "
+        "grounded, judge_reason) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
     )
     ids = [str(x) for x in finding_ids]
     with connect() as conn, conn.cursor() as cur:
-        cur.execute(sql, (session_id, time_start, time_end, ids, narrative, root_cause))
+        cur.execute(sql, (session_id, time_start, time_end, ids, narrative, root_cause, grounded, judge_reason))
 
 
 def upsert_report(session_id: str, content_md: str, content_json: str) -> None:

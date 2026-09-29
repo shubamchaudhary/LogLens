@@ -34,6 +34,7 @@ class AnalyzeState(TypedDict, total=False):
     attempt: int
     pending_narrative: str
     pending_root_cause: str
+    last_judge_reason: str
     incidents: list[dict[str, Any]]
     report_md: str
     report_json: str
@@ -105,7 +106,7 @@ def cluster_node(state: AnalyzeState) -> AnalyzeState:
 
 def correlate_node(state: AnalyzeState) -> AnalyzeState:
     cluster = state["clusters"][state["cluster_idx"]]
-    data = llm.chat_json(prompts.CORRELATE_SYSTEM, prompts.correlate_user(cluster))
+    data = llm.chat_json_object(prompts.CORRELATE_SYSTEM, prompts.correlate_user(cluster), ("narrative",))
     return {
         "pending_narrative": str(data.get("narrative", "")).strip(),
         "pending_root_cause": str(data.get("root_cause", "")).strip() or None,
@@ -119,11 +120,13 @@ def ground_check_node(state: AnalyzeState) -> AnalyzeState:
     root_cause = state.get("pending_root_cause") or ""
     attempt = state.get("attempt", 0)
 
-    verdict = llm.chat_json(
+    verdict = llm.chat_json_object(
         prompts.GROUND_CHECK_SYSTEM,
         prompts.ground_check_user(cluster, narrative, root_cause),
+        ("grounded",),
     )
-    grounded = bool(verdict.get("grounded"))
+    grounded = verdict.get("grounded") in (True, "true", "True")
+    reason = str(verdict.get("reason", ""))[:500]
     last_attempt = attempt + 1 >= config.MAX_CORRELATE_ATTEMPTS
 
     if grounded or last_attempt:
@@ -134,6 +137,9 @@ def ground_check_node(state: AnalyzeState) -> AnalyzeState:
             "finding_ids": [f["id"] for f in cluster],
             "narrative": narrative or "(no narrative generated)",
             "root_cause": state.get("pending_root_cause"),
+            # persisted so an ungrounded, force-accepted narrative is visible, not silent
+            "grounded": grounded,
+            "judge_reason": reason,
         }
         incidents = list(state.get("incidents", [])) + [incident]
         if not grounded:
@@ -156,6 +162,8 @@ def write_incidents_node(state: AnalyzeState) -> AnalyzeState:
             inc["finding_ids"],
             inc["narrative"],
             inc["root_cause"],
+            inc.get("grounded"),
+            inc.get("judge_reason"),
         )
     log.info("[%s] wrote %d incident(s)", sid, len(state.get("incidents", [])))
     return {}
@@ -177,7 +185,7 @@ def compose_report_node(state: AnalyzeState) -> AnalyzeState:
                    "severity": "INFO", "metrics_reviewed": len(metrics)}
         return {"report_md": md, "report_json": json.dumps(payload)}
 
-    data = llm.chat_json(prompts.REPORT_SYSTEM, prompts.report_user(incidents, metrics))
+    data = llm.chat_json_object(prompts.REPORT_SYSTEM, prompts.report_user(incidents, metrics), ("markdown",))
     md = str(data.get("markdown") or "# Log Analysis Report\n\n(report body missing)")
     payload = {
         "summary": data.get("summary", ""),

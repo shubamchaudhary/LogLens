@@ -101,6 +101,7 @@ CREATE INDEX IF NOT EXISTS idx_enrich_work_session ON enrich_work_done(session_i
 -- ── Applying to an EXISTING (v2) database — run these once: ──────────────────
 -- ALTER TABLE documents ADD COLUMN IF NOT EXISTS total_parts  INTEGER NOT NULL DEFAULT 0;
 -- ALTER TABLE documents ADD COLUMN IF NOT EXISTS parsed_parts INTEGER NOT NULL DEFAULT 0;
+-- ALTER TABLE incidents ADD COLUMN IF NOT EXISTS grounded BOOLEAN, ADD COLUMN IF NOT EXISTS judge_reason TEXT;
 -- (then CREATE TABLE ingest_parts and enrich_work_done above)
 
 -- ============================================================
@@ -157,6 +158,8 @@ CREATE TABLE IF NOT EXISTS incidents (
     finding_ids           UUID[] NOT NULL,
     narrative             TEXT NOT NULL,
     root_cause_hypothesis TEXT,
+    grounded              BOOLEAN,   -- judge verdict; false = force-accepted after the last attempt
+    judge_reason          TEXT,
     created_at            TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_incidents_session ON incidents(session_id, time_range_start);
