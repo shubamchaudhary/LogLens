@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17", cache: gradle }
+      - name: Unit tests
+        run: bash ./gradlew :loglens-backend:test --no-daemon
+      - name: Integration tests (Testcontainers, exactly-once + SQL-vs-Java rules)
+        run: bash ./gradlew :loglens-backend:test -Pintegration --tests 'com.loglens.ExactlyOnceIT' --no-daemon
+
+  orchestrator-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r rag-orchestrator/requirements.txt pytest
+      - run: pytest -q rag-orchestrator/tests
+
+  eval-fast:
+    # Deterministic, $0: seeded synthetic logs, production Layer-1 code, no LLM.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17", cache: gradle }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: bash ./gradlew :loglens-backend:printTestClasspath --no-daemon
+      - run: python evals/generate_corpus.py --name eval_mediumnoise --hours 6 --rate 2 --seed 7 --noise medium
+      - run: python evals/run_anomaly_gating.py --fast --mode robust
+      - run: python evals/check_thresholds.py anomaly_gating_robust_fast
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: eval-reports, path: evals/results/anomaly_gating_robust_fast/REPORT.md }
