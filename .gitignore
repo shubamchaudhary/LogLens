@@ -74,3 +74,5 @@ bench/.work/
 
 # Private interview notes (never commit)
 interview-notes/
+!evals/datasets/loghub/*.log
+!evals/datasets/owner_sample_10k.log
