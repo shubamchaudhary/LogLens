@@ -1,0 +1,96 @@
+{
+  "date": "2026-09-29T23:41:06+00:00",
+  "commit": "32e0373",
+  "heap": "256m",
+  "results": [
+    {
+      "case": "malformed_lines.log",
+      "bytes": 47574,
+      "status": "CORRELATING",
+      "error": null,
+      "seconds": 0.6,
+      "jvm_alive": true,
+      "chunks": 10,
+      "lines_stored": 686,
+      "app_errors": []
+    },
+    {
+      "case": "non_utf8.log",
+      "bytes": 34209,
+      "status": "DONE",
+      "error": null,
+      "seconds": 0.6,
+      "jvm_alive": true,
+      "chunks": 10,
+      "lines_stored": 601,
+      "app_errors": []
+    },
+    {
+      "case": "nul_bytes.log",
+      "bytes": 34206,
+      "status": "DONE",
+      "error": null,
+      "seconds": 0.6,
+      "jvm_alive": true,
+      "chunks": 10,
+      "lines_stored": 601,
+      "app_errors": []
+    },
+    {
+      "case": "empty.log",
+      "bytes": 0,
+      "status": "DONE",
+      "error": null,
+      "seconds": 0.6,
+      "jvm_alive": true,
+      "chunks": 0,
+      "lines_stored": 0,
+      "app_errors": []
+    },
+    {
+      "case": "archive.log.gz",
+      "bytes": 2649,
+      "status": "FAILED",
+      "error": "Ingest failed: Compressed archive (gzip/zip) is not supported: upload the plain-text log",
+      "seconds": 0.6,
+      "jvm_alive": true,
+      "chunks": 0,
+      "lines_stored": 0,
+      "app_errors": [
+        "2026-09-29T23:40:17.410Z ERROR 11917 --- [loglens] [ntainer#0-0-C-1] com.loglens.ingest.IngestSplitter        : Splitting failed for session=f69cb2bd-16ec-4d1f-bd34-606f1424ecd9 document=0c98d315-9790-461e-bcce-ef990dbde6a2: Compressed archive (gzip/zip) is no",
+        "java.lang.IllegalArgumentException: Compressed archive (gzip/zip) is not supported: upload the plain-text log"
+      ]
+    },
+    {
+      "case": "huge_single_line.log",
+      "bytes": 104857634,
+      "status": "DONE",
+      "error": null,
+      "seconds": 7.7,
+      "jvm_alive": true,
+      "chunks": 1,
+      "lines_stored": 1,
+      "app_errors": []
+    },
+    {
+      "case": "busy_minute.log",
+      "bytes": 14148619,
+      "status": "DONE",
+      "error": null,
+      "seconds": 17.5,
+      "jvm_alive": true,
+      "chunks": 60,
+      "lines_stored": 120000,
+      "app_errors": []
+    },
+    {
+      "case": "poison_message",
+      "dlq_offsets_before": "log.ingest.dlq:0:305",
+      "dlq_offsets_after": "log.ingest.dlq:0:306",
+      "next_upload_status": "DONE",
+      "app_errors": [
+        "com.fasterxml.jackson.core.JsonParseException: Unrecognized token 'this': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')"
+      ]
+    }
+  ]
+}
