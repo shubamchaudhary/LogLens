@@ -91,6 +91,9 @@ def main():
     from ingest_bench import clean_slate
     clean_slate()  # skip any backlog an interrupted run left in Kafka
     files = make_inputs()
+    only = [x for x in os.environ.get("ROBUST_ONLY", "").split(",") if x]
+    if only:  # rerun selected cases in a fresh JVM, merging into the existing results file
+        files = {k: v for k, v in files.items() if k in only}
     App.EXTRA = ["--loglens.embedding.enabled=false"]
     results = []
     app = App("robustness", heap="256m", conc=3).start()
@@ -118,6 +121,16 @@ def main():
                "app_errors": app_errors(app, since)}
         print(json.dumps(res), flush=True)
         results.append(res)
+    out_path = os.environ.get("ROBUST_OUT", os.path.join(HERE, "results", "robustness.json"))
+    if only:
+        app.stop()
+        for r in results:
+            r["fresh_jvm"] = True
+        old = json.load(open(out_path))["results"] if os.path.exists(out_path) else []
+        merged = [r for r in old if r["case"] not in only] + results
+        json.dump({"date": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "commit": git_sha(),
+                   "heap": "256m", "results": merged}, open(out_path, "w"), indent=2)
+        return
     # poison message: not JSON at all, straight onto the parts topic
     since = os.path.getsize(app.log)
     before = kafka("kafka-get-offsets.sh", "--bootstrap-server", "localhost:9092", "--topic", "log.ingest.dlq")
@@ -136,7 +149,7 @@ def main():
     app.stop()
     out = {"date": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "commit": git_sha(),
            "heap": "256m", "results": results}
-    json.dump(out, open(os.environ.get("ROBUST_OUT", os.path.join(HERE, "results", "robustness.json")), "w"), indent=2)
+    json.dump(out, open(out_path, "w"), indent=2)
 
 
 if __name__ == "__main__":
