@@ -105,6 +105,24 @@ public class AnomalyDetector {
         }
     }
 
+    /**
+     * Which LOCAL rules fire for a window (parser simple names, plus
+     * {@code WARN_BURST}). Same rules as {@link #detectLocal}; used by the eval
+     * harness to attribute hits and false alarms to a rule.
+     */
+    public List<String> explainLocal(LogWindow window) {
+        List<String> reasons = new ArrayList<>();
+        for (LogWindowParser p : parsers) {
+            if (p.isAnomalous(window)) {
+                reasons.add(p.getClass().getSimpleName());
+            }
+        }
+        if (warnCount(window) >= WARN_THRESHOLD) {
+            reasons.add("WARN_BURST");
+        }
+        return reasons;
+    }
+
     private long warnCount(LogWindow window) {
         long c = 0;
         for (String line : window.lines()) {

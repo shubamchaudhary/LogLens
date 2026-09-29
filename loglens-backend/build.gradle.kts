@@ -41,3 +41,26 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("com.h2database:h2")
 }
+
+// ── Eval harness: run the production Layer-1 path over a log file (no LLM) ──
+// ./gradlew :loglens-backend:evalWindows -Pin=<file.log> -Pout=<windows.json>
+tasks.register<JavaExec>("evalWindows") {
+    group = "verification"
+    description = "Chunk + parse + anomaly-flag a log file with production code; write per-window JSON."
+    dependsOn("testClasses")
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("com.loglens.ingest.WindowEvalCli")
+    args = listOfNotNull(
+        project.findProperty("in") as String?,
+        project.findProperty("out") as String?,
+        (project.findProperty("windowSeconds") as String?) ?: "60",
+        (project.findProperty("maxChars") as String?) ?: "5000")
+}
+
+// Writes the test runtime classpath so eval/bench scripts can call `java -cp` directly
+tasks.register("printTestClasspath") {
+    dependsOn("testClasses")
+    doLast {
+        file("build/test-classpath.txt").writeText(sourceSets["test"].runtimeClasspath.asPath)
+    }
+}
