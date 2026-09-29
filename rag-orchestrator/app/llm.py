@@ -146,7 +146,7 @@ def chat_json(system: str, user: str) -> Any:
 # ── Embeddings ───────────────────────────────────────────────────────────────
 
 _GEMINI_EMBED_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/models/{model}:embedContent?key={key}"
+    config.GEMINI_BASE_URL + "/models/{model}:embedContent?key={key}"
 )
 
 # Round-robin cursor for embedding keys, shared across drill-down calls.
