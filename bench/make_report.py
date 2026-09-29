@@ -21,7 +21,7 @@ def full_gc_live_set(run) -> tuple[int | None, int | None]:
     name = f"ingest-{run['file']}-{run['heap_xmx']}-c{run['part_concurrency']}"
     path = os.path.join(HERE, ".work", f"chaos-{name}.gc.log")
     if not os.path.exists(path):  # committed extract: only the full-GC lines
-        path = os.path.join(R, "gc", f"{name}.full-gc.log")
+        path = os.path.join(R, "gc", f"{name}.full-gc.txt")
     if not os.path.exists(path):
         return None, None
     after = [int(m.group(1)) for m in re.finditer(r"Pause Full \((?!Metadata)[^)]*\) \d+M->(\d+)M", open(path).read())]
