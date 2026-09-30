@@ -45,7 +45,8 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(ROOT, "evals"))
 from common import git_sha  # noqa: E402
 
-DB = "postgresql://loglens:loglens123@localhost:5434/loglens_db"
+# local docker-compose default (same as .env.example); override with DATABASE_URL
+DB = os.environ.get("DATABASE_URL", "postgresql://loglens:loglens123@localhost:5434/loglens_db")
 CACHE = os.path.join(HERE, ".work", "vectors")
 
 
