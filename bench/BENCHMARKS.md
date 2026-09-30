@@ -46,6 +46,90 @@ xychart-beta
   bar [0.81, 1.35, 2.15, 2.25]
 ```
 
+## Vector isolation: shared table + filter vs per-session tables
+
+120,000 vectors, 384-d (bge-small-en-v1.5 (ONNX)), HNSW m=16 ef_construction=64, pgvector 0.8.0. Recall@10 against exact search over the session's own rows; 50 queries per session (held-out lines of that session).
+
+| Session (share of table) | Layout | ef_search | Recall@10 | Avg rows returned | p50 ms | p95 ms |
+|---|---|---|---|---|---|---|
+| big (16.67%) | shared_hnsw | 40 | 0.976 | 9.76 | 6.52 | 9.63 |
+| big (16.67%) | shared_hnsw | 100 | 1.0 | 10 | 5.91 | 6.46 |
+| big (16.67%) | shared_hnsw | 200 | 1.0 | 10 | 5.85 | 6.43 |
+| big (16.67%) | shared_hnsw | 400 | 1.0 | 10 | 9.09 | 10.84 |
+| big (16.67%) | shared_hnsw_forced | 40 | 0.908 | 9.24 | 1.72 | 3.35 |
+| big (16.67%) | shared_hnsw_forced | 100 | 0.94 | 9.6 | 1.21 | 2.65 |
+| big (16.67%) | shared_hnsw_forced | 200 | 0.96 | 9.6 | 1.29 | 2.3 |
+| big (16.67%) | shared_hnsw_forced | 400 | 0.98 | 9.8 | 1.75 | 2.69 |
+| big (16.67%) | shared_iterative | 40 | 0.954 | 9.8 | 0.6 | 0.91 |
+| big (16.67%) | shared_iterative | 100 | 0.96 | 9.8 | 0.91 | 1.37 |
+| big (16.67%) | shared_iterative | 200 | 0.98 | 9.8 | 1.23 | 1.8 |
+| big (16.67%) | shared_iterative | 400 | 0.98 | 9.8 | 1.93 | 2.64 |
+| big (16.67%) | shared_btree_exact | 40 | 1.0 | 10 | 6.09 | 6.93 |
+| big (16.67%) | partial_hnsw | 40 | 0.98 | 10 | 0.8 | 1.57 |
+| big (16.67%) | partial_hnsw | 100 | 1.0 | 10 | 0.93 | 1.24 |
+| big (16.67%) | partial_hnsw | 200 | 1.0 | 10 | 1.33 | 1.78 |
+| big (16.67%) | partial_hnsw | 400 | 1.0 | 10 | 1.8 | 2.4 |
+| big (16.67%) | partitioned | 40 | 1.0 | 10 | 0.74 | 1.01 |
+| big (16.67%) | partitioned | 100 | 1.0 | 10 | 1.0 | 1.27 |
+| big (16.67%) | partitioned | 200 | 1.0 | 10 | 1.05 | 1.36 |
+| big (16.67%) | partitioned | 400 | 1.0 | 10 | 1.39 | 1.68 |
+| big (16.67%) | per_session_table | 40 | 1.0 | 10 | 0.6 | 0.92 |
+| big (16.67%) | per_session_table | 100 | 1.0 | 10 | 0.66 | 0.91 |
+| big (16.67%) | per_session_table | 200 | 1.0 | 10 | 1.01 | 1.51 |
+| big (16.67%) | per_session_table | 400 | 1.0 | 10 | 1.26 | 1.49 |
+| s000 (0.83%) | shared_hnsw | 40 | 1.0 | 10 | 0.7 | 0.92 |
+| s000 (0.83%) | shared_hnsw | 100 | 1.0 | 10 | 0.61 | 0.82 |
+| s000 (0.83%) | shared_hnsw | 200 | 1.0 | 10 | 0.54 | 0.62 |
+| s000 (0.83%) | shared_hnsw | 400 | 1.0 | 10 | 0.58 | 0.75 |
+| s000 (0.83%) | shared_hnsw_forced | 40 | 0.646 | 6.48 | 0.51 | 1.99 |
+| s000 (0.83%) | shared_hnsw_forced | 100 | 0.718 | 7.24 | 0.39 | 2.1 |
+| s000 (0.83%) | shared_hnsw_forced | 200 | 0.806 | 8.24 | 0.46 | 2.85 |
+| s000 (0.83%) | shared_hnsw_forced | 400 | 0.872 | 8.92 | 0.44 | 3.54 |
+| s000 (0.83%) | shared_iterative | 40 | 0.98 | 10 | 0.39 | 5.81 |
+| s000 (0.83%) | shared_iterative | 100 | 0.978 | 10 | 0.6 | 4.77 |
+| s000 (0.83%) | shared_iterative | 200 | 0.98 | 10 | 0.43 | 4.9 |
+| s000 (0.83%) | shared_iterative | 400 | 0.98 | 10 | 0.64 | 5.83 |
+| s000 (0.83%) | shared_btree_exact | 40 | 1.0 | 10 | 0.63 | 0.83 |
+| s000 (0.83%) | partial_hnsw | 40 | 1.0 | 10 | 0.24 | 0.66 |
+| s000 (0.83%) | partial_hnsw | 100 | 1.0 | 10 | 0.32 | 0.46 |
+| s000 (0.83%) | partial_hnsw | 200 | 1.0 | 10 | 0.52 | 0.64 |
+| s000 (0.83%) | partial_hnsw | 400 | 1.0 | 10 | 0.74 | 0.84 |
+| s000 (0.83%) | partitioned | 40 | 1.0 | 10 | 0.3 | 0.35 |
+| s000 (0.83%) | partitioned | 100 | 1.0 | 10 | 0.57 | 0.64 |
+| s000 (0.83%) | partitioned | 200 | 1.0 | 10 | 0.56 | 0.71 |
+| s000 (0.83%) | partitioned | 400 | 1.0 | 10 | 0.58 | 0.76 |
+| s000 (0.83%) | per_session_table | 40 | 1.0 | 10 | 0.26 | 0.38 |
+| s000 (0.83%) | per_session_table | 100 | 1.0 | 10 | 0.34 | 0.42 |
+| s000 (0.83%) | per_session_table | 200 | 1.0 | 10 | 0.53 | 0.93 |
+| s000 (0.83%) | per_session_table | 400 | 1.0 | 10 | 0.74 | 0.8 |
+| s050 (0.83%) | shared_hnsw | 40 | 1.0 | 10 | 0.53 | 0.57 |
+| s050 (0.83%) | shared_hnsw | 100 | 1.0 | 10 | 0.52 | 0.58 |
+| s050 (0.83%) | shared_hnsw | 200 | 1.0 | 10 | 0.53 | 0.59 |
+| s050 (0.83%) | shared_hnsw | 400 | 1.0 | 10 | 0.54 | 0.69 |
+| s050 (0.83%) | shared_hnsw_forced | 40 | 0.068 | 0.68 | 0.36 | 0.95 |
+| s050 (0.83%) | shared_hnsw_forced | 100 | 0.134 | 1.34 | 0.47 | 1.73 |
+| s050 (0.83%) | shared_hnsw_forced | 200 | 0.208 | 2.08 | 0.44 | 2.52 |
+| s050 (0.83%) | shared_hnsw_forced | 400 | 0.244 | 2.48 | 0.51 | 3.09 |
+| s050 (0.83%) | shared_iterative | 40 | 0.256 | 2.6 | 0.48 | 2.96 |
+| s050 (0.83%) | shared_iterative | 100 | 0.256 | 2.6 | 0.46 | 2.38 |
+| s050 (0.83%) | shared_iterative | 200 | 0.256 | 2.6 | 0.59 | 3.46 |
+| s050 (0.83%) | shared_iterative | 400 | 0.256 | 2.6 | 0.53 | 3.15 |
+| s050 (0.83%) | shared_btree_exact | 40 | 1.0 | 10 | 0.55 | 0.68 |
+| s050 (0.83%) | partial_hnsw | 40 | 1.0 | 10 | 0.29 | 0.58 |
+| s050 (0.83%) | partial_hnsw | 100 | 1.0 | 10 | 0.45 | 0.63 |
+| s050 (0.83%) | partial_hnsw | 200 | 1.0 | 10 | 0.58 | 0.69 |
+| s050 (0.83%) | partial_hnsw | 400 | 1.0 | 10 | 1.29 | 1.41 |
+| s050 (0.83%) | partitioned | 40 | 1.0 | 10 | 0.4 | 0.51 |
+| s050 (0.83%) | partitioned | 100 | 1.0 | 10 | 0.88 | 1.12 |
+| s050 (0.83%) | partitioned | 200 | 1.0 | 10 | 0.69 | 0.92 |
+| s050 (0.83%) | partitioned | 400 | 1.0 | 10 | 0.78 | 0.92 |
+| s050 (0.83%) | per_session_table | 40 | 1.0 | 10 | 0.24 | 0.31 |
+| s050 (0.83%) | per_session_table | 100 | 1.0 | 10 | 0.36 | 0.43 |
+| s050 (0.83%) | per_session_table | 200 | 1.0 | 10 | 0.67 | 0.79 |
+| s050 (0.83%) | per_session_table | 400 | 1.0 | 10 | 0.79 | 0.89 |
+
+Index build: shared HNSW 15.37 s (153 MB); partitioned 10.84 s; per-session tables (3) 3.32 s.
+
 ## Exactly-once effects under fault injection (`chaos.py`)
 
 Each scenario ingests the 6 h medium-noise archive (5.7 MB, small 256 KB parts so there are ~22 parts to crash between) and compares with a clean baseline run on the same jar.
@@ -81,8 +165,8 @@ Before = jar built at `c5ea7d9`; after = current code (`73c1fbd` line caps, NUL 
 | empty.log | 0 | **DONE** in 0.6 s, chunks 0, lines 0 | **DONE** in 0.6 s, chunks 0, lines 0 |
 | archive.log.gz | 2,649 | **PARSING** in 300.2 s, chunks 0, lines 0: org.springframework.kafka.KafkaException: Seek to current after exception | **FAILED** in 0.6 s, chunks 0, lines 0: Ingest failed: Compressed archive (gzip/zip) is not supported: upload the plain-text log |
 | huge_single_line.log | 104,857,634 | **CHUNKING** in 301.5 s, chunks 0, lines 0: java.lang.OutOfMemoryError: Java heap space | **DONE** in 7.7 s, chunks 1, lines 1 |
-| busy_minute.log | 14,148,619 | **CREATED** in 300.8 s, chunks 0, lines 0 | **DONE** in 17.5 s, chunks 60, lines 120000 |
-| poison_message | - | DLQ offsets log.ingest.dlq:0:304 -> log.ingest.dlq:0:305; next upload CREATED | DLQ offsets log.ingest.dlq:0:305 -> log.ingest.dlq:0:306; next upload DONE |
+| busy_minute.log | 14,148,619 | **FAILED** in 53.8 s, chunks 0, lines 0: Part 0 failed: PreparedStatementCallback; SQL [INSERT INTO log_chunks_s_405d20e7_7e22_4a36_9a92_668cebecfce4 (chunk_id, document_id, time_bu | **DONE** in 17.5 s, chunks 60, lines 120000 |
+| poison_message | - | DLQ offsets log.ingest.dlq:0:306 -> log.ingest.dlq:0:307; next upload DONE | DLQ offsets log.ingest.dlq:0:305 -> log.ingest.dlq:0:306; next upload DONE |
 
 ## Other measured numbers
 
