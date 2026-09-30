@@ -2,8 +2,8 @@
   "meta": {
     "eval": "anomaly_gating",
     "mode": "legacy",
-    "date": "2026-09-29T21:43:10+00:00",
-    "commit": "d0e01c1-dirty",
+    "date": "2026-09-30T00:42:55+00:00",
+    "commit": "ea63eaa",
     "fast": false,
     "llm_calls_made": 0,
     "cost_usd": 0.0,
@@ -848,45 +848,45 @@
       {
         "lines_per_s": 20,
         "window": {
-          "tp": 30,
+          "tp": 31,
           "fp": 90,
           "fn": 0,
-          "precision": 0.25,
+          "precision": 0.256,
           "recall": 1.0,
-          "f1": 0.4
+          "f1": 0.408
         },
         "gating": {
-          "windows": 120,
-          "flagged_windows": 120,
+          "windows": 121,
+          "flagged_windows": 121,
           "flagged_share": 1.0,
-          "llm_calls_gated": 3933,
-          "llm_calls_ungated": 3933,
+          "llm_calls_gated": 3934,
+          "llm_calls_ungated": 3934,
           "call_reduction": 0.0,
-          "est_tokens_gated": 9110106,
-          "est_tokens_ungated": 9110106,
+          "est_tokens_gated": 9109310,
+          "est_tokens_ungated": 9109310,
           "token_reduction": 0.0
         }
       },
       {
         "lines_per_s": 50,
         "window": {
-          "tp": 30,
-          "fp": 90,
-          "fn": 0,
-          "precision": 0.25,
-          "recall": 1.0,
-          "f1": 0.4
+          "tp": 60,
+          "fp": 184,
+          "fn": 1,
+          "precision": 0.246,
+          "recall": 0.984,
+          "f1": 0.393
         },
         "gating": {
-          "windows": 120,
-          "flagged_windows": 120,
-          "flagged_share": 1.0,
-          "llm_calls_gated": 9765,
-          "llm_calls_ungated": 9765,
-          "call_reduction": 0.0,
-          "est_tokens_gated": 23267729,
-          "est_tokens_ungated": 23267729,
-          "token_reduction": 0.0
+          "windows": 245,
+          "flagged_windows": 244,
+          "flagged_share": 0.996,
+          "llm_calls_gated": 9775,
+          "llm_calls_ungated": 9805,
+          "call_reduction": 0.003,
+          "est_tokens_gated": 22830688,
+          "est_tokens_ungated": 22894233,
+          "token_reduction": 0.003
         }
       }
     ]
