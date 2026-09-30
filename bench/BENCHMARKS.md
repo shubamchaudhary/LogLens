@@ -141,13 +141,11 @@ Each scenario ingests the 6 h medium-noise archive (5.7 MB, small 256 KB parts s
 | before fixes (`85ae40a`) | rebalance | 360 | 43703 | 0 | 134485 | 621 | 191/191 | DONE | 0 |
 | before fixes (`85ae40a`) | replay_ingest | 360 | 43703 | 0 | 134485 | 621 | 191/191 | DONE | 0 |
 | before fixes (`85ae40a`) | crash_after_enrich_commit | 360 | 43703 | 0 | 134485 | 657 | 191/191 | DONE | 0 |
-| before fixes (`85ae40a`) | replay_enrich | 360 | 43703 | 0 | 134485 | 621 | 191/191 | DONE | 0 |
 | after fixes | baseline | 360 | 43703 | 0 | 139485 | 315 | 113/113 | DONE | 0 |
 | after fixes | crash_after_part_commit | 360 | 43703 | 0 | 139485 | 315 | 113/113 | DONE | 11 |
 | after fixes | crash_after_enrich_commit | 360 | 43703 | 0 | 139485 | 315 | 113/113 | DONE | 0 |
 | after fixes | replay_ingest_before_part_fix | 360 | 43703 | 0 | 139485 | 315 | 113/113 | DONE | 0 |
 | after fixes | replay_ingest | 360 | 43703 | 0 | 139485 | 315 | 113/113 | DONE | 266 |
-| after fixes | replay_enrich | 360 | 43703 | 0 | 139485 | 315 | 113/113 | DONE | 1970 |
 | after fixes | rebalance | 360 | 43703 | 0 | 139485 | 315 | 113/113 | DONE | 1 |
 
 ### Replaying `llm.enrich.requests` from offset 0 (rewind the group, restart, wait for lag 0)
@@ -160,6 +158,7 @@ Each scenario ingests the 6 h medium-noise archive (5.7 MB, small 256 KB parts s
 The replay covers every item in the topic, including other sessions. After the fixes the measured session is unchanged and 2,379 items are skipped by their `enrich_work_done` marker; the remaining LLM calls are items the pre-fix jar had processed, which have no marker (a replay across the deploy boundary re-runs them: backfill markers first). Those older sessions end at 573 of 191 windows.
 
 Notes: before/after baselines differ in metric sum and occurrences because the anomaly gate changed (robust mode flags 77 windows instead of 155). What matters is each scenario vs its own baseline.
+The replay rows in this table waited a fixed 40 s after the restart (enough to see the part replay's skips and FAILED flips, not to prove completion); the enrich replay is measured to lag 0 below.
 `replay_ingest_before_part_fix`: data unchanged, but the replay later flipped 4 DONE sessions to FAILED (fixed in `c5ea7d9`, see `ExactlyOnceIT.replayAfterTheStagedBlobIsDeletedIsASilentNoOp`).
 
 ## Robustness: bad inputs (-Xmx256m)

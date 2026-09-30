@@ -31,6 +31,8 @@ def full_gc_live_set(run) -> tuple[int | None, int | None]:
 def chaos_rows(doc, label):
     out = []
     for r in (doc or {}).get("runs", []):
+        if r["scenario"] == "replay_enrich":
+            continue  # measured with a fixed 40 s window; superseded by the replay table below
         x = r["result"]
         out.append(f"| {label} | {r['scenario']} | {x['chunks']} | {x['line_sum']} | {x['duplicate_line_starts']} | "
                    f"{x['metric_count_sum']} | {x['finding_occurrences']} | {x['enriched_windows']}/{x['total_windows']} | "
@@ -137,6 +139,8 @@ def main():
                   "boundary re-runs them: backfill markers first). Those older sessions end at 573 of 191 windows."]
     L += ["", "Notes: before/after baselines differ in metric sum and occurrences because the anomaly gate changed "
               "(robust mode flags 77 windows instead of 155). What matters is each scenario vs its own baseline.",
+          "The replay rows in this table waited a fixed 40 s after the restart (enough to see the part replay's "
+          "skips and FAILED flips, not to prove completion); the enrich replay is measured to lag 0 below.",
           "`replay_ingest_before_part_fix`: data unchanged, but the replay later flipped 4 DONE sessions to FAILED "
           "(fixed in `c5ea7d9`, see `ExactlyOnceIT.replayAfterTheStagedBlobIsDeletedIsASilentNoOp`).", ""]
 
