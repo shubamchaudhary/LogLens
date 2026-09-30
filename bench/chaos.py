@@ -248,6 +248,9 @@ def main():
                                            "crash_after_enrich_commit,replay_enrich")
     args = ap.parse_args()
     subprocess.run(["bash", "-c", "fuser -k 8080/tcp 8081/tcp 2>/dev/null"], check=False)
+    time.sleep(2)
+    from ingest_bench import clean_slate
+    clean_slate()  # don't inherit a backlog or a stuck record from an earlier run
     App.EXTRA = [f"--loglens.ingest.part-target-bytes={args.part_bytes}"]
     out = {"date": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "commit": git_sha(),
            "file": os.path.basename(args.file), "bytes": os.path.getsize(args.file),
