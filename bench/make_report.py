@@ -31,6 +31,8 @@ def full_gc_live_set(run) -> tuple[int | None, int | None]:
 def chaos_rows(doc, label):
     out = []
     for r in (doc or {}).get("runs", []):
+        if r["scenario"] == "replay_enrich":
+            continue  # measured with a fixed 40 s window; superseded by the replay table below
         x = r["result"]
         out.append(f"| {label} | {r['scenario']} | {x['chunks']} | {x['line_sum']} | {x['duplicate_line_starts']} | "
                    f"{x['metric_count_sum']} | {x['finding_occurrences']} | {x['enriched_windows']}/{x['total_windows']} | "
@@ -47,7 +49,7 @@ def main():
          "**Hardware:** 4 vCPU Intel Xeon @ 2.10 GHz, 15 GB RAM, one VM shared by app + Postgres + Kafka + MinIO. "
          "**JVM:** OpenJDK 21.0.10, SerialGC (as in the production Dockerfile).",
          "", "Reproduce: `docker compose up -d`, `bench/fetch_model.sh`, `python bench/llm_stub.py --embed bge &`, then "
-         "`bash bench/run_all.sh`. Data: `evals/generate_corpus.py` (seeded; 20 lines/s Spring-style logs).", ""]
+         "`bash bench/run_all.sh` (the ingest runs, then `run_rest.sh`; finished steps are skipped). Data: `evals/generate_corpus.py` (seeded; 20 lines/s Spring-style logs).", ""]
 
     ing = load("ingest.json")
     if ing:
@@ -80,18 +82,26 @@ def main():
 
     par = load("parallelism.json")
     if par:
-        L += ["## Parallelism (1 GB file, -Xmx1g, 8 partitions)", "",
-              "| part-concurrency | Ingest s | MB/s | Lines/s | Peak heap MB |", "|---|---|---|---|---|"]
-        for r in par["runs"]:
-            L.append(f"| {r['part_concurrency']} | {r['ingest_s']} | {r['mb_per_s']} | {r['lines_per_s']:,} | "
-                     f"{r['peak_heap_used_mb']} |")
-        L.append("")
+        runs = sorted(par["runs"], key=lambda r: r["part_concurrency"])
+        base = runs[0]["mb_per_s"]
+        L += ["## Parallelism (1 GB file, -Xmx1g, 8 partitions, 4 vCPUs)", "",
+              "| part-concurrency | Ingest s | MB/s | Speed-up | Lines/s | Live set after full GC, max / median MB | "
+              "Peak heap used MB | Peak RSS MB |", "|---|---|---|---|---|---|---|---|"]
+        for r in runs:
+            live_max, live_med = full_gc_live_set(r)
+            L.append(f"| {r['part_concurrency']} | {r['ingest_s']} | {r['mb_per_s']} | {r['mb_per_s'] / base:.2f}x | "
+                     f"{r['lines_per_s']:,} | {live_max} / {live_med} | {r['peak_heap_used_mb']} | {r['peak_rss_mb']} |")
+        L += ["", "Throughput stops scaling at the number of vCPUs (regex parsing is CPU-bound and shares the box "
+                  "with Postgres and Kafka); the live set grows with part-concurrency, not with file size.", "",
+              "```mermaid", "xychart-beta", '  title "Ingest MB/s vs consumer threads, 1 GB"',
+              f"  x-axis [{', '.join(chr(34) + str(r['part_concurrency']) + chr(34) for r in runs)}]", '  y-axis "MB/s" 0 --> 3',
+              f"  bar [{', '.join(str(r['mb_per_s']) for r in runs)}]", "```", ""]
 
     vec = load("vector_isolation.json")
     if vec:
         L += ["## Vector isolation: shared table + filter vs per-session tables", "",
               f"{vec['vectors']:,} vectors, {vec['dim']}-d ({vec['embed_model']}), HNSW m=16 ef_construction=64, "
-              f"pgvector {vec['pgvector']}. Recall@10 against exact search over the session's own rows; 50 queries "
+              f"pgvector {vec['pgvector']}. Tie-aware recall@10 against exact search over the session's own rows; 50 queries "
               "per session (held-out lines of that session).", "",
               "| Session (share of table) | Layout | ef_search | Recall@10 | Avg rows returned | p50 ms | p95 ms |",
               "|---|---|---|---|---|---|---|"]
@@ -110,24 +120,61 @@ def main():
           "Status | Redelivery skips logged |", "|---|---|---|---|---|---|---|---|---|---|"]
     L += chaos_rows(load("chaos_before.json"), "before fixes (`85ae40a`)")
     L += chaos_rows(load("chaos_after.json"), "after fixes")
-    L += chaos_rows(load("chaos_before_replay.json"), "before fixes, replay")
+    rb, ra = load("chaos_replay_enrich_before.json"), load("chaos_replay_enrich_after.json")
+    if rb or ra:
+        L += ["", "### Replaying `llm.enrich.requests` from offset 0 (rewind the group, restart, wait for lag 0)", "",
+              "| Jar | LLM chat calls during replay | Finding occurrences before -> after | Enriched windows "
+              "before -> after | Status | Drain s | Skip logs |", "|---|---|---|---|---|---|---|"]
+        for doc, label in ((rb, "before fixes (`85ae40a`)"), (ra, "after fixes")):
+            for r in (doc or {}).get("runs", []):
+                if r["scenario"] != "replay_enrich":
+                    continue
+                b, x = r["before_replay"], r["result"]
+                L.append(f"| {label} | {r.get('llm_chat_calls_during_replay', '-')} | {b['finding_occurrences']} -> "
+                         f"{x['finding_occurrences']} | {b['enriched_windows']} -> {x['enriched_windows']} | "
+                         f"{x['status']} | {r.get('replay_drain_s', '-')} | {r.get('skip_logs', '-')} |")
+        L += ["", "The replay covers every item in the topic, including other sessions. After the fixes the measured "
+                  "session is unchanged and 2,379 items are skipped by their `enrich_work_done` marker; the remaining "
+                  "LLM calls are items the pre-fix jar had processed, which have no marker (a replay across the deploy "
+                  "boundary re-runs them: backfill markers first). Those older sessions end at 573 of 191 windows."]
     L += ["", "Notes: before/after baselines differ in metric sum and occurrences because the anomaly gate changed "
               "(robust mode flags 77 windows instead of 155). What matters is each scenario vs its own baseline.",
+          "The replay rows in this table waited a fixed 40 s after the restart (enough to see the part replay's "
+          "skips and FAILED flips, not to prove completion); the enrich replay is measured to lag 0 below.",
           "`replay_ingest_before_part_fix`: data unchanged, but the replay later flipped 4 DONE sessions to FAILED "
           "(fixed in `c5ea7d9`, see `ExactlyOnceIT.replayAfterTheStagedBlobIsDeletedIsASilentNoOp`).", ""]
 
-    rob = load("robustness.json")
-    if rob:
-        L += ["## Robustness (-Xmx256m)", "", "| Case | Bytes | Outcome | Error / notes | JVM alive |", "|---|---|---|---|---|"]
-        for x in rob["results"]:
-            if x["case"] == "poison_message":
-                L.append(f"| poison message (not JSON) on log.ingest.parts | - | next upload: {x['next_upload_status']} | "
-                         f"DLQ offsets {x['dlq_offsets_before']} -> {x['dlq_offsets_after']} | yes |")
-            else:
-                note = (x.get("error") or "; ".join(x.get("app_errors", [])[:1]) or "").replace("|", "/")[:160]
-                L.append(f"| {x['case']} | {x['bytes']:,} | {x['status']} (chunks {x['chunks']}, lines {x['lines_stored']}) "
-                         f"| {note} | {x['jvm_alive']} |")
-        L.append("")
+    def rob_cell(x):
+        if x is None:
+            return "-"
+        if x["case"] == "poison_message":
+            return (f"DLQ offsets {x['dlq_offsets_before']} -> {x['dlq_offsets_after']}; "
+                    f"next upload {x['next_upload_status']}")
+        note = (x.get("error") or "; ".join(x.get("app_errors", [])[:1]) or "").replace("|", "/")[:140]
+        if x["status"] in ("CREATED", "CHUNKING", "PARSING") and x["seconds"] >= 299:
+            return (f"**stuck in {x['status']}** (still there at the 300 s timeout), chunks {x['chunks']}"
+                    f"{': ' + note if note else ''}")
+        return (f"**{x['status']}** in {x['seconds']} s, chunks {x['chunks']}, lines {x['lines_stored']}"
+                f"{', JVM died' if not x['jvm_alive'] else ''}{': ' + note if note else ''}")
+
+    before, after = load("robustness_before.json"), load("robustness_after.json")
+    if before or after:
+        idx = lambda d: {x["case"]: x for x in (d or {}).get("results", [])}
+        b, a = idx(before), idx(after)
+        L += ["## Robustness: bad inputs (-Xmx256m)", "",
+              "Before = jar built at `c5ea7d9`; after = current code (`73c1fbd` line caps, NUL handling, gzip "
+              "check, chunk caps + the NUL-safe failure marker and bounded DLQ headers). A good outcome is a clear "
+              "final state: parsed (ENRICHING/CORRELATING/DONE) or FAILED with a reason, never stuck. Busy minute and "
+              "poison (before) ran in a fresh JVM, because the huge-line OOM had stopped the split consumer.", "",
+              "| Case | Bytes | Before | After |", "|---|---|---|---|"]
+        for case in list(dict.fromkeys(list(b) + list(a))):
+            size = (b.get(case) or a.get(case)).get("bytes")
+            L.append(f"| {case} | {f'{size:,}' if size is not None else '-'} | {rob_cell(b.get(case))} | "
+                     f"{rob_cell(a.get(case))} |")
+        L += ["", "Busy minute, before: the failed part's DLQ record was 42 MB (full exception text in headers), "
+                  "Kafka refused it (`RecordTooLargeException`), so the record was retried forever and blocked its "
+                  "partition for later uploads. Fixed with `BoundedExceptionHeaders` (42,010,200 -> 9,681 header "
+                  "bytes in `BoundedExceptionHeadersTest`).", ""]
 
     L += ["## Other measured numbers", "",
           "| Metric | Value | How |", "|---|---|---|",

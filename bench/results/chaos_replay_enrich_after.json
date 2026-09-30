@@ -1,0 +1,75 @@
+{
+  "date": "2026-09-30T01:30:00+00:00",
+  "commit": "acc2660",
+  "file": "eval_mediumnoise.log",
+  "bytes": 5675836,
+  "part_target_bytes": 262144,
+  "runs": [
+    {
+      "scenario": "baseline",
+      "session": "1965bd18-0fd3-4245-bf12-7729ecb5beb8",
+      "events": [],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 77,
+        "metric_rows": 4260,
+        "metric_count_sum": 139485,
+        "findings": 5,
+        "finding_occurrences": 315,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 113,
+        "enriched_windows": 113,
+        "status": "DONE"
+      },
+      "redelivery_skip_logs": 0,
+      "jar": "current build"
+    },
+    {
+      "scenario": "replay_enrich",
+      "session": "4a7eae47-2035-4fe3-b2bf-56a4f66026bf",
+      "events": [
+        "rewound llm-workers on llm.enrich.requests to earliest"
+      ],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 77,
+        "metric_rows": 4260,
+        "metric_count_sum": 139485,
+        "findings": 5,
+        "finding_occurrences": 315,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 113,
+        "enriched_windows": 113,
+        "status": "DONE"
+      },
+      "reset_output": [
+        "GROUP                          TOPIC                          PARTITION  NEW-OFFSET     llm-workers                    llm.enrich.requests            2          0              llm-workers                    llm.enrich.requests            3          0              llm-workers                    llm.enrich.requests            0          0              llm-workers                    llm.enrich.requests            1          0"
+      ],
+      "reset_output_lines": 2,
+      "replay_drain_s": 132.3,
+      "llm_chat_calls_during_replay": 2484,
+      "embed_texts_during_replay": 1440,
+      "before_replay": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 77,
+        "metric_rows": 4260,
+        "metric_count_sum": 139485,
+        "findings": 5,
+        "finding_occurrences": 315,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 113,
+        "enriched_windows": 113,
+        "status": "DONE"
+      },
+      "skip_logs": 2379,
+      "redelivery_skip_logs": 2379,
+      "jar": "current build"
+    }
+  ]
+}

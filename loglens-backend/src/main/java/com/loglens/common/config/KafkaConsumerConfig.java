@@ -43,6 +43,9 @@ public class KafkaConsumerConfig {
         DeadLetterPublishingRecoverer dlqPublisher = new DeadLetterPublishingRecoverer(
             kafkaTemplate,
             (record, ex) -> new TopicPartition(dlqTopicFor(record.topic()), 0));
+        // bounded exception headers: an unbounded message can make the DLQ record exceed
+        // max.request.size, and a record that can't be dead-lettered blocks its partition
+        dlqPublisher.setExceptionHeadersCreator(new BoundedExceptionHeaders());
 
         DefaultErrorHandler handler = new DefaultErrorHandler(
             (record, ex) -> {

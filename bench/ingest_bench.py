@@ -157,6 +157,9 @@ def main():
         runs = json.load(open(args.out)).get("runs", [])
     for f in args.files.split(","):
         for conc in [int(x) for x in args.conc.split(",")]:
+            if any(x["file"] == os.path.basename(f) and x["heap_xmx"] == args.heap and x["part_concurrency"] == conc
+                   for x in runs):
+                continue  # already measured (resume after an interruption)
             r = run_one(f, args.heap, conc, [x for x in args.extra.split(" ") if x])
             r["date"] = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
             r["commit"] = git_sha()

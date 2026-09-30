@@ -8,6 +8,7 @@ recording when each status was first seen (the end-to-end timeline).
 from __future__ import annotations
 
 import json
+import os
 import time
 import uuid
 
@@ -15,7 +16,8 @@ import psycopg
 import requests
 
 API = "http://localhost:8080/api/v1"
-DB = "postgresql://loglens:loglens123@localhost:5434/loglens_db"
+# local docker-compose default (same as .env.example); override with DATABASE_URL
+DB = os.environ.get("DATABASE_URL", "postgresql://loglens:loglens123@localhost:5434/loglens_db")
 
 
 class Client:

@@ -20,8 +20,12 @@ EXPOSE 8080
 # - MaxMetaspaceSize: Limit metaspace to prevent growth
 # - ReservedCodeCacheSize: Limit JIT code cache
 # - Xss256k: Reduce thread stack size
+# - ExitOnOutOfMemoryError: an OOM inside a Kafka listener stops that listener container
+#   while HTTP keeps answering (a zombie: uploads stay CREATED). Exiting lets the platform
+#   restart the process and Kafka redeliver the uncommitted record.
 ENTRYPOINT ["java", \
     "-XX:+UseContainerSupport", \
+    "-XX:+ExitOnOutOfMemoryError", \
     "-XX:MaxRAMPercentage=50.0", \
     "-XX:+UseSerialGC", \
     "-XX:MaxMetaspaceSize=128m", \

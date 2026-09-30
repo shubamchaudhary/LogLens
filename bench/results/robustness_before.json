@@ -1,0 +1,125 @@
+{
+  "date": "2026-09-30T00:37:03+00:00",
+  "commit": "e166b26",
+  "heap": "256m",
+  "results": [
+    {
+      "case": "malformed_lines.log",
+      "bytes": 47574,
+      "status": "CORRELATING",
+      "error": null,
+      "seconds": 1.2,
+      "jvm_alive": true,
+      "chunks": 10,
+      "lines_stored": 686,
+      "app_errors": []
+    },
+    {
+      "case": "non_utf8.log",
+      "bytes": 34209,
+      "status": "CORRELATING",
+      "error": null,
+      "seconds": 0.6,
+      "jvm_alive": true,
+      "chunks": 10,
+      "lines_stored": 601,
+      "app_errors": []
+    },
+    {
+      "case": "nul_bytes.log",
+      "bytes": 34206,
+      "status": "PARSING",
+      "error": null,
+      "seconds": 300.4,
+      "jvm_alive": true,
+      "chunks": 0,
+      "lines_stored": 0,
+      "app_errors": [
+        "org.springframework.kafka.KafkaException: Seek to current after exception",
+        "Caused by: org.springframework.kafka.listener.ListenerExecutionFailedException: Listener method 'public void com.loglens.ingest.PartConsumer.onPart(com.loglens.common.messages.IngestPartRequest,org.springframework.kafka.support.Acknowledgment)' threw exception",
+        "Suppressed: org.springframework.kafka.listener.ListenerExecutionFailedException: Restored Stack Trace",
+        "Caused by: org.springframework.dao.DataIntegrityViolationException: PreparedStatementCallback; SQL [INSERT INTO log_chunks_s_b80bcba8_dd82_4d1e_a5eb_09d3ef9b5bc8 (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES (?, ?, ?,",
+        "Caused by: java.sql.BatchUpdateException: Batch entry 5 INSERT INTO log_chunks_s_b80bcba8_dd82_4d1e_a5eb_09d3ef9b5bc8 (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES ('a4f672b3-9b51-4165-9026-f983ab5cfff0'::uuid, 'a4722",
+        "Caused by: org.postgresql.util.PSQLException: ERROR: invalid byte sequence for encoding \"UTF8\": 0x00"
+      ]
+    },
+    {
+      "case": "empty.log",
+      "bytes": 0,
+      "status": "DONE",
+      "error": null,
+      "seconds": 0.6,
+      "jvm_alive": true,
+      "chunks": 0,
+      "lines_stored": 0,
+      "app_errors": []
+    },
+    {
+      "case": "archive.log.gz",
+      "bytes": 2649,
+      "status": "PARSING",
+      "error": null,
+      "seconds": 300.2,
+      "jvm_alive": true,
+      "chunks": 0,
+      "lines_stored": 0,
+      "app_errors": [
+        "org.springframework.kafka.KafkaException: Seek to current after exception",
+        "Caused by: org.springframework.kafka.listener.ListenerExecutionFailedException: Listener method 'public void com.loglens.ingest.PartConsumer.onPart(com.loglens.common.messages.IngestPartRequest,org.springframework.kafka.support.Acknowledgment)' threw exception",
+        "Suppressed: org.springframework.kafka.listener.ListenerExecutionFailedException: Restored Stack Trace",
+        "Caused by: org.springframework.dao.DataIntegrityViolationException: PreparedStatementCallback; SQL [INSERT INTO log_chunks_s_5bddc4c7_8d35_4105_99b2_a2ca0ebccbac (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES (?, ?, ?,",
+        "Caused by: java.sql.BatchUpdateException: Batch entry 0 INSERT INTO log_chunks_s_5bddc4c7_8d35_4105_99b2_a2ca0ebccbac (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES ('296dad90-bf51-4491-9153-abda0bda326f'::uuid, '75c5b",
+        "Caused by: org.postgresql.util.PSQLException: ERROR: invalid byte sequence for encoding \"UTF8\": 0x00"
+      ]
+    },
+    {
+      "case": "huge_single_line.log",
+      "bytes": 104857634,
+      "status": "CHUNKING",
+      "error": null,
+      "seconds": 301.5,
+      "jvm_alive": true,
+      "chunks": 0,
+      "lines_stored": 0,
+      "app_errors": [
+        "java.lang.OutOfMemoryError: Java heap space",
+        "java.util.concurrent.CompletionException: java.lang.OutOfMemoryError: Java heap space",
+        "Caused by: java.lang.OutOfMemoryError: Java heap space"
+      ]
+    },
+    {
+      "case": "busy_minute.log",
+      "bytes": 14148619,
+      "status": "FAILED",
+      "error": "Part 0 failed: PreparedStatementCallback; SQL [INSERT INTO log_chunks_s_405d20e7_7e22_4a36_9a92_668cebecfce4 (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES (?, ?, ?, ?, ?, ?, ?)]; Batch entry 0 INSERT INTO log_chunks_s_405d20e7_7e22_4a36_9a92_668cebecfce4 (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES ('b9e56b04-2502-4788-9f0b-0737391b9e74'::uuid, '09d012ee-247c-4407-bff2-3c2f9ed3b16a'::uuid, '2026-07-15 09:00:00+00'::timestamp with time zone, 1, 120000, '2026-07-15 09:00:00 INFO [gw] traceId=TR0000000837207 span=375ac5e11361 - GET /api/item/0 status=200 latency=64ms\n2026-07-15 09:00:00 INFO [gw] traceId=TR0000001179210 span=4b0c907ae14a - GET /api/item/1 status=200 latency=39ms\n2026-07-15 09:00:00 INFO [gw] traceId=TR0000002356477 span=0c04c9198cab - GET /api/item/2 status=200 latency=72ms\n2026-07-15 09:00:00 INFO [gw] traceId=TR000000342151 span=1d712036d03a - GET /api/item/3 status=200 latency=49ms\n2",
+      "seconds": 53.8,
+      "jvm_alive": true,
+      "chunks": 0,
+      "lines_stored": 0,
+      "app_errors": [
+        "org.springframework.kafka.KafkaException: Seek to current after exception",
+        "Caused by: org.springframework.kafka.listener.ListenerExecutionFailedException: Listener method 'public void com.loglens.ingest.PartConsumer.onPart(com.loglens.common.messages.IngestPartRequest,org.springframework.kafka.support.Acknowledgment)' threw exception",
+        "Suppressed: org.springframework.kafka.listener.ListenerExecutionFailedException: Restored Stack Trace",
+        "Caused by: org.springframework.dao.DataAccessResourceFailureException: PreparedStatementCallback; SQL [INSERT INTO log_chunks_s_405d20e7_7e22_4a36_9a92_668cebecfce4 (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES (?, ?,",
+        "Caused by: java.sql.BatchUpdateException: Batch entry 0 INSERT INTO log_chunks_s_405d20e7_7e22_4a36_9a92_668cebecfce4 (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES ('5cedcca8-c509-4cd7-b7a4-7a9713b3fe5f'::uuid, '09d01",
+        "Caused by: org.postgresql.util.PSQLException: ERROR: string is too long for tsvector (6708398 bytes, max 1048575 bytes)"
+      ],
+      "fresh_jvm": true
+    },
+    {
+      "case": "poison_message",
+      "dlq_offsets_before": "log.ingest.dlq:0:306",
+      "dlq_offsets_after": "log.ingest.dlq:0:307",
+      "next_upload_status": "DONE",
+      "app_errors": [
+        "org.springframework.kafka.KafkaException: Seek to current after exception",
+        "Caused by: org.springframework.kafka.listener.ListenerExecutionFailedException: Listener method 'public void com.loglens.ingest.PartConsumer.onPart(com.loglens.common.messages.IngestPartRequest,org.springframework.kafka.support.Acknowledgment)' threw exception",
+        "Suppressed: org.springframework.kafka.listener.ListenerExecutionFailedException: Restored Stack Trace",
+        "Caused by: org.springframework.dao.DataAccessResourceFailureException: PreparedStatementCallback; SQL [INSERT INTO log_chunks_s_405d20e7_7e22_4a36_9a92_668cebecfce4 (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES (?, ?,",
+        "Caused by: java.sql.BatchUpdateException: Batch entry 0 INSERT INTO log_chunks_s_405d20e7_7e22_4a36_9a92_668cebecfce4 (chunk_id, document_id, time_bucket, line_start, line_end, content, is_anomalous) VALUES ('c0833366-3d57-40fe-944d-e75f3bead3a9'::uuid, '09d01",
+        "Caused by: org.postgresql.util.PSQLException: ERROR: string is too long for tsvector (6708398 bytes, max 1048575 bytes)"
+      ],
+      "fresh_jvm": true
+    }
+  ]
+}

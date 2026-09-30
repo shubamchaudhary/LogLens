@@ -88,7 +88,12 @@ def app_errors(app: App, since: int) -> list[str]:
 def main():
     subprocess.run(["bash", "-c", "fuser -k 8080/tcp 8081/tcp 2>/dev/null"], check=False)
     time.sleep(2)
-    files = make_inputs()
+    from ingest_bench import clean_slate
+    clean_slate()  # skip any backlog an interrupted run left in Kafka
+    files = all_files = make_inputs()
+    only = [x for x in os.environ.get("ROBUST_ONLY", "").split(",") if x]
+    if only:  # rerun selected cases in a fresh JVM, merging into the existing results file
+        files = {k: v for k, v in files.items() if k in only}
     App.EXTRA = ["--loglens.embedding.enabled=false"]
     results = []
     app = App("robustness", heap="256m", conc=3).start()
@@ -116,7 +121,22 @@ def main():
                "app_errors": app_errors(app, since)}
         print(json.dumps(res), flush=True)
         results.append(res)
-    # poison message: not JSON at all, straight onto the parts topic
+    out_path = os.environ.get("ROBUST_OUT", os.path.join(HERE, "results", "robustness.json"))
+    if not only or "poison_message" in only:
+        results.append(poison_case(app, all_files))
+    app.stop()
+    if only:
+        for r in results:
+            r["fresh_jvm"] = True
+        old = json.load(open(out_path))["results"] if os.path.exists(out_path) else []
+        results = [r for r in old if r["case"] not in only] + results
+    out = {"date": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "commit": git_sha(),
+           "heap": "256m", "results": results}
+    json.dump(out, open(out_path, "w"), indent=2)
+
+
+def poison_case(app: App, files: dict[str, str]) -> dict:
+    """Not JSON at all, straight onto the parts topic; then check a normal upload still works."""
     since = os.path.getsize(app.log)
     before = kafka("kafka-get-offsets.sh", "--bootstrap-server", "localhost:9092", "--topic", "log.ingest.dlq")
     subprocess.run(["docker", "exec", "-i", "ll-kafka", "/opt/kafka/bin/kafka-console-producer.sh",
@@ -128,13 +148,10 @@ def main():
     sid = ok_after.create_session("after-poison")
     ok_after.upload(sid, files["malformed_lines.log"], "after-poison.log")
     tl = watch(sid, until=("ENRICHING", "DONE", "FAILED"), timeout_s=120)
-    results.append({"case": "poison_message", "dlq_offsets_before": before.strip(), "dlq_offsets_after": after.strip(),
-                    "next_upload_status": tl["final"]["status"], "app_errors": app_errors(app, since)})
-    print(json.dumps(results[-1]), flush=True)
-    app.stop()
-    out = {"date": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"), "commit": git_sha(),
-           "heap": "256m", "results": results}
-    json.dump(out, open(os.environ.get("ROBUST_OUT", os.path.join(HERE, "results", "robustness.json")), "w"), indent=2)
+    res = {"case": "poison_message", "dlq_offsets_before": before.strip(), "dlq_offsets_after": after.strip(),
+           "next_upload_status": tl["final"]["status"], "app_errors": app_errors(app, since)}
+    print(json.dumps(res), flush=True)
+    return res
 
 
 if __name__ == "__main__":
