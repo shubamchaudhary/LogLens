@@ -36,10 +36,18 @@ if [ "$($PY -c "import json;print(len(json.load(open('$R/parallelism.json'))['ru
   $PY bench/ingest_bench.py --files bench/.work/data/bench_1g.log --heap 1g --conc 1,2,4,8 --out $R/parallelism.json
   log "parallelism done"
 fi
-if [ ! -f $R/chaos_before_replay.json ]; then
+# enrich replay to lag 0 on the pre-fix jar and on the current one (chaos.py counts stub LLM calls)
+if [ ! -f $R/chaos_replay_enrich_before.json ]; then
   stop_app
-  JAR=bench/.work/loglens-before.jar CHAOS_OUT=$R/chaos_before_replay.json \
+  JAR=bench/.work/loglens-before.jar CHAOS_OUT=$R/chaos_replay_enrich_before.json \
     $PY bench/chaos.py --file evals/datasets/synthetic/eval_mediumnoise.log --scenarios baseline,replay_enrich
-  log "chaos-before replay done"
+  log "replay before done"
 fi
+if [ ! -f $R/chaos_replay_enrich_after.json ]; then
+  stop_app
+  CHAOS_OUT=$R/chaos_replay_enrich_after.json \
+    $PY bench/chaos.py --file evals/datasets/synthetic/eval_mediumnoise.log --scenarios baseline,replay_enrich
+  log "replay after done"
+fi
+$PY bench/make_report.py > /dev/null && log "BENCHMARKS.md rendered"
 log "queue finished"
