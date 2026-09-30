@@ -118,7 +118,19 @@ def main():
           "Status | Redelivery skips logged |", "|---|---|---|---|---|---|---|---|---|---|"]
     L += chaos_rows(load("chaos_before.json"), "before fixes (`85ae40a`)")
     L += chaos_rows(load("chaos_after.json"), "after fixes")
-    L += chaos_rows(load("chaos_before_replay.json"), "before fixes, replay")
+    rb, ra = load("chaos_replay_enrich_before.json"), load("chaos_replay_enrich_after.json")
+    if rb or ra:
+        L += ["", "### Replaying `llm.enrich.requests` from offset 0 (rewind the group, restart, wait for lag 0)", "",
+              "| Jar | LLM chat calls during replay | Finding occurrences before -> after | Enriched windows "
+              "before -> after | Status | Drain s | Skip logs |", "|---|---|---|---|---|---|---|"]
+        for doc, label in ((rb, "before fixes (`85ae40a`)"), (ra, "after fixes")):
+            for r in (doc or {}).get("runs", []):
+                if r["scenario"] != "replay_enrich":
+                    continue
+                b, x = r["before_replay"], r["result"]
+                L.append(f"| {label} | {r.get('llm_chat_calls_during_replay', '-')} | {b['finding_occurrences']} -> "
+                         f"{x['finding_occurrences']} | {b['enriched_windows']} -> {x['enriched_windows']} | "
+                         f"{x['status']} | {r.get('replay_drain_s', '-')} | {r.get('skip_logs', '-')} |")
     L += ["", "Notes: before/after baselines differ in metric sum and occurrences because the anomaly gate changed "
               "(robust mode flags 77 windows instead of 155). What matters is each scenario vs its own baseline.",
           "`replay_ingest_before_part_fix`: data unchanged, but the replay later flipped 4 DONE sessions to FAILED "
