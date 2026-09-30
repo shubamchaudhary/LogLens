@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Second half of the benchmark queue (after run_all.sh's ingest runs): robustness with the
 # jar before the 73c1fbd fixes and after them, vector isolation, parallelism, and the
-# enrich-replay chaos scenario on the pre-fix jar. A step whose result file exists is
+# enrich-replay chaos scenario on the pre-fix and current jar. A step whose result file exists is
 # skipped, so the queue can be restarted after an interruption.
 set -u
 cd "$(dirname "$0")/.."
