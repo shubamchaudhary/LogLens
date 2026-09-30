@@ -1,6 +1,6 @@
 # Anomaly detection and LLM gating eval (loglens.anomaly.mode=robust)
 
-- Date: 2026-09-29T21:45:53+00:00  |  Commit: `d0e01c1-dirty`  |  LLM calls made: 0  |  Cost: $0
+- Date: 2026-09-30T00:40:46+00:00  |  Commit: `297298b`  |  LLM calls made: 0  |  Cost: $0
 - Config: window 60s, max 5000 chars/LLM call, WARN burst >= 5, latency > 3.0x corpus p95
 - How: production chunker + parsers + AnomalyDetector run by `WindowEvalCli`; scored by this script.
 
@@ -58,5 +58,5 @@
 | 1 | 120 | 26.7% | 71.5% | 0.812 | 0.867 |
 | 2 | 120 | 25.0% | 73.3% | 0.867 | 0.867 |
 | 5 | 120 | 24.2% | 72.6% | 0.897 | 0.867 |
-| 20 | 120 | 21.7% | 75.3% | 1.0 | 0.867 |
-| 50 | 120 | 22.5% | 74.4% | 0.963 | 0.867 |
+| 20 | 121 | 22.3% | 75.3% | 1.0 | 0.871 |
+| 50 | 245 | 24.1% | 74.3% | 0.898 | 0.869 |
