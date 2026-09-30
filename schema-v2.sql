@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS enrich_work_done (
 );
 CREATE INDEX IF NOT EXISTS idx_enrich_work_session ON enrich_work_done(session_id);
 
--- ── Applying to an EXISTING (v2) database — run these once: ──────────────────
+-- ── Applying to an EXISTING (v2) database — run these once (the 2026-09-30 part is in migration_2026_09_30_exactly_once.sql): ──
 -- ALTER TABLE documents ADD COLUMN IF NOT EXISTS total_parts  INTEGER NOT NULL DEFAULT 0;
 -- ALTER TABLE documents ADD COLUMN IF NOT EXISTS parsed_parts INTEGER NOT NULL DEFAULT 0;
 -- ALTER TABLE incidents ADD COLUMN IF NOT EXISTS grounded BOOLEAN, ADD COLUMN IF NOT EXISTS judge_reason TEXT;
