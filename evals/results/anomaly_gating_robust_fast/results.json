@@ -2,8 +2,8 @@
   "meta": {
     "eval": "anomaly_gating",
     "mode": "robust",
-    "date": "2026-09-29T22:02:12+00:00",
-    "commit": "42bdb4a",
+    "date": "2026-09-30T00:43:02+00:00",
+    "commit": "ea63eaa-dirty",
     "fast": true,
     "llm_calls_made": 0,
     "cost_usd": 0.0,
