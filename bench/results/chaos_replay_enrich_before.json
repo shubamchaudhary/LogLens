@@ -1,0 +1,75 @@
+{
+  "date": "2026-09-30T01:18:18+00:00",
+  "commit": "acc2660",
+  "file": "eval_mediumnoise.log",
+  "bytes": 5675836,
+  "part_target_bytes": 262144,
+  "runs": [
+    {
+      "scenario": "baseline",
+      "session": "87c3dddd-0a58-44f3-982a-855bae7c770e",
+      "events": [],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 155,
+        "metric_rows": 3173,
+        "metric_count_sum": 134485,
+        "findings": 5,
+        "finding_occurrences": 621,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 191,
+        "enriched_windows": 191,
+        "status": "DONE"
+      },
+      "redelivery_skip_logs": 0,
+      "jar": "bench/.work/loglens-before.jar"
+    },
+    {
+      "scenario": "replay_enrich",
+      "session": "83db160e-7b0d-4cc6-8fa7-632429996cce",
+      "events": [
+        "rewound llm-workers on llm.enrich.requests to earliest"
+      ],
+      "result": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 155,
+        "metric_rows": 3173,
+        "metric_count_sum": 134485,
+        "findings": 5,
+        "finding_occurrences": 1242,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 191,
+        "enriched_windows": 382,
+        "status": "DONE"
+      },
+      "reset_output": [
+        "GROUP                          TOPIC                          PARTITION  NEW-OFFSET     llm-workers                    llm.enrich.requests            2          0              llm-workers                    llm.enrich.requests            3          0              llm-workers                    llm.enrich.requests            0          0              llm-workers                    llm.enrich.requests            1          0"
+      ],
+      "reset_output_lines": 2,
+      "replay_drain_s": 584.1,
+      "llm_chat_calls_during_replay": 8820,
+      "embed_texts_during_replay": 6814,
+      "before_replay": {
+        "chunks": 360,
+        "embedded": 360,
+        "anomalous": 155,
+        "metric_rows": 3173,
+        "metric_count_sum": 134485,
+        "findings": 5,
+        "finding_occurrences": 621,
+        "line_sum": 43703,
+        "duplicate_line_starts": 0,
+        "total_windows": 191,
+        "enriched_windows": 191,
+        "status": "DONE"
+      },
+      "skip_logs": 0,
+      "redelivery_skip_logs": 0,
+      "jar": "bench/.work/loglens-before.jar"
+    }
+  ]
+}
