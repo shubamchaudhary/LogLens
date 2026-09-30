@@ -48,7 +48,7 @@ xychart-beta
 
 ## Vector isolation: shared table + filter vs per-session tables
 
-120,000 vectors, 384-d (bge-small-en-v1.5 (ONNX)), HNSW m=16 ef_construction=64, pgvector 0.8.0. Recall@10 against exact search over the session's own rows; 50 queries per session (held-out lines of that session).
+120,000 vectors, 384-d (bge-small-en-v1.5 (ONNX)), HNSW m=16 ef_construction=64, pgvector 0.8.0. Tie-aware recall@10 against exact search over the session's own rows; 50 queries per session (held-out lines of that session).
 
 | Session (share of table) | Layout | ef_search | Recall@10 | Avg rows returned | p50 ms | p95 ms |
 |---|---|---|---|---|---|---|
@@ -149,6 +149,15 @@ Each scenario ingests the 6 h medium-noise archive (5.7 MB, small 256 KB parts s
 | after fixes | replay_ingest | 360 | 43703 | 0 | 139485 | 315 | 113/113 | DONE | 266 |
 | after fixes | replay_enrich | 360 | 43703 | 0 | 139485 | 315 | 113/113 | DONE | 1970 |
 | after fixes | rebalance | 360 | 43703 | 0 | 139485 | 315 | 113/113 | DONE | 1 |
+
+### Replaying `llm.enrich.requests` from offset 0 (rewind the group, restart, wait for lag 0)
+
+| Jar | LLM chat calls during replay | Finding occurrences before -> after | Enriched windows before -> after | Status | Drain s | Skip logs |
+|---|---|---|---|---|---|---|
+| before fixes (`85ae40a`) | 8820 | 621 -> 1242 | 191 -> 382 | DONE | 584.1 | 0 |
+| after fixes | 2484 | 315 -> 315 | 113 -> 113 | DONE | 132.3 | 2379 |
+
+The replay covers every item in the topic, including other sessions. After the fixes the measured session is unchanged and 2,379 items are skipped by their `enrich_work_done` marker; the remaining LLM calls are items the pre-fix jar had processed, which have no marker (a replay across the deploy boundary re-runs them: backfill markers first). Those older sessions end at 573 of 191 windows.
 
 Notes: before/after baselines differ in metric sum and occurrences because the anomaly gate changed (robust mode flags 77 windows instead of 155). What matters is each scenario vs its own baseline.
 `replay_ingest_before_part_fix`: data unchanged, but the replay later flipped 4 DONE sessions to FAILED (fixed in `c5ea7d9`, see `ExactlyOnceIT.replayAfterTheStagedBlobIsDeletedIsASilentNoOp`).

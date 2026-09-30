@@ -99,7 +99,7 @@ def main():
     if vec:
         L += ["## Vector isolation: shared table + filter vs per-session tables", "",
               f"{vec['vectors']:,} vectors, {vec['dim']}-d ({vec['embed_model']}), HNSW m=16 ef_construction=64, "
-              f"pgvector {vec['pgvector']}. Recall@10 against exact search over the session's own rows; 50 queries "
+              f"pgvector {vec['pgvector']}. Tie-aware recall@10 against exact search over the session's own rows; 50 queries "
               "per session (held-out lines of that session).", "",
               "| Session (share of table) | Layout | ef_search | Recall@10 | Avg rows returned | p50 ms | p95 ms |",
               "|---|---|---|---|---|---|---|"]
@@ -131,6 +131,10 @@ def main():
                 L.append(f"| {label} | {r.get('llm_chat_calls_during_replay', '-')} | {b['finding_occurrences']} -> "
                          f"{x['finding_occurrences']} | {b['enriched_windows']} -> {x['enriched_windows']} | "
                          f"{x['status']} | {r.get('replay_drain_s', '-')} | {r.get('skip_logs', '-')} |")
+        L += ["", "The replay covers every item in the topic, including other sessions. After the fixes the measured "
+                  "session is unchanged and 2,379 items are skipped by their `enrich_work_done` marker; the remaining "
+                  "LLM calls are items the pre-fix jar had processed, which have no marker (a replay across the deploy "
+                  "boundary re-runs them: backfill markers first). Those older sessions end at 573 of 191 windows."]
     L += ["", "Notes: before/after baselines differ in metric sum and occurrences because the anomaly gate changed "
               "(robust mode flags 77 windows instead of 155). What matters is each scenario vs its own baseline.",
           "`replay_ingest_before_part_fix`: data unchanged, but the replay later flipped 4 DONE sessions to FAILED "
