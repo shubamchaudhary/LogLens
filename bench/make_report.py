@@ -151,6 +151,9 @@ def main():
             return (f"DLQ offsets {x['dlq_offsets_before']} -> {x['dlq_offsets_after']}; "
                     f"next upload {x['next_upload_status']}")
         note = (x.get("error") or "; ".join(x.get("app_errors", [])[:1]) or "").replace("|", "/")[:140]
+        if x["status"] in ("CREATED", "CHUNKING", "PARSING") and x["seconds"] >= 299:
+            return (f"**stuck in {x['status']}** (still there at the 300 s timeout), chunks {x['chunks']}"
+                    f"{': ' + note if note else ''}")
         return (f"**{x['status']}** in {x['seconds']} s, chunks {x['chunks']}, lines {x['lines_stored']}"
                 f"{', JVM died' if not x['jvm_alive'] else ''}{': ' + note if note else ''}")
 
@@ -160,14 +163,18 @@ def main():
         b, a = idx(before), idx(after)
         L += ["## Robustness: bad inputs (-Xmx256m)", "",
               "Before = jar built at `c5ea7d9`; after = current code (`73c1fbd` line caps, NUL handling, gzip "
-              "check, chunk caps + the NUL-safe failure marker). A good outcome is a clear final state: parsed "
-              "(ENRICHING/CORRELATING/DONE) or FAILED with a reason, never stuck.", "",
+              "check, chunk caps + the NUL-safe failure marker and bounded DLQ headers). A good outcome is a clear "
+              "final state: parsed (ENRICHING/CORRELATING/DONE) or FAILED with a reason, never stuck. Busy minute and "
+              "poison (before) ran in a fresh JVM, because the huge-line OOM had stopped the split consumer.", "",
               "| Case | Bytes | Before | After |", "|---|---|---|---|"]
         for case in list(dict.fromkeys(list(b) + list(a))):
             size = (b.get(case) or a.get(case)).get("bytes")
             L.append(f"| {case} | {f'{size:,}' if size is not None else '-'} | {rob_cell(b.get(case))} | "
                      f"{rob_cell(a.get(case))} |")
-        L.append("")
+        L += ["", "Busy minute, before: the failed part's DLQ record was 42 MB (full exception text in headers), "
+                  "Kafka refused it (`RecordTooLargeException`), so the record was retried forever and blocked its "
+                  "partition for later uploads. Fixed with `BoundedExceptionHeaders` (42,010,200 -> 9,681 header "
+                  "bytes in `BoundedExceptionHeadersTest`).", ""]
 
     L += ["## Other measured numbers", "",
           "| Metric | Value | How |", "|---|---|---|",

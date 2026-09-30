@@ -163,18 +163,20 @@ The replay rows in this table waited a fixed 40 s after the restart (enough to s
 
 ## Robustness: bad inputs (-Xmx256m)
 
-Before = jar built at `c5ea7d9`; after = current code (`73c1fbd` line caps, NUL handling, gzip check, chunk caps + the NUL-safe failure marker). A good outcome is a clear final state: parsed (ENRICHING/CORRELATING/DONE) or FAILED with a reason, never stuck.
+Before = jar built at `c5ea7d9`; after = current code (`73c1fbd` line caps, NUL handling, gzip check, chunk caps + the NUL-safe failure marker and bounded DLQ headers). A good outcome is a clear final state: parsed (ENRICHING/CORRELATING/DONE) or FAILED with a reason, never stuck. Busy minute and poison (before) ran in a fresh JVM, because the huge-line OOM had stopped the split consumer.
 
 | Case | Bytes | Before | After |
 |---|---|---|---|
 | malformed_lines.log | 47,574 | **CORRELATING** in 1.2 s, chunks 10, lines 686 | **CORRELATING** in 0.6 s, chunks 10, lines 686 |
 | non_utf8.log | 34,209 | **CORRELATING** in 0.6 s, chunks 10, lines 601 | **DONE** in 0.6 s, chunks 10, lines 601 |
-| nul_bytes.log | 34,206 | **PARSING** in 300.4 s, chunks 0, lines 0: org.springframework.kafka.KafkaException: Seek to current after exception | **DONE** in 0.6 s, chunks 10, lines 601 |
+| nul_bytes.log | 34,206 | **stuck in PARSING** (still there at the 300 s timeout), chunks 0: org.springframework.kafka.KafkaException: Seek to current after exception | **DONE** in 0.6 s, chunks 10, lines 601 |
 | empty.log | 0 | **DONE** in 0.6 s, chunks 0, lines 0 | **DONE** in 0.6 s, chunks 0, lines 0 |
-| archive.log.gz | 2,649 | **PARSING** in 300.2 s, chunks 0, lines 0: org.springframework.kafka.KafkaException: Seek to current after exception | **FAILED** in 0.6 s, chunks 0, lines 0: Ingest failed: Compressed archive (gzip/zip) is not supported: upload the plain-text log |
-| huge_single_line.log | 104,857,634 | **CHUNKING** in 301.5 s, chunks 0, lines 0: java.lang.OutOfMemoryError: Java heap space | **DONE** in 7.7 s, chunks 1, lines 1 |
+| archive.log.gz | 2,649 | **stuck in PARSING** (still there at the 300 s timeout), chunks 0: org.springframework.kafka.KafkaException: Seek to current after exception | **FAILED** in 0.6 s, chunks 0, lines 0: Ingest failed: Compressed archive (gzip/zip) is not supported: upload the plain-text log |
+| huge_single_line.log | 104,857,634 | **stuck in CHUNKING** (still there at the 300 s timeout), chunks 0: java.lang.OutOfMemoryError: Java heap space | **DONE** in 7.7 s, chunks 1, lines 1 |
 | busy_minute.log | 14,148,619 | **FAILED** in 53.8 s, chunks 0, lines 0: Part 0 failed: PreparedStatementCallback; SQL [INSERT INTO log_chunks_s_405d20e7_7e22_4a36_9a92_668cebecfce4 (chunk_id, document_id, time_bu | **DONE** in 17.5 s, chunks 60, lines 120000 |
 | poison_message | - | DLQ offsets log.ingest.dlq:0:306 -> log.ingest.dlq:0:307; next upload DONE | DLQ offsets log.ingest.dlq:0:305 -> log.ingest.dlq:0:306; next upload DONE |
+
+Busy minute, before: the failed part's DLQ record was 42 MB (full exception text in headers), Kafka refused it (`RecordTooLargeException`), so the record was retried forever and blocked its partition for later uploads. Fixed with `BoundedExceptionHeaders` (42,010,200 -> 9,681 header bytes in `BoundedExceptionHeadersTest`).
 
 ## Other measured numbers
 
