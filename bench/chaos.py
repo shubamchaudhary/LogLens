@@ -63,6 +63,8 @@ class App:
         self.max_kills = 0
 
     def start(self):
+        # this run's lines start here (the log file is appended across runs)
+        self.log_start = os.path.getsize(self.log) if os.path.exists(self.log) else 0
         env = dict(os.environ, PORT=str(self.port))
         self.proc = subprocess.Popen([os.path.join(HERE, "run_app.sh"), self.heap, str(self.conc), self.log] + App.EXTRA,
                                      cwd=ROOT, env=env, start_new_session=True)
@@ -133,9 +135,31 @@ def snapshot(session_id: str) -> dict:
 
 
 def count_log(app: App, pattern: str) -> int:
+    """Matching lines written by this App run only."""
     rx = re.compile(pattern)
     with open(app.log, errors="replace") as f:
+        f.seek(getattr(app, "log_start", 0))
         return sum(1 for ln in f if rx.search(ln))
+
+
+def stub_stats() -> dict:
+    try:
+        return requests.get("http://127.0.0.1:8089/stats", timeout=5).json()
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def wait_lag_zero(group: str, topic: str, timeout_s: int = 900) -> float:
+    """Seconds until every partition of topic has lag 0 for group (after a replay rewind)."""
+    t0 = time.time()
+    time.sleep(10)
+    while time.time() - t0 < timeout_s:
+        out = kafka("kafka-consumer-groups.sh", "--bootstrap-server", "localhost:9092", "--describe", "--group", group)
+        lags = [ln.split()[5] for ln in out.splitlines() if len(ln.split()) > 5 and ln.split()[1] == topic]
+        if lags and all(x == "0" for x in lags):
+            return round(time.time() - t0, 1)
+        time.sleep(5)
+    return -1.0
 
 
 def run_scenario(name: str, file: str, kills: int) -> dict:
@@ -199,8 +223,13 @@ def run_scenario(name: str, file: str, kills: int) -> dict:
         extra["reset_output"] = out.strip().splitlines()[-3:]
         events.append(f"rewound {group} on {topic} to earliest")
         extra["reset_output_lines"] = len(out.splitlines())
+        calls_before = stub_stats()
         app = App(name + "-replay").start()
-        time.sleep(40)
+        extra["replay_drain_s"] = wait_lag_zero(group, topic)
+        time.sleep(5)
+        calls_after = stub_stats()
+        extra["llm_chat_calls_during_replay"] = calls_after.get("chat_calls", 0) - calls_before.get("chat_calls", 0)
+        extra["embed_texts_during_replay"] = calls_after.get("embed_texts", 0) - calls_before.get("embed_texts", 0)
         snap = snapshot(sid)
         extra["before_replay"] = before
         extra["skip_logs"] = count_log(app, r"already (processed|committed).*skipping")
