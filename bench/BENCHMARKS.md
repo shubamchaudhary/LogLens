@@ -4,7 +4,7 @@ All numbers come from the scripts in this folder, run against the **real backend
 
 **Hardware:** 4 vCPU Intel Xeon @ 2.10 GHz, 15 GB RAM, one VM shared by app + Postgres + Kafka + MinIO. **JVM:** OpenJDK 21.0.10, SerialGC (as in the production Dockerfile).
 
-Reproduce: `docker compose up -d`, `bench/fetch_model.sh`, `python bench/llm_stub.py --embed bge &`, then `bash bench/run_all.sh`. Data: `evals/generate_corpus.py` (seeded; 20 lines/s Spring-style logs).
+Reproduce: `docker compose up -d`, `bench/fetch_model.sh`, `python bench/llm_stub.py --embed bge &`, then `bash bench/run_all.sh` (the ingest runs, then `run_rest.sh`; finished steps are skipped). Data: `evals/generate_corpus.py` (seeded; 20 lines/s Spring-style logs).
 
 ## Ingest throughput and heap (fixed -Xmx256m, part-concurrency 3)
 
@@ -25,6 +25,25 @@ xychart-beta
   x-axis ["100m", "500m", "1g", "2g"]
   y-axis "MB" 0 --> 256
   bar [76, 91, 92, 81]
+```
+
+## Parallelism (1 GB file, -Xmx1g, 8 partitions, 4 vCPUs)
+
+| part-concurrency | Ingest s | MB/s | Speed-up | Lines/s | Live set after full GC, max / median MB | Peak heap used MB | Peak RSS MB |
+|---|---|---|---|---|---|---|---|
+| 1 | 1235.59 | 0.81 | 1.00x | 6,293 | 56 / 52 | 133.0 | 515.4 |
+| 2 | 742.55 | 1.35 | 1.67x | 10,472 | 81 / 63 | 199.2 | 570.9 |
+| 4 | 465.94 | 2.15 | 2.65x | 16,689 | 111 / 90 | 272.6 | 617.7 |
+| 8 | 444.79 | 2.25 | 2.78x | 17,483 | 163 / 116 | 398.4 | 806.3 |
+
+Throughput stops scaling at the number of vCPUs (regex parsing is CPU-bound and shares the box with Postgres and Kafka); the live set grows with part-concurrency, not with file size.
+
+```mermaid
+xychart-beta
+  title "Ingest throughput vs part-concurrency, 1 GB"
+  x-axis ["1 consumers", "2 consumers", "4 consumers", "8 consumers"]
+  y-axis "MB/s" 0 --> 3
+  bar [0.81, 1.35, 2.15, 2.25]
 ```
 
 ## Exactly-once effects under fault injection (`chaos.py`)
@@ -49,6 +68,21 @@ Each scenario ingests the 6 h medium-noise archive (5.7 MB, small 256 KB parts s
 
 Notes: before/after baselines differ in metric sum and occurrences because the anomaly gate changed (robust mode flags 77 windows instead of 155). What matters is each scenario vs its own baseline.
 `replay_ingest_before_part_fix`: data unchanged, but the replay later flipped 4 DONE sessions to FAILED (fixed in `c5ea7d9`, see `ExactlyOnceIT.replayAfterTheStagedBlobIsDeletedIsASilentNoOp`).
+
+## Robustness: bad inputs (-Xmx256m)
+
+Before = jar built at `c5ea7d9`; after = current code (`73c1fbd` line caps, NUL handling, gzip check, chunk caps + the NUL-safe failure marker). A good outcome is a clear final state: parsed (ENRICHING/CORRELATING/DONE) or FAILED with a reason, never stuck.
+
+| Case | Bytes | Before | After |
+|---|---|---|---|
+| malformed_lines.log | 47,574 | **CORRELATING** in 1.2 s, chunks 10, lines 686 | **CORRELATING** in 0.6 s, chunks 10, lines 686 |
+| non_utf8.log | 34,209 | **CORRELATING** in 0.6 s, chunks 10, lines 601 | **DONE** in 0.6 s, chunks 10, lines 601 |
+| nul_bytes.log | 34,206 | **PARSING** in 300.4 s, chunks 0, lines 0: org.springframework.kafka.KafkaException: Seek to current after exception | **DONE** in 0.6 s, chunks 10, lines 601 |
+| empty.log | 0 | **DONE** in 0.6 s, chunks 0, lines 0 | **DONE** in 0.6 s, chunks 0, lines 0 |
+| archive.log.gz | 2,649 | **PARSING** in 300.2 s, chunks 0, lines 0: org.springframework.kafka.KafkaException: Seek to current after exception | **FAILED** in 0.6 s, chunks 0, lines 0: Ingest failed: Compressed archive (gzip/zip) is not supported: upload the plain-text log |
+| huge_single_line.log | 104,857,634 | **CHUNKING** in 301.5 s, chunks 0, lines 0: java.lang.OutOfMemoryError: Java heap space | **DONE** in 7.7 s, chunks 1, lines 1 |
+| busy_minute.log | 14,148,619 | **CREATED** in 300.8 s, chunks 0, lines 0 | **DONE** in 17.5 s, chunks 60, lines 120000 |
+| poison_message | - | DLQ offsets log.ingest.dlq:0:304 -> log.ingest.dlq:0:305; next upload CREATED | DLQ offsets log.ingest.dlq:0:305 -> log.ingest.dlq:0:306; next upload DONE |
 
 ## Other measured numbers
 

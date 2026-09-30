@@ -80,12 +80,20 @@ def main():
 
     par = load("parallelism.json")
     if par:
-        L += ["## Parallelism (1 GB file, -Xmx1g, 8 partitions)", "",
-              "| part-concurrency | Ingest s | MB/s | Lines/s | Peak heap MB |", "|---|---|---|---|---|"]
-        for r in par["runs"]:
-            L.append(f"| {r['part_concurrency']} | {r['ingest_s']} | {r['mb_per_s']} | {r['lines_per_s']:,} | "
-                     f"{r['peak_heap_used_mb']} |")
-        L.append("")
+        runs = sorted(par["runs"], key=lambda r: r["part_concurrency"])
+        base = runs[0]["mb_per_s"]
+        L += ["## Parallelism (1 GB file, -Xmx1g, 8 partitions, 4 vCPUs)", "",
+              "| part-concurrency | Ingest s | MB/s | Speed-up | Lines/s | Live set after full GC, max / median MB | "
+              "Peak heap used MB | Peak RSS MB |", "|---|---|---|---|---|---|---|---|"]
+        for r in runs:
+            live_max, live_med = full_gc_live_set(r)
+            L.append(f"| {r['part_concurrency']} | {r['ingest_s']} | {r['mb_per_s']} | {r['mb_per_s'] / base:.2f}x | "
+                     f"{r['lines_per_s']:,} | {live_max} / {live_med} | {r['peak_heap_used_mb']} | {r['peak_rss_mb']} |")
+        L += ["", "Throughput stops scaling at the number of vCPUs (regex parsing is CPU-bound and shares the box "
+                  "with Postgres and Kafka); the live set grows with part-concurrency, not with file size.", "",
+              "```mermaid", "xychart-beta", '  title "Ingest throughput vs part-concurrency, 1 GB"',
+              f"  x-axis [{', '.join(chr(34) + str(r['part_concurrency']) + ' consumers' + chr(34) for r in runs)}]", '  y-axis "MB/s" 0 --> 3',
+              f"  bar [{', '.join(str(r['mb_per_s']) for r in runs)}]", "```", ""]
 
     vec = load("vector_isolation.json")
     if vec:

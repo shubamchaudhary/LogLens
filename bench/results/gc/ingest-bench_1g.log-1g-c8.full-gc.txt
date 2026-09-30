@@ -1,0 +1,50 @@
+[1.558s][info][gc,start    ] GC(12) Pause Full (Metadata GC Threshold)
+[1.589s][info][gc             ] GC(12) Pause Full (Metadata GC Threshold) 23M->12M(61M) 30.575ms
+[2.931s][info][gc,start       ] GC(23) Pause Full (Metadata GC Threshold)
+[2.978s][info][gc             ] GC(23) Pause Full (Metadata GC Threshold) 32M->20M(61M) 46.563ms
+[4.441s][info][gc,start       ] GC(39) Pause Full (Metadata GC Threshold)
+[4.498s][info][gc             ] GC(39) Pause Full (Metadata GC Threshold) 35M->25M(61M) 57.616ms
+[7.413s][info][gc,start       ] GC(63) Pause Full (Allocation Failure)
+[7.517s][info][gc             ] GC(63) Pause Full (Allocation Failure) 45M->40M(98M) 103.565ms
+[110.863s][info][gc,start       ] GC(1243) Pause Full (Allocation Failure)
+[111.017s][info][gc             ] GC(1243) Pause Full (Allocation Failure) 72M->72M(166M) 154.510ms
+[123.681s][info][gc,start       ] GC(1322) Pause Full (Allocation Failure)
+[123.830s][info][gc             ] GC(1322) Pause Full (Allocation Failure) 122M->117M(282M) 149.393ms
+[127.022s][info][gc,start       ] GC(1336) Pause Full (Allocation Failure)
+[127.197s][info][gc             ] GC(1336) Pause Full (Allocation Failure) 214M->163M(395M) 175.635ms
+[141.506s][info][gc,start       ] GC(1374) Pause Full (Allocation Failure)
+[141.676s][info][gc             ] GC(1374) Pause Full (Allocation Failure) 286M->112M(395M) 169.647ms
+[156.571s][info][gc,start       ] GC(1415) Pause Full (Allocation Failure)
+[156.742s][info][gc             ] GC(1415) Pause Full (Allocation Failure) 285M->130M(395M) 170.772ms
+[171.589s][info][gc,start       ] GC(1455) Pause Full (Allocation Failure)
+[171.748s][info][gc             ] GC(1455) Pause Full (Allocation Failure) 283M->121M(395M) 159.120ms
+[186.784s][info][gc,start       ] GC(1497) Pause Full (Allocation Failure)
+[186.950s][info][gc             ] GC(1497) Pause Full (Allocation Failure) 277M->125M(395M) 165.521ms
+[205.301s][info][gc,start       ] GC(1544) Pause Full (Allocation Failure)
+[205.452s][info][gc             ] GC(1544) Pause Full (Allocation Failure) 277M->110M(395M) 150.850ms
+[223.979s][info][gc,start       ] GC(1593) Pause Full (Allocation Failure)
+[224.143s][info][gc             ] GC(1593) Pause Full (Allocation Failure) 282M->111M(395M) 163.971ms
+[241.050s][info][gc,start       ] GC(1637) Pause Full (Allocation Failure)
+[241.227s][info][gc             ] GC(1637) Pause Full (Allocation Failure) 285M->131M(395M) 176.793ms
+[257.168s][info][gc,start       ] GC(1681) Pause Full (Allocation Failure)
+[257.339s][info][gc             ] GC(1681) Pause Full (Allocation Failure) 274M->133M(395M) 171.540ms
+[279.756s][info][gc,start       ] GC(1739) Pause Full (Allocation Failure)
+[279.926s][info][gc             ] GC(1739) Pause Full (Allocation Failure) 296M->119M(395M) 169.828ms
+[296.289s][info][gc,start       ] GC(1784) Pause Full (Allocation Failure)
+[296.446s][info][gc             ] GC(1784) Pause Full (Allocation Failure) 276M->114M(395M) 156.968ms
+[312.955s][info][gc,start       ] GC(1828) Pause Full (Allocation Failure)
+[313.141s][info][gc             ] GC(1828) Pause Full (Allocation Failure) 284M->124M(395M) 185.304ms
+[329.596s][info][gc,start       ] GC(1871) Pause Full (Allocation Failure)
+[329.746s][info][gc             ] GC(1871) Pause Full (Allocation Failure) 279M->114M(395M) 150.184ms
+[352.277s][info][gc,start       ] GC(1926) Pause Full (Allocation Failure)
+[352.439s][info][gc             ] GC(1926) Pause Full (Allocation Failure) 283M->100M(395M) 162.058ms
+[370.042s][info][gc,start       ] GC(1973) Pause Full (Allocation Failure)
+[370.209s][info][gc             ] GC(1973) Pause Full (Allocation Failure) 282M->126M(395M) 167.168ms
+[391.828s][info][gc,start       ] GC(2027) Pause Full (Allocation Failure)
+[391.989s][info][gc             ] GC(2027) Pause Full (Allocation Failure) 280M->116M(395M) 160.664ms
+[407.303s][info][gc,start       ] GC(2066) Pause Full (Allocation Failure)
+[407.453s][info][gc             ] GC(2066) Pause Full (Allocation Failure) 298M->123M(395M) 149.609ms
+[424.955s][info][gc,start       ] GC(2112) Pause Full (Allocation Failure)
+[425.099s][info][gc             ] GC(2112) Pause Full (Allocation Failure) 291M->92M(395M) 143.484ms
+[446.833s][info][gc,start       ] GC(2163) Pause Full (Allocation Failure)
+[446.951s][info][gc             ] GC(2163) Pause Full (Allocation Failure) 273M->65M(395M) 118.191ms
