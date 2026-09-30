@@ -91,8 +91,8 @@ def main():
                      f"{r['lines_per_s']:,} | {live_max} / {live_med} | {r['peak_heap_used_mb']} | {r['peak_rss_mb']} |")
         L += ["", "Throughput stops scaling at the number of vCPUs (regex parsing is CPU-bound and shares the box "
                   "with Postgres and Kafka); the live set grows with part-concurrency, not with file size.", "",
-              "```mermaid", "xychart-beta", '  title "Ingest throughput vs part-concurrency, 1 GB"',
-              f"  x-axis [{', '.join(chr(34) + str(r['part_concurrency']) + ' consumers' + chr(34) for r in runs)}]", '  y-axis "MB/s" 0 --> 3',
+              "```mermaid", "xychart-beta", '  title "Ingest MB/s vs consumer threads, 1 GB"',
+              f"  x-axis [{', '.join(chr(34) + str(r['part_concurrency']) + chr(34) for r in runs)}]", '  y-axis "MB/s" 0 --> 3',
               f"  bar [{', '.join(str(r['mb_per_s']) for r in runs)}]", "```", ""]
 
     vec = load("vector_isolation.json")

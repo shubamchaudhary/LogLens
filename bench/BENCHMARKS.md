@@ -40,8 +40,8 @@ Throughput stops scaling at the number of vCPUs (regex parsing is CPU-bound and 
 
 ```mermaid
 xychart-beta
-  title "Ingest throughput vs part-concurrency, 1 GB"
-  x-axis ["1 consumers", "2 consumers", "4 consumers", "8 consumers"]
+  title "Ingest MB/s vs consumer threads, 1 GB"
+  x-axis ["1", "2", "4", "8"]
   y-axis "MB/s" 0 --> 3
   bar [0.81, 1.35, 2.15, 2.25]
 ```
