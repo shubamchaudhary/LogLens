@@ -181,9 +181,12 @@ const incidents = merged.map((c, i) => {
   const byLine = (n) => allEvents.find((e) => e.line_no === n);
   for (const e of context.filter((e) => ms(e.ts) < start)) add(e, e.level === 'WARN' ? 'warning' : 'change');
   for (const f of failures.slice(0, 4)) add(byLine(f.firstLine), 'first');
-  const withTrace = allEvents.find(
-    (e) => e.signature === failures[0].id && e.line_end > e.line_no && ms(e.ts) >= start && ms(e.ts) <= end
-  );
+  // Rarer failure types (restarts, crashes) say a lot per line; show their first occurrence too.
+  for (const f of failures.slice(4).filter((f) => f.count <= 50).slice(0, 2)) add(byLine(f.firstLine), 'first');
+  // One complete multi-line record (stack trace / Detail) of the worst failure type that has one.
+  const traced = failures.find((f) => allEvents.some((e) => e.signature === f.id && e.line_end > e.line_no));
+  const withTrace =
+    traced && allEvents.find((e) => e.signature === traced.id && e.line_end > e.line_no && ms(e.ts) >= start && ms(e.ts) <= end);
   add(withTrace, 'sample');
   for (const e of context.filter((e) => ms(e.ts) >= start)) add(e, e.level === 'WARN' ? 'event' : 'fix');
   add(byLine(failures[0].lastLine), 'last');

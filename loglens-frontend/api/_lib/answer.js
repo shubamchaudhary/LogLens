@@ -58,8 +58,10 @@ export function terms(question) {
     const t = w.replace(/^[.-]+|[.-]+$/g, '');
     if (t.length < 3 || STOP.has(t) || /^\d{1,2}:\d{2}$/.test(t)) continue;
     if (/^\d+$/.test(t) && !STATUS.test(t)) continue;
-    out.add(t.replace(/[^a-z0-9]/g, ''));
-    for (const x of EXPAND[t] || []) out.add(x);
+    // naive singular: "deadlocks" must find "deadlock", "timeouts" → "timeout"
+    const base = t.length > 4 && t.endsWith('s') && !t.endsWith('ss') ? t.slice(0, -1) : t;
+    out.add(base.replace(/[^a-z0-9]/g, ''));
+    for (const x of EXPAND[base] || EXPAND[t] || []) out.add(x);
   }
   return [...out].filter(Boolean).slice(0, 14);
 }
@@ -106,8 +108,16 @@ export async function retrieveOnce(q, qv, ts, windows) {
         )
       : { rows: [] },
   ]);
+  const incidents = await pool.query(`SELECT id, starts_at, ends_at, title, summary, doc FROM incidents ORDER BY starts_at`);
+  const incidentSigs = new Set(incidents.rows.flatMap((inc) => (inc.doc.signatures || []).map((x) => x.id)));
+
+  // Reciprocal rank fusion. A failure type found only by vector similarity must be part
+  // of an incident or a top-2 vector hit; otherwise background noise crowds the context.
+  const lexIds = new Set(lexSigs.rows.map((r) => r.id));
   const rrf = new Map();
-  vecSigs.rows.forEach((r, i) => rrf.set(r.id, (rrf.get(r.id) || 0) + 1 / (60 + i)));
+  vecSigs.rows.forEach((r, i) => {
+    if (lexIds.has(r.id) || incidentSigs.has(r.id) || i < 2) rrf.set(r.id, (rrf.get(r.id) || 0) + 1 / (60 + i));
+  });
   lexSigs.rows.forEach((r, i) => rrf.set(r.id, (rrf.get(r.id) || 0) + 1 / (60 + i)));
   const sigIds = [...rrf.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([id]) => id);
   const maxSim = Math.max(0, ...vecSigs.rows.map((r) => Number(r.sim)));
@@ -145,15 +155,16 @@ export async function retrieveOnce(q, qv, ts, windows) {
   for (const e of [...lexEvents.rows, ...sigEvents.rows]) if (!events.has(e.line_no)) events.set(e.line_no, e);
   const allSigIds = [...new Set([...sigIds, ...[...events.values()].map((e) => e.signature)])].slice(0, 8);
 
-  const [sigs, incidents] = await Promise.all([
-    pool.query(`SELECT * FROM signatures WHERE id = ANY($1)`, [allSigIds]),
-    pool.query(`SELECT id, starts_at, ends_at, title, summary, doc FROM incidents ORDER BY starts_at`),
-  ]);
-  const eventTimes = [...events.values()].map((e) => new Date(e.ts).getTime());
+  const sigs = await pool.query(`SELECT * FROM signatures WHERE id = ANY($1)`, [allSigIds]);
+  // Incidents that the question's times fall in, or whose failure types matched.
+  const inWindow = (inc) =>
+    windows.some((w) => Date.parse(w.from) <= new Date(inc.ends_at).getTime() && Date.parse(w.to) >= new Date(inc.starts_at).getTime());
+  const lexTimes = lexEvents.rows.map((e) => new Date(e.ts).getTime());
   const relevantIncidents = incidents.rows.filter(
     (inc) =>
-      eventTimes.some((t) => t >= new Date(inc.starts_at).getTime() - 30 * 60_000 && t <= new Date(inc.ends_at).getTime() + 5 * 60_000) ||
-      (inc.doc.signatures || []).some((s) => allSigIds.includes(s.id))
+      inWindow(inc) ||
+      (inc.doc.signatures || []).some((x) => sigIds.slice(0, 3).includes(x.id)) ||
+      lexTimes.some((t) => t >= new Date(inc.starts_at).getTime() && t <= new Date(inc.ends_at).getTime())
   );
 
   // The incidents' own key lines (the change before it, first failure, fix) are prime evidence.
@@ -181,7 +192,7 @@ export function buildContext(r) {
   const refs = new Map(); // "S1" -> signature row
   const sigLines = r.sigs.map((s, i) => {
     refs.set(`S${i + 1}`, s);
-    const tenants = (s.top_tenants || []).slice(0, 3).map(([t, n]) => `${t} ${n}`).join(', ');
+    const tenants = (s.top_tenants || []).slice(0, 5).map(([t, n]) => `${t} ${n}`).join(', ');
     return `S${i + 1} | ${s.level} ${s.service} | count=${s.count} | first ${hhmmss(s.first_ts)} (L${s.first_line}) | last ${hhmmss(s.last_ts)} (L${s.last_line}) | top tenants: ${tenants || '-'}\n   "${clip(s.sample, 260)}"`;
   });
   const incLines = r.incidents.map(
