@@ -1,17 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import bench from '../demo/bench.json';
 import BarChart from '../components/BarChart';
 import HeapChart, { LiveSetBars } from '../components/HeapChart';
 import GateExplainer from '../components/GateExplainer';
+import TestedGrid from '../components/TestedGrid';
+import { loadFixture } from '../demo/demoApi';
 import { Heading, Section, SiteHeader } from '../components/Site';
 import Icon from '../components/Icon';
 import { REPO_URL } from '../config';
+import { usePublicTheme } from '../hooks/useTheme';
 import { fmtBytes, fmtNum } from '../utils/format';
 
 // The repo's bench/BENCHMARKS.md and eval reports as charts and tables. All values
 // come from src/demo/bench.json, generated from bench/results and evals/results.
 
 const NAV = [
+  ['#tested', 'Summary'],
   ['#ingest', 'Ingest'],
   ['#faults', 'Faults'],
   ['#quality', 'Quality'],
@@ -61,6 +65,15 @@ const LAYOUT_SHORT = {
 const RETRIEVER = { vector_only: 'Vector', fts_only: 'Full text', hybrid_rrf: 'Hybrid (RRF)' };
 
 export default function Benchmarks() {
+  usePublicTheme();
+  const [lines1g, setLines1g] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    loadFixture().then((f) => !cancelled && setLines1g(f.stats.lines));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   useEffect(() => {
     document.title = 'Benchmarks · DeepLogLens';
     return () => {
@@ -77,7 +90,7 @@ export default function Benchmarks() {
   const g = bench.gate;
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-paper">
+    <div className="min-h-screen overflow-x-clip bg-paper text-ink">
       <SiteHeader links={NAV} back />
 
       <section className="mx-auto max-w-6xl px-4 pb-14 pt-16 sm:px-6 sm:pt-20">
@@ -85,15 +98,21 @@ export default function Benchmarks() {
         <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">Measured numbers</h1>
         <div className="mt-6 flex flex-wrap gap-2">
           {[bench.setup.hardware, bench.setup.jvm, bench.setup.stack, `run ${bench.date}`].map((t) => (
-            <span key={t} className="rounded-md border border-line bg-white px-2.5 py-1 font-mono text-[11px] text-slate-600">
+            <span key={t} className="rounded-md border border-line bg-surface px-2.5 py-1 font-mono text-[11px] text-body">
               {t}
             </span>
           ))}
         </div>
-        <a href={`${REPO_URL}/blob/main/bench/BENCHMARKS.md`} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-violet-700 hover:underline">
+        <a href={`${REPO_URL}/blob/main/bench/BENCHMARKS.md`} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:underline">
           <Icon name="github" className="h-4 w-4" /> Raw results and scripts
         </a>
       </section>
+
+      {/* Summary */}
+      <Section id="tested">
+        <Heading kicker="Tested at scale" title="The headline numbers" />
+        <TestedGrid lines1g={lines1g} />
+      </Section>
 
       {/* Ingest */}
       <Section id="ingest">
@@ -139,7 +158,7 @@ export default function Benchmarks() {
             [base.metricSum, 'metric total'],
             [base.occurrences, 'findings'],
           ].map(([v, k]) => (
-            <span key={k} className="text-sm text-slate-600">
+            <span key={k} className="text-sm text-body">
               <span className="font-display font-bold text-ink">{fmtNum(v)}</span> {k}
             </span>
           ))}
@@ -153,11 +172,11 @@ export default function Benchmarks() {
                   <h3 className="font-semibold text-ink">{SCENARIO[r.scenario]?.[0] || r.scenario}</h3>
                   <Check ok={matches(r)} label="identical" />
                 </div>
-                <p className="mt-1 text-sm text-slate-500">{SCENARIO[r.scenario]?.[1]}</p>
-                <p className="mt-4 font-mono text-xs text-slate-600">
+                <p className="mt-1 text-sm text-muted">{SCENARIO[r.scenario]?.[1]}</p>
+                <p className="mt-4 font-mono text-xs text-body">
                   {fmtNum(r.chunks)} windows · {fmtNum(r.lineSum)} lines · {fmtNum(r.occurrences)} findings
                 </p>
-                {r.skips > 0 && <p className="mt-1 text-xs text-violet-700">{fmtNum(r.skips)} repeated deliveries recognised and skipped</p>}
+                {r.skips > 0 && <p className="mt-1 text-xs text-accent">{fmtNum(r.skips)} repeated deliveries recognised and skipped</p>}
               </div>
             ))}
         </div>
@@ -167,9 +186,9 @@ export default function Benchmarks() {
           {bench.robustness.map((r) => (
             <div key={r.case} className="panel p-4">
               <p className="text-sm font-semibold text-ink">{CASE[r.case] || r.case}</p>
-              <p className="font-mono text-[11px] text-slate-400">{r.bytes != null ? fmtBytes(r.bytes) : 'Kafka message'}</p>
-              <p className="mt-3 text-sm text-slate-700">{outcome(r)}</p>
-              {r.seconds != null && <p className="font-mono text-[11px] text-slate-500">{r.seconds} s</p>}
+              <p className="font-mono text-[11px] text-dim">{r.bytes != null ? fmtBytes(r.bytes) : 'Kafka message'}</p>
+              <p className="mt-3 text-sm text-ink">{outcome(r)}</p>
+              {r.seconds != null && <p className="font-mono text-[11px] text-muted">{r.seconds} s</p>}
             </div>
           ))}
         </div>
@@ -251,7 +270,7 @@ export default function Benchmarks() {
           <Table
             head={['Layout', ...sessions.map((s) => `${s} recall · p50`)]}
             rows={layouts.map((l) => [
-              <span key="l" className={l === 'per_session_table' ? 'font-semibold text-violet-700' : 'text-slate-900'}>
+              <span key="l" className={l === 'per_session_table' ? 'font-semibold text-accent' : 'text-ink'}>
                 {LAYOUT[l]}
               </span>,
               ...sessions.map((s) => {
@@ -270,8 +289,8 @@ export default function Benchmarks() {
 function Panel({ title, sub, children }) {
   return (
     <div className="panel p-5 sm:p-6">
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-      {sub && <p className="mb-5 text-xs text-slate-500">{sub}</p>}
+      <h3 className="text-sm font-semibold text-ink">{title}</h3>
+      {sub && <p className="mb-5 text-xs text-muted">{sub}</p>}
       {children}
     </div>
   );
@@ -284,7 +303,7 @@ function Table({ head, rows, strong }) {
         <thead>
           <tr className="border-b border-line bg-paper/60">
             {head.map((h, i) => (
-              <th key={i} className="whitespace-nowrap px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              <th key={i} className="whitespace-nowrap px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-muted">
                 {h}
               </th>
             ))}
@@ -294,7 +313,7 @@ function Table({ head, rows, strong }) {
           {rows.map((r, i) => (
             <tr key={i} className="border-b border-line last:border-0">
               {r.map((c, j) => (
-                <td key={j} className={`whitespace-nowrap px-4 py-2.5 font-mono text-[13px] ${j === strong ? 'font-semibold text-slate-900' : j === 0 ? 'font-sans text-slate-800' : 'text-slate-600'}`}>
+                <td key={j} className={`whitespace-nowrap px-4 py-2.5 font-mono text-[13px] ${j === strong ? 'font-semibold text-ink' : j === 0 ? 'font-sans text-ink' : 'text-body'}`}>
                   {c}
                 </td>
               ))}
@@ -308,11 +327,11 @@ function Table({ head, rows, strong }) {
 
 function Check({ ok, label = 'matches' }) {
   return ok ? (
-    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 font-sans text-[11px] font-semibold text-emerald-700">
+    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-1.5 py-0.5 font-sans text-[11px] font-semibold text-emerald-500">
       <Icon name="check" className="h-3 w-3" /> {label}
     </span>
   ) : (
-    <span className="rounded-md bg-rose-50 px-1.5 py-0.5 font-sans text-[11px] font-semibold text-rose-700">differs</span>
+    <span className="rounded-md bg-rose-500/10 px-1.5 py-0.5 font-sans text-[11px] font-semibold text-rose-500">differs</span>
   );
 }
 

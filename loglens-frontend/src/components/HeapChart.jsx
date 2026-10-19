@@ -31,9 +31,9 @@ export default function HeapChart({ bench }) {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">Heap while ingesting {run.size}</h3>
+          <h3 className="text-sm font-semibold text-ink">Heap while ingesting {run.size}</h3>
         </div>
-        <div className="inline-flex rounded-lg border border-line bg-white p-0.5 text-xs font-medium" role="tablist">
+        <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 text-xs font-medium" role="tablist">
           {bench.sizes.map((s, i) => (
             <button
               key={s.size}
@@ -43,7 +43,7 @@ export default function HeapChart({ bench }) {
                 setSel(i);
                 setHover(null);
               }}
-              className={`rounded-md px-2.5 py-1 transition ${i === sel ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-900'}`}
+              className={`rounded-md px-2.5 py-1 transition ${i === sel ? 'bg-ink text-paper' : 'text-muted hover:text-ink'}`}
             >
               {s.size}
             </button>
@@ -52,7 +52,7 @@ export default function HeapChart({ bench }) {
       </div>
 
       <div className="mt-4 flex gap-2">
-        <div className="relative flex w-8 shrink-0 flex-col justify-between pb-5 text-right text-[10px] text-slate-400" style={{ height: 230 }}>
+        <div className="relative flex w-8 shrink-0 flex-col justify-between pb-5 text-right text-[10px] text-dim" style={{ height: 230 }}>
           {[top, (top * 3) / 4, top / 2, top / 4, 0].map((v) => (
             <span key={v}>{Math.round(v)}</span>
           ))}
@@ -61,32 +61,32 @@ export default function HeapChart({ bench }) {
           <div className="relative" style={{ height: 210 }} onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
             <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1000 200" preserveAspectRatio="none" aria-hidden="true">
               {[0.25, 0.5, 0.75].map((f) => (
-                <line key={f} x1="0" x2="1000" y1={y(top * f)} y2={y(top * f)} className="stroke-slate-100" vectorEffect="non-scaling-stroke" />
+                <line key={f} x1="0" x2="1000" y1={y(top * f)} y2={y(top * f)} className="stroke-line" vectorEffect="non-scaling-stroke" />
               ))}
               <rect x="0" width="1000" y={y(run.live.max)} height={y(run.live.median) - y(run.live.max)} className="fill-pink-500/20" />
               <path d={area} className="fill-violet-500/10" />
               <path d={line} fill="none" strokeWidth="1.5" className="stroke-violet-600" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-              <line x1="0" x2="1000" y1={y(top)} y2={y(top)} strokeWidth="1.5" strokeDasharray="6 4" className="stroke-slate-400" vectorEffect="non-scaling-stroke" />
+              <line x1="0" x2="1000" y1={y(top)} y2={y(top)} strokeWidth="1.5" strokeDasharray="6 4" className="stroke-line2" vectorEffect="non-scaling-stroke" />
               <line x1="0" x2="1000" y1={y(run.live.max)} y2={y(run.live.max)} strokeWidth="1.5" className="stroke-pink-600" vectorEffect="non-scaling-stroke" />
               <line x1="0" x2="1000" y1={y(run.live.median)} y2={y(run.live.median)} strokeWidth="1.5" className="stroke-pink-600" vectorEffect="non-scaling-stroke" />
-              {pt && <line x1={x(pt[0])} x2={x(pt[0])} y1="0" y2="200" className="stroke-slate-400" vectorEffect="non-scaling-stroke" />}
+              {pt && <line x1={x(pt[0])} x2={x(pt[0])} y1="0" y2="200" className="stroke-line2" vectorEffect="non-scaling-stroke" />}
             </svg>
-            <span className="absolute right-1 rounded bg-white/80 px-1 text-[10px] font-medium text-slate-500" style={{ top: `${(y(top) / 200) * 100}%`, transform: 'translateY(-115%)' }}>
+            <span className="absolute right-1 rounded bg-surface/80 px-1 text-[10px] font-medium text-muted" style={{ top: `${(y(top) / 200) * 100}%`, transform: 'translateY(-115%)' }}>
               -Xmx cap {top} MB
             </span>
-            <span className="absolute left-1 rounded bg-white/85 px-1 text-[10px] font-semibold text-pink-700" style={{ top: `${(y(run.live.max) / 200) * 100}%`, transform: 'translateY(4px)' }}>
+            <span className="absolute left-1 rounded bg-surface/85 px-1 text-[10px] font-semibold text-hot" style={{ top: `${(y(run.live.max) / 200) * 100}%`, transform: 'translateY(4px)' }}>
               live set {run.live.median}–{run.live.max} MB
             </span>
             {pt && (
               <div
-                className="pointer-events-none absolute top-1 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-[11px] text-white shadow-lg"
+                className="pointer-events-none absolute top-1 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg bg-ink px-2.5 py-1.5 text-[11px] text-paper shadow-lg"
                 style={{ left: `${Math.min(Math.max((pt[0] / tMax) * 100, 12), 88)}%` }}
               >
                 {mmss(pt[0])} · <span className="font-semibold">{pt[1]} MB</span> heap used
               </div>
             )}
           </div>
-          <div className="mt-1 flex justify-between text-[10px] text-slate-400">
+          <div className="mt-1 flex justify-between text-[10px] text-dim">
             <span>0</span>
             <span>{mmss(tMax / 2)}</span>
             <span>{mmss(tMax)}</span>
@@ -94,25 +94,25 @@ export default function HeapChart({ bench }) {
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-slate-500">
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-muted">
         <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-violet-600" /> heap used</span>
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-y border-pink-600 bg-pink-500/20" /> live set</span>
-        <span className="flex items-center gap-1.5"><span className="w-4 border-t-2 border-dashed border-slate-400" /> heap cap</span>
+        <span className="flex items-center gap-1.5"><span className="w-4 border-t-2 border-dashed border-line2" /> heap cap</span>
       </div>
 
       <dl className="mt-4 grid grid-cols-3 gap-2">
         <Fact k="Lines" v={fmtNum(run.lines)} />
-        <Fact k="Live set" v={`${run.live.max} MB`} tone="text-pink-700" />
+        <Fact k="Live set" v={`${run.live.max} MB`} tone="text-hot" />
         <Fact k="Peak heap" v={`${Math.round(run.peakHeapMb)} MB`} />
       </dl>
     </div>
   );
 }
 
-function Fact({ k, v, tone = 'text-slate-900' }) {
+function Fact({ k, v, tone = 'text-ink' }) {
   return (
     <div className="rounded-lg border border-line bg-paper/60 px-3 py-2">
-      <dt className="text-[11px] text-slate-500">{k}</dt>
+      <dt className="text-[11px] text-muted">{k}</dt>
       <dd className={`text-base font-bold ${tone}`}>
         {v}
       </dd>
@@ -136,9 +136,9 @@ export function LiveSetBars({ bench }) {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">{by === 'size' ? 'Live set by file size' : 'Live set by threads'}</h3>
+          <h3 className="text-sm font-semibold text-ink">{by === 'size' ? 'Live set by file size' : 'Live set by threads'}</h3>
         </div>
-        <div className="inline-flex rounded-lg border border-line bg-white p-0.5 text-xs font-medium">
+        <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 text-xs font-medium">
           {[
             ['size', 'File size'],
             ['threads', 'Threads'],
@@ -146,7 +146,7 @@ export function LiveSetBars({ bench }) {
             <button
               key={k}
               onClick={() => setBy(k)}
-              className={`rounded-md px-2.5 py-1 transition ${by === k ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-900'}`}
+              className={`rounded-md px-2.5 py-1 transition ${by === k ? 'bg-ink text-paper' : 'text-muted hover:text-ink'}`}
             >
               {l}
             </button>
@@ -158,24 +158,24 @@ export function LiveSetBars({ bench }) {
           <div key={r.label} className="flex flex-col items-center" onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
             <div className="relative flex h-40 w-full items-end justify-center gap-1">
               {hover === i && (
-                <div className="pointer-events-none absolute -top-2 z-10 whitespace-nowrap rounded-lg bg-slate-900 px-2 py-1 text-[11px] text-white shadow-lg">
+                <div className="pointer-events-none absolute -top-2 z-10 whitespace-nowrap rounded-lg bg-ink px-2 py-1 text-[11px] text-paper shadow-lg">
                   live {r.live} MB{r.peak ? ` · peak ${r.peak} MB` : ''} · {r.note}
                 </div>
               )}
               {r.peak != null && (
-                <div className="w-1/3 max-w-6 rounded-t-[4px] bg-slate-200" style={{ height: `${(r.peak / max) * 100}%` }} />
+                <div className="w-1/3 max-w-6 rounded-t-[4px] bg-line2" style={{ height: `${(r.peak / max) * 100}%` }} />
               )}
               <div className="w-1/3 max-w-6 rounded-t-[4px] bg-pink-600" style={{ height: `${(r.live / max) * 100}%` }} />
             </div>
-            <span className="mt-1.5 text-xs font-semibold text-slate-800">{r.live} MB</span>
-            <span className="text-[11px] text-slate-500">{r.label}</span>
+            <span className="mt-1.5 text-xs font-semibold text-ink">{r.live} MB</span>
+            <span className="text-[11px] text-muted">{r.label}</span>
           </div>
         ))}
       </div>
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-slate-500">
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-muted">
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-pink-600" /> live set</span>
         {by === 'size' && (
-          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-slate-200" /> peak heap</span>
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-line2" /> peak heap</span>
         )}
       </div>
     </div>

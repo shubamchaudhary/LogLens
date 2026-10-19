@@ -12,10 +12,20 @@ export default {
         display: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
-        paper: '#fdfcf9', // warm page background of the public pages
-        sand: '#f7f4ee', // their secondary panels
-        line: '#e9e4da', // their hairline borders
-        ink: '#14181c', // their headings
+        // Theme tokens (src/index.css): light by default, dark on the public pages when
+        // <html data-theme="dark">. Values are "R G B" so opacity modifiers work.
+        paper: 'rgb(var(--paper) / <alpha-value>)', // page background
+        sand: 'rgb(var(--sand) / <alpha-value>)', // secondary panels
+        surface: 'rgb(var(--surface) / <alpha-value>)', // panels and cards
+        line: 'rgb(var(--line) / <alpha-value>)', // hairline borders
+        line2: 'rgb(var(--line2) / <alpha-value>)', // stronger lines, neutral bars
+        ink: 'rgb(var(--ink) / <alpha-value>)', // headings
+        body: 'rgb(var(--body) / <alpha-value>)', // running text
+        muted: 'rgb(var(--muted) / <alpha-value>)', // secondary text
+        dim: 'rgb(var(--dim) / <alpha-value>)', // faint labels
+        accent: 'rgb(var(--accent) / <alpha-value>)', // violet text and marks
+        'accent-soft': 'rgb(var(--accent-soft) / <alpha-value>)', // violet tint behind it
+        hot: 'rgb(var(--hot) / <alpha-value>)', // pink text (live set, verdicts)
       },
       keyframes: {
         'fade-up': {

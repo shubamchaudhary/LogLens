@@ -4,13 +4,13 @@ import { loadFixture } from '../demo/demoApi';
 import bench from '../demo/bench.json';
 import TimelineChart from '../components/TimelineChart';
 import HeapChart, { LiveSetBars } from '../components/HeapChart';
-import { ArchitectureSteps } from '../components/Architecture';
+import { ArchitectureSteps, ArchitectureStory } from '../components/Architecture';
 import { Heading, Section, SiteHeader } from '../components/Site';
 import Icon from '../components/Icon';
 import { useGuestLaunch } from '../hooks/useGuestLaunch';
+import { usePublicTheme } from '../hooks/useTheme';
 import { pipelineSteps } from '../utils/pipeline';
 import { fmtClock, fmtNum } from '../utils/format';
-import { SEVERITY_STYLES } from '../utils/severity';
 
 // Every number on this page is measured: the 1 GB log's from its fixture (production
 // parsers and gate), the rest from bench/ and evals/ via src/demo/bench.json.
@@ -18,13 +18,21 @@ import { SEVERITY_STYLES } from '../utils/severity';
 const NAV = [
   ['#how', 'How it works'],
   ['#scale', 'Scale'],
-  ['#tested', 'Tested'],
   ['/benchmarks', 'Benchmarks'],
 ];
 
 const pct = (x) => `${Math.round(x * 1000) / 10}%`;
 
+// Outlined severity chips that read on both themes.
+const SEVERITY_CHIP = {
+  CRITICAL: 'border-rose-500/40 text-rose-500',
+  ERROR: 'border-orange-500/40 text-orange-500',
+  WARN: 'border-amber-500/40 text-amber-500',
+  INFO: 'border-sky-500/40 text-sky-500',
+};
+
 export default function Landing() {
+  usePublicTheme();
   const { launch, busy } = useGuestLaunch();
   const [fixture, setFixture] = useState(null);
 
@@ -45,7 +53,7 @@ export default function Landing() {
   const medium = bench.gate.synthetic.find((d) => d.dataset.includes('medium'));
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-paper">
+    <div className="min-h-screen overflow-x-clip bg-paper text-ink">
       <SiteHeader links={NAV} />
 
       {/* Hero */}
@@ -56,7 +64,7 @@ export default function Landing() {
             Log intelligence for{' '}
             <span className="whitespace-nowrap bg-gradient-to-r from-violet-600 to-pink-500 bg-[length:100%_6px] bg-bottom bg-no-repeat pb-1">GB-scale archives</span>
           </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-600">
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-body">
             Upload a log archive. DeepLogLens reads every line, finds the failures, explains the root cause of each one,
             and answers your questions about the logs with the exact lines as evidence.
           </p>
@@ -64,7 +72,7 @@ export default function Landing() {
             <button onClick={launch} disabled={busy} className="btn-primary px-6 py-3 text-base">
               <Icon name="play" className="h-4 w-4" /> Guest analysis on a 1 GB log
             </button>
-            <Link to="/login" className="inline-flex items-center justify-center rounded-xl border border-line bg-white px-6 py-3 text-base font-semibold text-slate-700 transition hover:border-violet-300 hover:text-violet-700">
+            <Link to="/login" className="inline-flex items-center justify-center rounded-xl border border-line bg-surface px-6 py-3 text-base font-semibold text-ink transition hover:border-accent/40 hover:text-accent">
               Sign in
             </Link>
           </div>
@@ -73,12 +81,12 @@ export default function Landing() {
 
       {/* The report */}
       <section className="px-4 pb-16 sm:px-6">
-        <div className="mx-auto max-w-6xl overflow-hidden rounded-2xl border border-line bg-white shadow-xl shadow-[#b45900]/5">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-2xl border border-line bg-surface shadow-xl shadow-[#b45900]/5">
           <div className="flex items-center gap-2 border-b border-line bg-sand px-4 py-2.5">
             <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
             <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-            <span className="ml-3 truncate font-mono text-[11px] text-slate-500">deeploglens-1gb.log · report</span>
+            <span className="ml-3 truncate font-mono text-[11px] text-muted">deeploglens-1gb.log · report</span>
           </div>
           {fixture ? (
             <div className="p-4 sm:p-6">
@@ -87,8 +95,8 @@ export default function Landing() {
                 <Kpi label="ERROR lines" value={fmtNum(stats.errorLines)} tone="text-rose-600" />
                 <Kpi label="WARN lines" value={fmtNum(stats.warnLines)} tone="text-amber-600" />
                 <Kpi label="Minutes flagged" value={`${stats.flaggedMinutes}/${stats.minutes}`} />
-                <Kpi label="LLM calls" value={fmtNum(stats.llmCallsGated)} tone="text-violet-700" />
-                <Kpi label="Incidents" value={fixture.incidents.length} tone="text-violet-700" />
+                <Kpi label="LLM calls" value={fmtNum(stats.llmCallsGated)} tone="text-accent" />
+                <Kpi label="Incidents" value={fixture.incidents.length} tone="text-accent" />
               </div>
               <div className="mt-4 rounded-xl border border-line p-3 sm:p-4">
                 <TimelineChart series={fixture.timeline} incidents={fixture.incidents} onSelectIncident={launch} height={200} />
@@ -96,15 +104,15 @@ export default function Landing() {
               <ol className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {fixture.incidents.map((inc, i) => (
                   <li key={inc.id}>
-                    <button onClick={launch} className="flex h-full w-full gap-3 rounded-xl border border-line p-3 text-left transition hover:border-violet-300 hover:bg-paper">
+                    <button onClick={launch} className="flex h-full w-full gap-3 rounded-xl border border-line p-3 text-left transition hover:border-accent/40 hover:bg-paper">
                       <span className="num-badge rounded-full">{i + 1}</span>
                       <span className="min-w-0">
                         <span className="block text-sm font-semibold leading-snug text-ink">{inc.title}</span>
-                        <span className="mt-1 flex items-center gap-2 text-[11px] text-slate-500">
+                        <span className="mt-1 flex items-center gap-2 text-[11px] text-muted">
                           <span className="font-mono">
                             {fmtClock(inc.start).slice(0, 5)}–{fmtClock(inc.end).slice(0, 5)}
                           </span>
-                          <span className={`rounded border px-1.5 text-[10px] font-semibold ${SEVERITY_STYLES[inc.severity]?.chip || ''}`}>{inc.severity}</span>
+                          <span className={`rounded border px-1.5 text-[10px] font-semibold ${SEVERITY_CHIP[inc.severity] || ''}`}>{inc.severity}</span>
                         </span>
                       </span>
                     </button>
@@ -135,13 +143,16 @@ export default function Landing() {
       {/* How it works */}
       <Section id="how">
         <Heading kicker="How it works" title="From one log file to a cited report" />
-        <div className="mt-12">
+        <div className="mt-4 hidden lg:block">
+          <ArchitectureStory steps={steps} />
+        </div>
+        <div className="mt-12 lg:hidden">
           <ArchitectureSteps steps={steps} />
         </div>
       </Section>
 
       {/* Scale */}
-      <Section id="scale">
+      <Section id="scale" className="pb-24">
         <Heading kicker="Scale" title={`${big.size} of logs, flat memory`} />
         <div className="mt-10 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
           <div className="panel p-5 sm:p-6">
@@ -153,44 +164,7 @@ export default function Landing() {
         </div>
       </Section>
 
-      {/* Tested */}
-      <Section id="tested" className="pb-24">
-        <Heading kicker="Tested" title="Tested at scale" />
-        <Tested lines1g={stats?.lines} />
-        <Link to="/benchmarks" className="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold text-violet-700 hover:underline">
-          All benchmarks <Icon name="arrowRight" className="h-4 w-4" />
-        </Link>
-      </Section>
     </div>
-  );
-}
-
-/** The headline test results, all from bench.json. */
-function Tested({ lines1g }) {
-  const big = bench.sizes.at(-1);
-  const g = bench.gate;
-  const incidents = g.synthetic.reduce((n, d) => n + d.incidents, 0);
-  const found = g.synthetic.reduce((n, d) => n + Math.round(d.incidentRecall * d.incidents), 0);
-  const faults = bench.chaos.rows.filter((r) => r.scenario !== 'baseline').length;
-  const hybrid = bench.retrieval.rows.find((r) => r.retriever.startsWith('hybrid'));
-  const items = [
-    [big.size, `archive ingested, ${(big.lines / 1e6).toFixed(1)}M lines`],
-    ['1 GB', `archive analysed end to end${lines1g ? `, ${(lines1g / 1e6).toFixed(1)}M lines` : ''}`],
-    [`${found} / ${incidents}`, 'injected incidents detected'],
-    [`${faults} / ${faults}`, 'crash and replay runs identical to a clean run'],
-    [`${bench.robustness.length} / ${bench.robustness.length}`, 'malformed inputs handled cleanly'],
-    [hybrid.r30.toFixed(2), `Q&A retrieval recall on ${bench.retrieval.questions} questions`],
-  ];
-  return (
-    <dl className="mt-10 grid grid-cols-2 overflow-hidden rounded-xl border border-line bg-line gap-px lg:grid-cols-3">
-      {items.map(([v, k]) => (
-        <div key={k} className="bg-white p-5 sm:p-6">
-          <dt className="sr-only">{k}</dt>
-          <dd className="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">{v}</dd>
-          <dd className="mt-1 text-sm text-slate-500">{k}</dd>
-        </div>
-      ))}
-    </dl>
   );
 }
 
@@ -198,8 +172,8 @@ function Metric({ value, label, note, accent = false }) {
   return (
     <div className="panel p-6">
       <div className={`font-display text-5xl font-extrabold tracking-tight ${accent ? 'text-gradient' : 'text-ink'}`}>{value}</div>
-      <div className="mt-2 text-base font-semibold text-slate-800">{label}</div>
-      <div className="mt-1 text-sm text-slate-500">{note}</div>
+      <div className="mt-2 text-base font-semibold text-ink">{label}</div>
+      <div className="mt-1 text-sm text-muted">{note}</div>
     </div>
   );
 }
@@ -207,7 +181,7 @@ function Metric({ value, label, note, accent = false }) {
 function Kpi({ label, value, tone = 'text-ink' }) {
   return (
     <div className="rounded-lg border border-line bg-paper px-3 py-2">
-      <div className="text-[11px] text-slate-500">{label}</div>
+      <div className="text-[11px] text-muted">{label}</div>
       <div className={`font-display text-lg font-bold ${tone}`}>{value}</div>
     </div>
   );
