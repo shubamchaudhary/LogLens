@@ -1,7 +1,7 @@
-// In-browser stand-in for the backend, used when demo mode is on. Each method
-// mirrors its counterpart in services/api.js and resolves to an axios-like
-// { data, status }, so components can't tell the difference. The fixture is
-// loaded lazily, so it only costs bandwidth for visitors who open the demo.
+// Guest mode backend. Sessions, upload and pipeline progress run in the browser
+// from fixture.json (the precomputed analysis of the 1 GB showcase log); questions
+// go to the serverless /api/ask function, which queries the log's database live.
+// Each method resolves to an axios-like { data, status } like services/api.js.
 
 import { demoState, setDemoState } from './demoMode';
 import { buildReplay } from './replay';
@@ -14,23 +14,18 @@ export function loadFixture() {
 
 const ok = (data, status = 200) => ({ data, status });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const latency = () => sleep(80 + Math.random() * 120);
 const readOnly = () =>
-  Promise.reject(Object.assign(new Error('The demo session is read-only'), { response: { status: 403 } }));
+  Promise.reject(Object.assign(new Error('Read-only session'), { response: { status: 403 } }));
 
-// Replay coordination: the progress stream waits for the upload to "start" the run,
-// and the UI can ask a running replay to jump to the end.
 const startListeners = new Set();
 let activeSkip = null;
-
-// Drill-down turns asked during this visit (the real backend persists them).
-const history = [];
+const history = []; // Ask turns of this visit
 
 export function skipReplay() {
   activeSkip?.();
 }
 
-/** Back to a fresh, un-run demo session. */
+/** Back to a fresh, un-run session. */
 export function resetDemo() {
   activeSkip = null;
   history.length = 0;
@@ -40,20 +35,11 @@ export function resetDemo() {
 function sessionView(f) {
   const state = demoState();
   if (state === 'DONE') return f.session;
-  return {
-    ...f.session,
-    analysisStatus: state === 'RUNNING' ? 'CHUNKING' : 'CREATED',
-    enrichedWindows: 0,
-    totalWindows: 0,
-  };
+  return { ...f.session, analysisStatus: state === 'RUNNING' ? 'CHUNKING' : 'CREATED', enrichedWindows: 0, totalWindows: 0 };
 }
 
 export const sessionAPI = {
-  list: async () => {
-    const f = await loadFixture();
-    await latency();
-    return ok([sessionView(f)]);
-  },
+  list: async () => ok([sessionView(await loadFixture())]),
   get: async () => ok(sessionView(await loadFixture())),
   create: readOnly,
   rename: readOnly,
@@ -63,97 +49,55 @@ export const sessionAPI = {
 export const documentAPI = {
   list: async () => {
     const f = await loadFixture();
-    return ok(demoState() === 'CREATED' ? [] : [{ id: f.documentId, fileName: f.file.name, fileSizeBytes: f.file.bytes }]);
+    return ok(demoState() === 'CREATED' ? [] : [{ fileName: f.file.name, fileSizeBytes: f.file.bytes }]);
   },
   upload: readOnly,
   presign: readOnly,
   confirm: readOnly,
-  /** Pretend presign → PUT → confirm; the "file" is always the bundled sample. */
+  /** presign → PUT → confirm for the bundled 1 GB file. */
   uploadDirect: async (sessionId, file, onUploadProgress) => {
     const f = await loadFixture();
-    const total = f.file.bytes;
-    for (let i = 1; i <= 12; i++) {
-      await sleep(90);
-      onUploadProgress?.({ loaded: Math.round((total * i) / 12), total });
+    for (let i = 1; i <= 16; i++) {
+      await sleep(110);
+      onUploadProgress?.({ loaded: Math.round((f.file.bytes * i) / 16), total: f.file.bytes });
     }
     setDemoState('RUNNING');
     startListeners.forEach((fn) => fn());
-    return ok({ id: f.documentId, fileName: f.file.name }, 202);
+    return ok({ fileName: f.file.name }, 202);
   },
 };
 
-const normalise = (q) => q.toLowerCase().replace(/[^a-z0-9: ]+/g, ' ').replace(/\s+/g, ' ').trim();
-
-function answerFor(f, question) {
-  const q = normalise(question);
-  const exact = f.qa.find((x) => normalise(x.question) === q);
-  if (exact) return { answer: exact.answer, citations: exact.citations, trace: exact.trace };
-
-  const scored = f.qa
-    .map((x) => ({ x, score: x.keywords.filter((k) => q.includes(k)).length }))
-    .sort((a, b) => b.score - a.score);
-  const closest = scored[0]?.score > 0 ? scored[0].x.question : null;
-  return {
-    answer:
-      'This demo only has answers for the suggested questions, because free-form questions need the live ' +
-      'retrieval + LLM backend, which is paused to keep hosting free. ' +
-      (closest ? `The closest suggested question is: **${closest}**` : 'Try one of the suggested questions above.'),
-    citations: [],
-    unanswered: true,
-    suggestion: closest,
-  };
+async function postAsk(question) {
+  const resp = await fetch('/api/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw Object.assign(new Error(data.error || 'ask failed'), { response: { status: resp.status, data } });
+  return data;
 }
 
 export const analysisAPI = {
-  metrics: async (sessionId, params = {}) => {
+  /** Everything the result tabs need, in one call. */
+  overview: async () => {
     const f = await loadFixture();
-    await latency();
-    return ok(
-      f.metrics.filter(
-        (m) => (!params.category || m.category === params.category) && (!params.metric || m.metric === params.metric)
-      )
-    );
+    return ok({ series: f.timeline, incidents: f.incidents, stats: f.stats, file: f.file, suggestions: f.suggestions });
   },
-  findings: async (sessionId, params = {}) => {
-    const f = await loadFixture();
-    await latency();
-    return ok(
-      f.findings.filter(
-        (x) => (!params.category || x.category === params.category) && (!params.severity || x.severity === params.severity)
-      )
-    );
+  ask: async (sessionId, question) => {
+    const data = await postAsk(question);
+    history.push({ ...data, question });
+    return ok(data);
   },
-  incidents: async () => {
-    const f = await loadFixture();
-    await latency();
-    return ok(f.incidents);
-  },
-  report: async () => {
-    const f = await loadFixture();
-    await latency();
-    return ok(f.report);
-  },
-  evidence: async (sessionId, chunkIds = []) => {
-    const f = await loadFixture();
-    await latency();
-    const rows = chunkIds.map((id) => f.chunks[id]).filter(Boolean);
-    rows.sort((a, b) => a.timeBucket.localeCompare(b.timeBucket) || a.lineStart - b.lineStart);
-    return ok(rows);
-  },
-  drilldown: async (sessionId, question) => {
-    const f = await loadFixture();
-    const result = answerFor(f, question);
-    history.push({ id: `demo-${history.length + 1}`, question, ...result, createdAt: new Date().toISOString() });
-    return ok(result);
-  },
-  drilldownHistory: async () => ok(history.map((h) => ({ ...h }))),
-  drilldownClear: async () => {
+  askHistory: async () => ok(history.map((h) => ({ ...h }))),
+  askClear: async () => {
     history.length = 0;
     return ok(null, 204);
   },
+  evidence: async () => ok([]), // incidents carry their evidence lines already
 };
 
-/** The demo's SSE: replays the pipeline once the sample upload starts it. */
+/** The guest session's SSE: replays the pipeline once the upload starts it. */
 export function streamProgress(sessionId, { onUpdate, onDone, onLog } = {}) {
   const timers = [];
   let cancelled = false;
@@ -184,7 +128,7 @@ export function streamProgress(sessionId, { onUpdate, onDone, onLog } = {}) {
       timers.forEach(clearTimeout);
       const rest = remaining;
       remaining = [];
-      rest.forEach(apply);
+      rest.filter((s) => s.progress || s.final).forEach(apply);
     };
   };
 
@@ -196,7 +140,7 @@ export function streamProgress(sessionId, { onUpdate, onDone, onLog } = {}) {
       onDone?.();
     });
   } else if (state === 'RUNNING') {
-    run(); // a reload mid-replay starts it over
+    run(); // a reload mid-run starts it over
   } else {
     onUpdate?.({ status: 'CREATED', enriched: 0, total: 0 });
     startListeners.add(run);

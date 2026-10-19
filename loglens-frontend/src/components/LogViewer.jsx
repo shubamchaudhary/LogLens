@@ -23,7 +23,7 @@ const BADGE = {
  * Raw log lines (a chunk's content) in a terminal-style viewer: line numbers,
  * ERROR/WARN rows highlighted, and a toggle to hide everything else.
  */
-export default function LogViewer({ content, lineStart, title, maxHeight = 'max-h-72' }) {
+export default function LogViewer({ content, lineStart, title, maxHeight = 'max-h-72', action }) {
   const lines = (content || '').split('\n');
   const issues = lines.filter((l) => /\b(FATAL|ERROR|WARN(?:ING)?)\b/.test(l)).length;
   const [onlyIssues, setOnlyIssues] = useState(false);
@@ -38,20 +38,23 @@ export default function LogViewer({ content, lineStart, title, maxHeight = 'max-
         <span className="truncate font-mono text-[11px] text-slate-400">
           {title || (lineStart != null ? `lines ${lineStart}–${lineStart + lines.length - 1}` : 'log lines')}
         </span>
-        {issues > 0 && issues < lines.length && (
-          <button
-            onClick={() => setOnlyIssues((v) => !v)}
-            className="shrink-0 rounded-md px-2 py-0.5 text-[11px] font-medium text-slate-300 hover:bg-slate-800"
-          >
-            {onlyIssues ? `Show all ${lines.length}` : `Only ERROR/WARN (${issues})`}
-          </button>
-        )}
+        <span className="flex shrink-0 items-center gap-1">
+          {issues > 0 && issues < lines.length && lines.length > 12 && (
+            <button
+              onClick={() => setOnlyIssues((v) => !v)}
+              className="rounded-md px-2 py-0.5 text-[11px] font-medium text-slate-300 hover:bg-slate-800"
+            >
+              {onlyIssues ? `Show all ${lines.length}` : `Only ERROR/WARN (${issues})`}
+            </button>
+          )}
+          {action}
+        </span>
       </div>
       <div className={`${maxHeight} overflow-auto py-1`}>
         <pre className="font-mono text-[11px] leading-5">
           {rows.map((r, i) => (
             <div key={i} className={`flex gap-3 px-3 ${ROW[r.level] || 'text-slate-300'}`}>
-              {r.no != null && <span className="w-10 shrink-0 select-none text-right text-slate-600">{r.no}</span>}
+              {r.no != null && <span className="w-14 shrink-0 select-none text-right text-slate-600">{r.no}</span>}
               <span className="whitespace-pre-wrap break-all">
                 <Highlighted text={r.text} level={r.level} />
               </span>

@@ -1,19 +1,19 @@
-# LogLens — LangGraph-Based Log Intelligence RAG Pipeline
+# DeepLogLens — LangGraph-Based Log Intelligence RAG Pipeline
 
 **Turn a GB-scale log archive into a grounded, cited incident report you can
 interrogate in plain English.**
 
-Upload a log file → LogLens parses it deterministically for *exact* metrics, uses an
+Upload a log file → DeepLogLens parses it deterministically for *exact* metrics, uses an
 LLM to explain only the anomalous windows, correlates them into incidents, and lets
 you ask questions answered with citations to the exact log lines. All the expensive AI
 work runs **off the request path, behind a durable queue** — so the system is cheap,
 never loses work, and scales its reasoning cost with the number of *incidents*, not the
 size of the logs.
 
-🔗 **Live demo:** [deeploglens.vercel.app](https://deeploglens.vercel.app) (or [/demo](https://deeploglens.vercel.app/demo)
-to jump straight in). The hosted backend is paused to stay on free tiers, so the demo replays the
-pipeline in the browser on a real 10k-line log: the metrics and anomaly flags are the production
-parsers' output for that file. See [`loglens-frontend/README.md`](loglens-frontend/README.md#demo-mode-what-recruiters-see).
+🔗 **Live:** [deeploglens.vercel.app](https://deeploglens.vercel.app): analyze a 1 GB, 5.4 M-line
+production log, see its incidents with exact counts, probable causes and the log lines behind them,
+and ask it questions ([/demo](https://deeploglens.vercel.app/demo) jumps straight in). How that
+deployment works: [`loglens-frontend/README.md`](loglens-frontend/README.md).
 
 ---
 
@@ -22,7 +22,7 @@ parsers' output for that file. See [`loglens-frontend/README.md`](loglens-fronte
 Making sense of a large log archive is a real, expensive problem. The naive fix —
 "paste the logs into an LLM and ask what broke" — fails, because an LLM **cannot
 count**, **cannot see all the logs at once**, and **will confidently invent** numbers
-and errors. LogLens is built around *trust*:
+and errors. DeepLogLens is built around *trust*:
 
 - **Numbers come from code, not the model.** Deterministic parsers compute every count,
   rate, and latency. LLMs never count anything.

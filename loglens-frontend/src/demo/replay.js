@@ -1,7 +1,7 @@
-// The replay timeline: the progress events the backend's SSE stream would send
-// ({status, enriched, total}) plus a console line for each step the pipeline takes.
-// Every count comes from the fixture (the production parsers' output for the
-// sample file); only the timing is staged. ~20 s end to end.
+// The guest session's pipeline run: the progress events the backend's SSE stream
+// sends ({status, enriched, total}) plus a console line for each step. Every
+// number comes from the fixture, i.e. from the production parsers and anomaly
+// gate run over the 1 GB file; the pacing is compressed to ~25 s.
 
 import { fmtBytes } from '../utils/format';
 
@@ -22,56 +22,71 @@ export function buildReplay(f) {
     steps.push({ at, progress: { status, enriched, total: status === 'ENRICHING' || enriched ? total : 0 } });
   };
 
+  // 1. Split
   progress('CHUNKING');
-  log('upload', `presigned PUT → blob storage · ${fmtBytes(f.file.bytes)} straight from the browser`, 0);
-  log('upload', 'confirm → 202 Accepted · pointer published to Kafka log.ingest.requests', 300);
-  log('split', `splitter · one streaming pass → ${s.parts} window-aligned part (target 5 MB) → log.ingest.parts`, 900);
+  log('upload', `presigned PUT → object storage · ${fmtBytes(f.file.bytes)} sent straight from the browser`, 0);
+  log('upload', 'confirm → 202 Accepted · file pointer queued on Kafka (log.ingest.requests)', 400);
+  log('split', `one streaming pass → ${s.parts} parts of ~5 MB, each cut on a 1-minute boundary → log.ingest.parts`, 900);
 
-  progress('PARSING', 0, 700);
-  log('parse', `part 1/${s.parts} · ranged GET → ${fmt(s.lines)} lines → ${s.windows} windows of 60 s`, 500);
-  log('parse', `8 parsers (API, SQL, ERRORS, PERFORMANCE, AUTH, LIFECYCLE, TRAFFIC, SIGNATURE) → ${s.metricRows} metric rows`, 800);
-  log('parse', 'commit · metrics + chunks + part marker in one transaction (a redelivery is a no-op)', 700);
-  log('gate', `anomaly gate (robust rules) · ${s.flagged} of ${s.windows} windows flagged`, 700);
+  // 2. Parse + detect
+  progress('PARSING', 0, 600);
+  const perPart = Math.round(s.lines / s.parts);
+  for (const p of [1, Math.round(s.parts / 3), Math.round((2 * s.parts) / 3), s.parts]) {
+    log('parse', `part ${p}/${s.parts} · ranged GET (~5 MB) → ~${fmt(perPart)} lines → parsed → committed`, 550);
+  }
+  log(
+    'parse',
+    `8 parsers (HTTP, SQL, errors, JVM/GC, auth, deploys, traffic, message templates) → ${fmt(s.lines)} lines in ` +
+      `${fmt(s.chunks)} chunks → ${fmt(s.metricRows)} metric rows`,
+    600
+  );
+  log('parse', "exactly-once: each part's rows and a done-marker commit in one transaction", 500);
+  log('detect', `robust anomaly rules over ${s.minutes} minutes → ${s.flaggedMinutes} minutes flagged`, 700);
   const rules = Object.entries(s.anomalyRules)
     .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
     .map(([rule, n]) => `${rule} ×${n}`)
     .join(' · ');
-  log('gate', `rules fired: ${rules}`, 300);
+  log('detect', `rules fired: ${rules}`, 350);
   log(
-    'gate',
-    `finalizer · ${total} work items → llm.enrich.requests (${s.flagged} ENRICH_WINDOW + ${s.embedBatches} EMBED_BATCH)`,
+    'fan-out',
+    `${fmt(s.flaggedChunks)} flagged chunks to explain + ${s.embedBatches} embedding batches → llm.enrich.requests (one partition per API key)`,
     600
   );
 
-  // Enrichment: one progress tick per work item, embeddings interleaved.
+  // 3. Explain (LLM) + embed: one tick per work item, a console line per incident window.
   progress('ENRICHING', 0, 500);
-  const items = s.flaggedWindows.map((w) => ({
-    stage: 'enrich',
-    text: `enrich ${hhmm(w.bucket)} window · ${w.llmCalls} chat call${w.llmCalls === 1 ? '' : 's'} · ${w.reasons.join(', ')}`,
+  const lines = f.incidents.map((inc) => ({
+    stage: 'explain',
+    text: `${hhmm(inc.start)}–${hhmm(inc.end)} · ${inc.flaggedMinutes} flagged minutes · ${fmt(inc.llmCalls)} chat calls → findings (JSON)`,
   }));
-  for (let b = 0; b < s.embedBatches; b++) {
-    const size = Math.min(80, s.windows - b * 80);
-    items.splice(Math.round(((b + 1) * items.length) / (s.embedBatches + 1)), 0, {
+  for (let b = 1; b <= s.embedBatches; b += Math.max(1, Math.floor(s.embedBatches / 4))) {
+    lines.splice(Math.min(lines.length, Math.round((b / s.embedBatches) * lines.length)), 0, {
       stage: 'embed',
-      text: `embed batch ${b + 1}/${s.embedBatches} · ${size} chunks → 768-d vectors → pgvector`,
+      text: `batch ${b}/${s.embedBatches} · 80 chunks → 768-d vectors → pgvector`,
     });
   }
-  items.forEach((item, i) => {
-    log(item.stage, item.text, 420);
-    steps.push({ at, progress: { status: 'ENRICHING', enriched: i + 1, total } });
-  });
+  const tickGap = Math.max(25, Math.round(9000 / total));
+  let li = 0;
+  for (let i = 1; i <= total; i++) {
+    at += tickGap;
+    steps.push({ at, progress: { status: 'ENRICHING', enriched: i, total } });
+    if (li < lines.length && i >= ((li + 1) * total) / (lines.length + 1)) {
+      steps.push({ at, log: lines[li++] });
+    }
+  }
   const saved = Math.round((1 - s.llmCallsGated / s.llmCallsUngated) * 1000) / 10;
-  log('enrich', `LLM calls: ${s.llmCallsGated} with the gate vs ${s.llmCallsUngated} without → ${saved}% fewer`, 400);
+  log('explain', `LLM calls: ${fmt(s.llmCallsGated)} with the anomaly gate vs ${fmt(s.llmCallsUngated)} without → ${saved}% fewer`, 300);
 
-  progress('CORRELATING', total, 600);
-  log('graph', `LangGraph · cluster ${f.findings.length} findings → correlate → ${f.incidents.length} incidents`, 900);
-  log('graph', 'ground-check · an LLM judge checks every claim against the cited chunks', 1100);
+  // 4. Correlate, 5. Report
+  progress('CORRELATING', total, 500);
+  log('correlate', `LangGraph groups the findings across services → ${f.incidents.length} incidents`, 900);
+  log('verify', 'an LLM judge checks every claim against the log lines it cites; unsupported claims are dropped', 1000);
+  progress('REPORTING', total, 600);
+  log('report', 'rank incidents by impact · probable causes · follow-up actions', 900);
 
-  progress('REPORTING', total, 700);
-  log('report', 'compose report · Summary, Key Metrics (from SQL, not the model), Incidents, Recommendations', 900);
-
-  at += 1300;
-  steps.push({ at, log: { stage: 'done', text: `done · ${f.incidents.length} incidents · report ready` } });
+  at += 1200;
+  steps.push({ at, log: { stage: 'done', text: `${f.incidents.length} incidents ready · ask questions about the file` }, final: true });
   steps.push({ at, progress: { status: 'DONE', enriched: total, total } });
   return steps;
 }

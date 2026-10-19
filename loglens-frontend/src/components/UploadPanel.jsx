@@ -5,6 +5,8 @@ import { loadFixture } from '../demo/demoApi';
 import { fmtBytes, fmtClock } from '../utils/format';
 import Icon from './Icon';
 import LogViewer from './LogViewer';
+import LogFileViewer from './LogFileViewer';
+import { logFileInfo } from '../utils/logFile';
 
 /**
  * Drop or pick a single log file to start a session's analysis. On success the
@@ -112,24 +114,23 @@ function FileUpload({ sessionId, onUploaded }) {
   );
 }
 
-/**
- * Demo mode: no file picker (uploads need the backend). The visitor runs the
- * pipeline on the bundled sample log instead; we show what's in it first.
- */
+/** Guest session: the input is the bundled 1 GB production log. */
 function SampleUpload({ sessionId, onUploaded }) {
   const [sample, setSample] = useState(null);
+  const [info, setInfo] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [pct, setPct] = useState(0);
+  const [viewer, setViewer] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     loadFixture().then((f) => {
       if (cancelled) return;
-      // An excerpt where things start going wrong: the first flagged window.
-      const first = Object.values(f.chunks).sort((a, b) => a.lineStart - b.lineStart)[0];
-      const excerpt = first.content.split('\n').slice(0, 8).join('\n');
-      setSample({ file: f.file, stats: f.stats, excerpt, lineStart: first.lineStart });
+      // Excerpt: the first lines of the day where something goes wrong.
+      const first = f.incidents[0]?.evidence?.slice(0, 3) || [];
+      setSample({ file: f.file, excerpt: first });
     });
+    logFileInfo().then((i) => !cancelled && setInfo(i));
     return () => {
       cancelled = true;
     };
@@ -145,6 +146,7 @@ function SampleUpload({ sessionId, onUploaded }) {
     return <div className="card h-72 animate-pulse" />;
   }
 
+  const f = sample.file;
   return (
     <div className="card p-6">
       <div className="flex flex-wrap items-center gap-4">
@@ -152,11 +154,10 @@ function SampleUpload({ sessionId, onUploaded }) {
           <Icon name="file" className="h-6 w-6" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-sm font-semibold text-slate-900">{sample.file.name}</p>
+          <p className="font-mono text-sm font-semibold text-slate-900">{f.name}</p>
           <p className="text-xs text-slate-500">
-            {fmtBytes(sample.file.bytes)} · {sample.file.lines.toLocaleString('en-US')} lines · {sample.file.services}{' '}
-            services · {sample.file.tenants} tenants · {fmtClock(sample.file.from).slice(0, 5)}–
-            {fmtClock(sample.file.to).slice(0, 5)} UTC
+            {fmtBytes(f.bytes)} · {f.lines.toLocaleString('en-US')} lines · {f.services} services · {f.tenants} tenants ·{' '}
+            {fmtClock(f.from).slice(0, 5)}–{fmtClock(f.to).slice(0, 5)} UTC
           </p>
         </div>
         <button onClick={run} disabled={uploading} className="btn-primary w-full sm:w-auto">
@@ -179,14 +180,32 @@ function SampleUpload({ sessionId, onUploaded }) {
         </div>
       )}
 
-      <div className="mt-5">
-        <LogViewer content={sample.excerpt} lineStart={sample.lineStart} title="excerpt · where things start to go wrong" maxHeight="max-h-56" />
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button onClick={() => setViewer(true)} className="btn-secondary px-3 py-1.5 text-xs">
+          <Icon name="eye" className="h-3.5 w-3.5" /> Preview the file
+        </button>
+        {info?.gzipUrl && (
+          <a href={info.gzipUrl} className="btn-secondary px-3 py-1.5 text-xs">
+            <Icon name="download" className="h-3.5 w-3.5" /> Download .gz
+          </a>
+        )}
+        {info?.downloadUrl && (
+          <a href={info.downloadUrl} className="btn-secondary px-3 py-1.5 text-xs">
+            <Icon name="download" className="h-3.5 w-3.5" /> Download {fmtBytes(f.bytes)}
+          </a>
+        )}
       </div>
-      <p className="mt-3 flex items-start gap-1.5 text-xs text-slate-500">
-        <Icon name="info" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        Uploading your own file needs the live backend (Kafka, Postgres, LLM keys), which is paused to keep hosting
-        free. Clone the repo to run it on your logs.
-      </p>
+
+      {sample.excerpt.length > 0 && (
+        <div className="mt-4 space-y-2">
+          <p className="text-xs font-medium text-slate-500">A few of the 5.4 million lines:</p>
+          {sample.excerpt.map((e) => (
+            <LogViewer key={e.line} content={e.text} lineStart={e.line} maxHeight="max-h-40" title={`line ${e.line.toLocaleString('en-US')}`} />
+          ))}
+        </div>
+      )}
+
+      {viewer && <LogFileViewer file={f} line={1} onClose={() => setViewer(false)} />}
     </div>
   );
 }

@@ -1,55 +1,63 @@
-# LogLens frontend
+# DeepLogLens frontend
 
-React + Vite + Tailwind. Pages: a landing page (`/`), sign-in/registration, and the
-app (`/app`): sessions, upload, live pipeline progress, and the result tabs
-(overview, report, findings, incidents, metrics, Ask).
+React + Vite + Tailwind, plus two Vercel serverless functions in `api/`.
+
+- `/`: landing page
+- `/app`: sessions → upload → live pipeline progress → **Overview**, **Incidents**, **Ask**
+- `/demo`: straight into the guest session (no account)
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173, talks to VITE_API_BASE_URL (default http://localhost:8080/api/v1)
-npm run lint
-npm run build
+npm run dev        # http://localhost:5173 (proxies /api to :3001)
+npm run dev:api    # the api/ functions locally on :3001
+npm run lint && npm run build
 ```
 
-## Demo mode (what recruiters see)
+## Guest session: the 1 GB log
 
-The hosted backend is paused to keep hosting free, so "View demo" (and the `/demo`
-deep link) runs **entirely in the browser**: `src/demo/demoApi.js` stands in for
-the API and replays the pipeline from `src/demo/fixture.json`. Components call the
-same `services/api.js` functions either way; `demoAware()` routes each call.
+Guests analyze `deeploglens-1gb.log`: one day (08:00–17:50 UTC) of an e-commerce
+platform, 1 GiB, 5.37 M lines, with six outages modelled on real failure modes
+(expired TLS certificate, a release that exhausts the DB pool, Redis failover,
+Kafka `max.poll.interval.ms` rebalance loop, OOM crash loop, Postgres deadlocks).
 
-| Env var | Values | Effect |
+The pipeline results are precomputed: the production parsers and anomaly gate
+(`WindowEvalCli`, the same Java code the backend runs) produce the metrics and
+flags; `build-dataset.mjs` turns them into incidents with exact counts and evidence
+lines; an LLM writes each incident's explanation. The UI replays the run, then
+serves the results from `src/demo/fixture.json`.
+
+**Ask is live.** `api/ask.js` searches the log's database (pgvector + Postgres
+full-text, fused with RRF), gives the model numbered log lines and exact counts,
+and drops any citation the model makes that wasn't in that context. `api/log.js`
+serves any slice of the file with an HTTP Range read, for the preview.
+
+### Rebuild the data (from `loglens-frontend/`)
+
+```bash
+npm run demo:generate        # 1 GB log, byte-identical every run (sha256 in .data/meta.json)
+npm run demo:extract         # events, failure templates, minute stats, line→byte index
+(cd .. && ./gradlew :loglens-backend:printTestClasspath && \
+  java -Xmx12g -cp "$(cat loglens-backend/build/test-classpath.txt)" com.loglens.ingest.WindowEvalCli \
+  loglens-frontend/scripts/demo/.data/deeploglens-1gb.log loglens-frontend/scripts/demo/.data/windows.json 60 5000 robust)
+npm run demo:build           # incidents + src/demo/fixture.json + api/_lib/log-index.json
+GROQ_API_KEYS=... npm run demo:explain                       # LLM writes the incident explanations
+DATABASE_URL=... GEMINI_API_KEYS=... npm run demo:load-db    # schema, 127k events, embeddings
+```
+
+### Environment variables (Vercel → Settings → Environment Variables)
+
+| Name | Used by | Value |
 |---|---|---|
-| `VITE_GUEST_MODE` | `replay` (default) | "View demo" = in-browser replay, no backend call |
-| | `live` | "View demo" = `POST /auth/guest` against the real backend |
-| `VITE_API_BASE_URL` | URL | Real backend base URL |
+| `DATABASE_URL` | `api/ask` | Postgres with pgvector, e.g. Neon (`...?sslmode=require`) |
+| `GROQ_API_KEYS` | `api/ask` | comma-separated Groq keys (rotated, 429s skip to the next) |
+| `GEMINI_API_KEYS` | `api/ask` | comma-separated Gemini keys (query embeddings) |
+| `LOG_FILE_URL` | `api/log` | public URL of the raw file that honours `Range` (e.g. a GitHub release asset) |
+| `LOG_FILE_GZ_URL` | `api/log` | optional: compressed download |
+| `GROQ_MODEL` | `api/ask` | optional, default `llama-3.3-70b-versatile` |
+| `ASK_DAILY_LIMIT` / `ASK_GLOBAL_DAILY_LIMIT` | `api/ask` | optional quotas (default 25 per visitor, 1500 total per day) |
+| `VITE_GUEST_MODE` | build | `live` sends guests to the backend's guest session instead |
 
-### What's in the fixture
+Never prefix secrets with `VITE_`: those are compiled into the browser bundle.
 
-- **Real**: metrics, anomaly flags, rules fired and LLM-call counts are the output of
-  the production Java parsers and anomaly detector (`WindowEvalCli`) on
-  `evals/datasets/owner_sample_10k.log`; evidence shows the actual log lines.
-- **Sample, until you record one**: the AI-written text (finding explanations, incident
-  narratives, report, answers) in `scripts/demo/narratives.mjs`. Every number in it is
-  a placeholder filled from the log by the build script.
-
-The demo's "What's real here?" panel says the same thing to visitors.
-
-Rebuild the fixture (from the repo root):
-
-```bash
-./gradlew :loglens-backend:printTestClasspath
-java -cp "$(cat loglens-backend/build/test-classpath.txt)" com.loglens.ingest.WindowEvalCli \
-  evals/datasets/owner_sample_10k.log loglens-frontend/scripts/demo/windows.json 60 5000 robust
-node loglens-frontend/scripts/demo/build-fixture.mjs
-```
-
-Replace the sample AI text with a **recorded live run**: start the full stack with real
-keys, upload `owner_sample_10k.log` to a session, wait for DONE, then:
-
-```bash
-node loglens-frontend/scripts/demo/capture-fixture.mjs --api http://localhost:8080/api/v1 \
-  --email you@example.com --password '...' --session <session-uuid>
-```
-
-The demo banner then says the AI text is recorded.
+Local testing without keys: `node scripts/demo/llm-stub.mjs` and point
+`GROQ_BASE_URL` / `GEMINI_BASE_URL` at it (see the file header).

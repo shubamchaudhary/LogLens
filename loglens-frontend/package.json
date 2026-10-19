@@ -7,10 +7,17 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:api": "node scripts/dev-api.mjs",
+    "demo:generate": "python3 scripts/demo/generate_log.py",
+    "demo:extract": "node scripts/demo/extract.mjs",
+    "demo:build": "node scripts/demo/build-dataset.mjs",
+    "demo:explain": "node scripts/demo/enrich-incidents.mjs",
+    "demo:load-db": "node scripts/demo/load-db.mjs"
   },
   "dependencies": {
     "axios": "^1.13.2",
+    "pg": "^8.23.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^9.1.0",
