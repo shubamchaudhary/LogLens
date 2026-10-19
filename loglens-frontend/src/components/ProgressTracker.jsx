@@ -1,11 +1,18 @@
 const STEPS = ['CHUNKING', 'PARSING', 'ENRICHING', 'CORRELATING', 'REPORTING', 'DONE'];
 const STEP_LABELS = {
-  CHUNKING: 'Chunk',
+  CHUNKING: 'Split',
   PARSING: 'Parse',
   ENRICHING: 'Enrich',
   CORRELATING: 'Correlate',
   REPORTING: 'Report',
   DONE: 'Done',
+};
+const STEP_HINTS = {
+  CHUNKING: 'Streaming splitter cuts the file into window-aligned parts on Kafka.',
+  PARSING: 'Deterministic parsers compute exact metrics per 1-minute window; the anomaly gate picks windows for the LLM.',
+  ENRICHING: 'Flagged windows get LLM explanations; every window is embedded for Q&A.',
+  CORRELATING: 'LangGraph clusters findings into incidents and ground-checks every claim.',
+  REPORTING: 'Writing the incident report.',
 };
 
 /**
@@ -22,79 +29,81 @@ export default function ProgressTracker({ progress }) {
   const pct = total > 0 ? Math.min(100, Math.round((enriched / total) * 100)) : 0;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-sm font-semibold text-gray-800">Analysis progress</h3>
-        {failed && <span className="text-sm font-medium text-red-600">Failed</span>}
+    <div className="card p-6">
+      <div className="mb-6 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-slate-900">Analysis pipeline</h3>
+        {failed ? (
+          <span className="text-sm font-medium text-rose-600">Failed</span>
+        ) : (
+          <span className="text-xs text-slate-400">updates live</span>
+        )}
       </div>
 
-      {/* Stepper */}
-      <ol className="flex items-center w-full mb-6">
+      <ol className="mb-6 flex w-full items-center">
         {STEPS.map((step, i) => {
           const done = !failed && currentIdx > i;
           const active = !failed && currentIdx === i;
           return (
-            <li
-              key={step}
-              className={`flex items-center ${i < STEPS.length - 1 ? 'w-full' : ''}`}
-            >
+            <li key={step} className={`flex items-center ${i < STEPS.length - 1 ? 'w-full' : ''}`}>
               <div className="flex flex-col items-center">
                 <span
-                  className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold shrink-0 ${
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition ${
                     done
-                      ? 'bg-indigo-600 text-white'
+                      ? 'bg-gradient-to-br from-violet-600 to-pink-500 text-white'
                       : active
-                        ? 'bg-indigo-100 text-indigo-700 ring-2 ring-indigo-500'
+                        ? 'bg-violet-50 text-violet-700 ring-2 ring-violet-500 ring-offset-2'
                         : failed && currentIdx === i
-                          ? 'bg-red-100 text-red-700 ring-2 ring-red-500'
-                          : 'bg-gray-100 text-gray-400'
+                          ? 'bg-rose-100 text-rose-700 ring-2 ring-rose-500'
+                          : 'bg-slate-100 text-slate-400'
                   }`}
                 >
-                  {done ? '✓' : i + 1}
+                  {done ? '✓' : active && step !== 'DONE' ? <Spinner /> : i + 1}
                 </span>
                 <span
-                  className={`mt-1.5 text-[11px] whitespace-nowrap ${
-                    active ? 'text-indigo-700 font-medium' : 'text-gray-400'
-                  }`}
+                  className={`mt-1.5 whitespace-nowrap text-[11px] ${active ? 'font-semibold text-violet-700' : 'text-slate-400'}`}
                 >
                   {STEP_LABELS[step]}
                 </span>
               </div>
               {i < STEPS.length - 1 && (
-                <div
-                  className={`flex-1 h-0.5 mx-2 -mt-5 ${done ? 'bg-indigo-600' : 'bg-gray-200'}`}
-                />
+                <div className="-mt-5 mx-1.5 h-0.5 flex-1 overflow-hidden rounded bg-slate-200 sm:mx-2">
+                  <div
+                    className={`h-full bg-gradient-to-r from-violet-600 to-pink-500 transition-all duration-700 ${done ? 'w-full' : 'w-0'}`}
+                  />
+                </div>
               )}
             </li>
           );
         })}
       </ol>
 
-      {/* Enrichment window progress */}
       {status === 'ENRICHING' && total > 0 && (
-        <div>
-          <div className="flex justify-between text-xs text-gray-500 mb-1">
-            <span>Enriching windows</span>
-            <span>
+        <div className="mb-3">
+          <div className="mb-1 flex justify-between text-xs text-slate-500">
+            <span>Enrichment work items (LLM + embeddings)</span>
+            <span className="font-semibold text-slate-700">
               {enriched} / {total}
             </span>
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
             <div
-              className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
+              className="h-2 rounded-full bg-gradient-to-r from-violet-600 to-pink-500 transition-all duration-500"
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="mt-2 text-xs text-gray-400">
-            LLM enrichment is rate-limited per API key — this can pause between windows while the
-            retry lane drains. That's expected, not a hang.
-          </p>
         </div>
       )}
 
-      {status !== 'ENRICHING' && !failed && status !== 'DONE' && (
-        <p className="text-sm text-gray-500">Working… this updates live.</p>
-      )}
+      {STEP_HINTS[status] && <p className="text-sm text-slate-500">{STEP_HINTS[status]}</p>}
     </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
   );
 }

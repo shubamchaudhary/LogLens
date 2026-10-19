@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth';
+import { GUEST_MODE } from '../config';
 
 /**
  * Enhanced Login Page with better UX
@@ -89,21 +90,31 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-white to-pink-50">
       <div className="max-w-md w-full mx-4">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-600 to-pink-500 rounded-2xl mb-4 shadow-lg shadow-violet-500/30">
             <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">LogLens</h1>
-          <p className="text-gray-600 mt-2">Sign in to continue</p>
+          <h1 className="text-3xl font-bold text-slate-900">LogLens</h1>
+          <p className="text-slate-600 mt-2">Sign in to continue</p>
         </div>
 
+        {GUEST_MODE === 'replay' && (
+          <div className="mb-4 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900">
+            <p className="font-semibold">Just looking? Use the demo.</p>
+            <p className="mt-0.5 text-violet-800/80">
+              Sign-in needs the live backend, which is paused on the free tier. The demo below runs the whole
+              pipeline in your browser on a real log file.
+            </p>
+          </div>
+        )}
+
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+        <div className="bg-white rounded-2xl shadow-xl shadow-violet-500/5 border border-slate-100 p-8 space-y-6">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Error Alert */}
             {error && (
@@ -119,7 +130,7 @@ export default function Login() {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
                 Email Address
               </label>
               <input
@@ -128,7 +139,7 @@ export default function Login() {
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -138,7 +149,7 @@ export default function Login() {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
                 Password
               </label>
               <div className="relative">
@@ -148,7 +159,7 @@ export default function Login() {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors pr-12"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors pr-12"
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -156,7 +167,7 @@ export default function Login() {
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
@@ -178,11 +189,11 @@ export default function Login() {
               <label className="flex items-center">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                  className="w-4 h-4 text-violet-600 border-slate-300 rounded focus:ring-violet-500"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                 />
-                <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                <span className="ml-2 text-sm text-slate-600">Remember me</span>
               </label>
             </div>
 
@@ -190,7 +201,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-pink-500 hover:brightness-110 text-white shadow-lg shadow-violet-500/25 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? (
                 <>
@@ -209,17 +220,17 @@ export default function Login() {
           {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-slate-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">New to LogLens?</span>
+              <span className="px-2 bg-white text-slate-500">New to LogLens?</span>
             </div>
           </div>
 
           {/* Sign Up Link */}
           <Link
             to="/register"
-            className="w-full py-3 px-4 border-2 border-indigo-600 text-indigo-600 font-medium rounded-lg hover:bg-indigo-50 transition-colors flex items-center justify-center"
+            className="w-full py-3 px-4 border-2 border-violet-600 text-violet-600 font-medium rounded-lg hover:bg-violet-50 transition-colors flex items-center justify-center"
           >
             Create an account
           </Link>
@@ -227,10 +238,10 @@ export default function Login() {
           {/* Guest Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-slate-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or explore without signing up</span>
+              <span className="px-2 bg-white text-slate-500">Or explore without signing up</span>
             </div>
           </div>
 
@@ -238,7 +249,7 @@ export default function Login() {
           <button
             onClick={handleGuestLogin}
             disabled={guestLoading || loading}
-            className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-pink-500 hover:brightness-110 text-white font-semibold rounded-lg shadow-lg shadow-violet-500/25 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {guestLoading ? (
               <>
@@ -254,15 +265,17 @@ export default function Login() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                View Demo (Guest)
+                View live demo (no sign-up)
               </>
             )}
           </button>
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-500 text-sm mt-8">
-          By signing in, you agree to our Terms of Service and Privacy Policy
+        <p className="text-center text-sm mt-8">
+          <Link to="/" className="text-slate-500 hover:text-violet-700">
+            ← Back to the LogLens overview
+          </Link>
         </p>
       </div>
     </div>

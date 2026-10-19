@@ -1,0 +1,3332 @@
+{
+  "input" : "owner_sample_10k.log",
+  "lines" : 10000,
+  "timestampRecognizedLines" : 10000,
+  "windowSeconds" : 60,
+  "maxContentChars" : 5000,
+  "anomalyMode" : "robust",
+  "layer1Millis" : 2486,
+  "windows" : [ {
+    "bucket" : "2026-07-15T09:00:00Z",
+    "lineStart" : 1,
+    "lineEnd" : 60,
+    "chars" : 9357,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3846,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:01:00Z",
+    "lineStart" : 61,
+    "lineEnd" : 120,
+    "chars" : 9417,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3862,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:02:00Z",
+    "lineStart" : 121,
+    "lineEnd" : 180,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:03:00Z",
+    "lineStart" : 181,
+    "lineEnd" : 240,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:04:00Z",
+    "lineStart" : 241,
+    "lineEnd" : 300,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:05:00Z",
+    "lineStart" : 301,
+    "lineEnd" : 360,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:06:00Z",
+    "lineStart" : 361,
+    "lineEnd" : 420,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:07:00Z",
+    "lineStart" : 421,
+    "lineEnd" : 480,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:08:00Z",
+    "lineStart" : 481,
+    "lineEnd" : 540,
+    "chars" : 9447,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3869,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:09:00Z",
+    "lineStart" : 541,
+    "lineEnd" : 600,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:10:00Z",
+    "lineStart" : 601,
+    "lineEnd" : 660,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:11:00Z",
+    "lineStart" : 661,
+    "lineEnd" : 720,
+    "chars" : 9467,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3874,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:12:00Z",
+    "lineStart" : 721,
+    "lineEnd" : 780,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:13:00Z",
+    "lineStart" : 781,
+    "lineEnd" : 840,
+    "chars" : 9477,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3876,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:14:00Z",
+    "lineStart" : 841,
+    "lineEnd" : 900,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:15:00Z",
+    "lineStart" : 901,
+    "lineEnd" : 960,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:16:00Z",
+    "lineStart" : 961,
+    "lineEnd" : 1020,
+    "chars" : 9467,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3874,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:17:00Z",
+    "lineStart" : 1021,
+    "lineEnd" : 1080,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:18:00Z",
+    "lineStart" : 1081,
+    "lineEnd" : 1140,
+    "chars" : 9477,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3876,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:19:00Z",
+    "lineStart" : 1141,
+    "lineEnd" : 1200,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:20:00Z",
+    "lineStart" : 1201,
+    "lineEnd" : 1260,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:21:00Z",
+    "lineStart" : 1261,
+    "lineEnd" : 1320,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:22:00Z",
+    "lineStart" : 1321,
+    "lineEnd" : 1380,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:23:00Z",
+    "lineStart" : 1381,
+    "lineEnd" : 1440,
+    "chars" : 9447,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3869,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:24:00Z",
+    "lineStart" : 1441,
+    "lineEnd" : 1500,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:25:00Z",
+    "lineStart" : 1501,
+    "lineEnd" : 1560,
+    "chars" : 9427,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3864,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:26:00Z",
+    "lineStart" : 1561,
+    "lineEnd" : 1620,
+    "chars" : 9457,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3871,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:27:00Z",
+    "lineStart" : 1621,
+    "lineEnd" : 1680,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:28:00Z",
+    "lineStart" : 1681,
+    "lineEnd" : 1740,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:29:00Z",
+    "lineStart" : 1741,
+    "lineEnd" : 1800,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:30:00Z",
+    "lineStart" : 1801,
+    "lineEnd" : 1860,
+    "chars" : 10409,
+    "anomalous" : true,
+    "reasons" : [ "SPIKE:AUTH|auth_401", "SPIKE:ERRORS|errors", "SPIKE:LEVEL|warn_lines" ],
+    "llmCalls" : 3,
+    "estTokens" : 5282,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 44,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "AUTH",
+      "metric" : "auth_401",
+      "count" : 14,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "LIFECYCLE",
+      "metric" : "deploys",
+      "count" : 1,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "LEVEL",
+      "metric" : "warn_lines",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:fcb00f:WARN [token-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host=",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:f7a248:ERROR [db-proxy] tenantId=* traceId=* requestId=* sessionId=* userId=* host=* - ",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:a2df26:ERROR [api-gateway] tenantId=* traceId=* requestId=* sessionId=* userId=* host=*",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:e64211:ERROR [auth-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host=",
+      "count" : 14,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:31:00Z",
+    "lineStart" : 1861,
+    "lineEnd" : 1920,
+    "chars" : 10424,
+    "anomalous" : true,
+    "reasons" : [ "SPIKE:AUTH|auth_401", "SPIKE:ERRORS|errors", "SPIKE:LEVEL|warn_lines" ],
+    "llmCalls" : 3,
+    "estTokens" : 5265,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 45,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "AUTH",
+      "metric" : "auth_401",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "LEVEL",
+      "metric" : "warn_lines",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:e64211:ERROR [auth-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host=",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:fcb00f:WARN [token-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host=",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:f7a248:ERROR [db-proxy] tenantId=* traceId=* requestId=* sessionId=* userId=* host=* - ",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:a2df26:ERROR [api-gateway] tenantId=* traceId=* requestId=* sessionId=* userId=* host=*",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:32:00Z",
+    "lineStart" : 1921,
+    "lineEnd" : 1980,
+    "chars" : 10424,
+    "anomalous" : true,
+    "reasons" : [ "SPIKE:AUTH|auth_401", "SPIKE:ERRORS|errors", "SPIKE:LEVEL|warn_lines" ],
+    "llmCalls" : 3,
+    "estTokens" : 5265,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 45,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "AUTH",
+      "metric" : "auth_401",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "LEVEL",
+      "metric" : "warn_lines",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:e64211:ERROR [auth-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host=",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:fcb00f:WARN [token-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host=",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:f7a248:ERROR [db-proxy] tenantId=* traceId=* requestId=* sessionId=* userId=* host=* - ",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:a2df26:ERROR [api-gateway] tenantId=* traceId=* requestId=* sessionId=* userId=* host=*",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:33:00Z",
+    "lineStart" : 1981,
+    "lineEnd" : 2040,
+    "chars" : 10374,
+    "anomalous" : true,
+    "reasons" : [ "SPIKE:AUTH|auth_401", "SPIKE:ERRORS|errors", "SPIKE:LEVEL|warn_lines" ],
+    "llmCalls" : 3,
+    "estTokens" : 5252,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 45,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "AUTH",
+      "metric" : "auth_401",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "LEVEL",
+      "metric" : "warn_lines",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:e64211:ERROR [auth-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host=",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:fcb00f:WARN [token-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host=",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:f7a248:ERROR [db-proxy] tenantId=* traceId=* requestId=* sessionId=* userId=* host=* - ",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:a2df26:ERROR [api-gateway] tenantId=* traceId=* requestId=* sessionId=* userId=* host=*",
+      "count" : 15,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:34:00Z",
+    "lineStart" : 2041,
+    "lineEnd" : 2100,
+    "chars" : 9592,
+    "anomalous" : true,
+    "reasons" : [ "SPIKE:ERRORS|errors" ],
+    "llmCalls" : 2,
+    "estTokens" : 4167,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 7,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "AUTH",
+      "metric" : "auth_401",
+      "count" : 3,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "LEVEL",
+      "metric" : "warn_lines",
+      "count" : 3,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:e64211:ERROR [auth-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host=",
+      "count" : 3,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:fcb00f:WARN [token-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host=",
+      "count" : 3,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:f7a248:ERROR [db-proxy] tenantId=* traceId=* requestId=* sessionId=* userId=* host=* - ",
+      "count" : 2,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:a2df26:ERROR [api-gateway] tenantId=* traceId=* requestId=* sessionId=* userId=* host=*",
+      "count" : 2,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:35:00Z",
+    "lineStart" : 2101,
+    "lineEnd" : 2160,
+    "chars" : 9427,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3864,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:36:00Z",
+    "lineStart" : 2161,
+    "lineEnd" : 2220,
+    "chars" : 9457,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3871,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:37:00Z",
+    "lineStart" : 2221,
+    "lineEnd" : 2280,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:38:00Z",
+    "lineStart" : 2281,
+    "lineEnd" : 2340,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:39:00Z",
+    "lineStart" : 2341,
+    "lineEnd" : 2400,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:40:00Z",
+    "lineStart" : 2401,
+    "lineEnd" : 2460,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:41:00Z",
+    "lineStart" : 2461,
+    "lineEnd" : 2520,
+    "chars" : 9467,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3874,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:42:00Z",
+    "lineStart" : 2521,
+    "lineEnd" : 2580,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:43:00Z",
+    "lineStart" : 2581,
+    "lineEnd" : 2640,
+    "chars" : 9477,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3876,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:44:00Z",
+    "lineStart" : 2641,
+    "lineEnd" : 2700,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:45:00Z",
+    "lineStart" : 2701,
+    "lineEnd" : 2760,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:46:00Z",
+    "lineStart" : 2761,
+    "lineEnd" : 2820,
+    "chars" : 9467,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3874,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:47:00Z",
+    "lineStart" : 2821,
+    "lineEnd" : 2880,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:48:00Z",
+    "lineStart" : 2881,
+    "lineEnd" : 2940,
+    "chars" : 9477,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3876,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:49:00Z",
+    "lineStart" : 2941,
+    "lineEnd" : 3000,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:50:00Z",
+    "lineStart" : 3001,
+    "lineEnd" : 3060,
+    "chars" : 9427,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3864,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:51:00Z",
+    "lineStart" : 3061,
+    "lineEnd" : 3120,
+    "chars" : 9457,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3871,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:52:00Z",
+    "lineStart" : 3121,
+    "lineEnd" : 3180,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:53:00Z",
+    "lineStart" : 3181,
+    "lineEnd" : 3240,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:54:00Z",
+    "lineStart" : 3241,
+    "lineEnd" : 3300,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:55:00Z",
+    "lineStart" : 3301,
+    "lineEnd" : 3360,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:56:00Z",
+    "lineStart" : 3361,
+    "lineEnd" : 3420,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:57:00Z",
+    "lineStart" : 3421,
+    "lineEnd" : 3480,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:58:00Z",
+    "lineStart" : 3481,
+    "lineEnd" : 3540,
+    "chars" : 10285,
+    "anomalous" : true,
+    "reasons" : [ "RARE_SIGNATURE", "SPIKE:ERRORS|errors" ],
+    "llmCalls" : 3,
+    "estTokens" : 4936,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 40,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:7b1264:ERROR [payment-service] tenantId=* traceId=* requestId=* sessionId=* userId=* ho",
+      "count" : 40,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T09:59:00Z",
+    "lineStart" : 3541,
+    "lineEnd" : 3600,
+    "chars" : 10709,
+    "anomalous" : true,
+    "reasons" : [ "RARE_SIGNATURE", "SPIKE:ERRORS|errors" ],
+    "llmCalls" : 3,
+    "estTokens" : 5041,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:7b1264:ERROR [payment-service] tenantId=* traceId=* requestId=* sessionId=* userId=* ho",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:00:00Z",
+    "lineStart" : 3601,
+    "lineEnd" : 3660,
+    "chars" : 10607,
+    "anomalous" : true,
+    "reasons" : [ "RARE_SIGNATURE", "SPIKE:ERRORS|errors" ],
+    "llmCalls" : 3,
+    "estTokens" : 5016,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 50,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:7b1264:ERROR [payment-service] tenantId=* traceId=* requestId=* sessionId=* userId=* ho",
+      "count" : 50,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:01:00Z",
+    "lineStart" : 3661,
+    "lineEnd" : 3720,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:02:00Z",
+    "lineStart" : 3721,
+    "lineEnd" : 3780,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:03:00Z",
+    "lineStart" : 3781,
+    "lineEnd" : 3840,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:04:00Z",
+    "lineStart" : 3841,
+    "lineEnd" : 3900,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:05:00Z",
+    "lineStart" : 3901,
+    "lineEnd" : 3960,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:06:00Z",
+    "lineStart" : 3961,
+    "lineEnd" : 4020,
+    "chars" : 9467,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3874,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:07:00Z",
+    "lineStart" : 4021,
+    "lineEnd" : 4080,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:08:00Z",
+    "lineStart" : 4081,
+    "lineEnd" : 4140,
+    "chars" : 9477,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3876,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:09:00Z",
+    "lineStart" : 4141,
+    "lineEnd" : 4200,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:10:00Z",
+    "lineStart" : 4201,
+    "lineEnd" : 4260,
+    "chars" : 9427,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3864,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:11:00Z",
+    "lineStart" : 4261,
+    "lineEnd" : 4320,
+    "chars" : 9457,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3871,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:12:00Z",
+    "lineStart" : 4321,
+    "lineEnd" : 4380,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:13:00Z",
+    "lineStart" : 4381,
+    "lineEnd" : 4440,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:14:00Z",
+    "lineStart" : 4441,
+    "lineEnd" : 4500,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:15:00Z",
+    "lineStart" : 4501,
+    "lineEnd" : 4560,
+    "chars" : 9427,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3864,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:16:00Z",
+    "lineStart" : 4561,
+    "lineEnd" : 4620,
+    "chars" : 9457,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3871,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:17:00Z",
+    "lineStart" : 4621,
+    "lineEnd" : 4680,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:18:00Z",
+    "lineStart" : 4681,
+    "lineEnd" : 4740,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:19:00Z",
+    "lineStart" : 4741,
+    "lineEnd" : 4800,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:20:00Z",
+    "lineStart" : 4801,
+    "lineEnd" : 4860,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:21:00Z",
+    "lineStart" : 4861,
+    "lineEnd" : 4920,
+    "chars" : 9467,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3874,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:22:00Z",
+    "lineStart" : 4921,
+    "lineEnd" : 4980,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:23:00Z",
+    "lineStart" : 4981,
+    "lineEnd" : 5040,
+    "chars" : 9555,
+    "anomalous" : true,
+    "reasons" : [ "RARE_SIGNATURE", "SPIKE:ERRORS|errors" ],
+    "llmCalls" : 2,
+    "estTokens" : 3964,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 40,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:34911f:ERROR [redis-cache] tenantId=* traceId=* requestId=* sessionId=* userId=* host=*",
+      "count" : 40,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:24:00Z",
+    "lineStart" : 5041,
+    "lineEnd" : 5100,
+    "chars" : 9629,
+    "anomalous" : true,
+    "reasons" : [ "RARE_SIGNATURE", "SPIKE:ERRORS|errors" ],
+    "llmCalls" : 2,
+    "estTokens" : 3983,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:34911f:ERROR [redis-cache] tenantId=* traceId=* requestId=* sessionId=* userId=* host=*",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:25:00Z",
+    "lineStart" : 5101,
+    "lineEnd" : 5160,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:26:00Z",
+    "lineStart" : 5161,
+    "lineEnd" : 5220,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:27:00Z",
+    "lineStart" : 5221,
+    "lineEnd" : 5280,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:28:00Z",
+    "lineStart" : 5281,
+    "lineEnd" : 5340,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:29:00Z",
+    "lineStart" : 5341,
+    "lineEnd" : 5400,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:30:00Z",
+    "lineStart" : 5401,
+    "lineEnd" : 5460,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:31:00Z",
+    "lineStart" : 5461,
+    "lineEnd" : 5520,
+    "chars" : 9467,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3874,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:32:00Z",
+    "lineStart" : 5521,
+    "lineEnd" : 5580,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:33:00Z",
+    "lineStart" : 5581,
+    "lineEnd" : 5640,
+    "chars" : 9427,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3864,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:34:00Z",
+    "lineStart" : 5641,
+    "lineEnd" : 5700,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:35:00Z",
+    "lineStart" : 5701,
+    "lineEnd" : 5760,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:36:00Z",
+    "lineStart" : 5761,
+    "lineEnd" : 5820,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:37:00Z",
+    "lineStart" : 5821,
+    "lineEnd" : 5880,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:38:00Z",
+    "lineStart" : 5881,
+    "lineEnd" : 5940,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:39:00Z",
+    "lineStart" : 5941,
+    "lineEnd" : 6000,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:40:00Z",
+    "lineStart" : 6001,
+    "lineEnd" : 6060,
+    "chars" : 9427,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3864,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:41:00Z",
+    "lineStart" : 6061,
+    "lineEnd" : 6120,
+    "chars" : 9457,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3871,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:42:00Z",
+    "lineStart" : 6121,
+    "lineEnd" : 6180,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:43:00Z",
+    "lineStart" : 6181,
+    "lineEnd" : 6240,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:44:00Z",
+    "lineStart" : 6241,
+    "lineEnd" : 6300,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:45:00Z",
+    "lineStart" : 6301,
+    "lineEnd" : 6360,
+    "chars" : 9427,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3864,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:46:00Z",
+    "lineStart" : 6361,
+    "lineEnd" : 6420,
+    "chars" : 9457,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3871,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:47:00Z",
+    "lineStart" : 6421,
+    "lineEnd" : 6480,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:48:00Z",
+    "lineStart" : 6481,
+    "lineEnd" : 6540,
+    "chars" : 9655,
+    "anomalous" : true,
+    "reasons" : [ "RARE_SIGNATURE", "SPIKE:LEVEL|warn_lines" ],
+    "llmCalls" : 2,
+    "estTokens" : 4016,
+    "metrics" : [ {
+      "category" : "PERFORMANCE",
+      "metric" : "gc_pause_ms",
+      "count" : 40,
+      "sumMs" : 100000,
+      "avgMs" : 2500.0,
+      "p95Ms" : 2500.0
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "LEVEL",
+      "metric" : "warn_lines",
+      "count" : 40,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:e8ebab:WARN [search-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host",
+      "count" : 40,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:49:00Z",
+    "lineStart" : 6541,
+    "lineEnd" : 6600,
+    "chars" : 9749,
+    "anomalous" : true,
+    "reasons" : [ "RARE_SIGNATURE", "SPIKE:LEVEL|warn_lines" ],
+    "llmCalls" : 2,
+    "estTokens" : 4038,
+    "metrics" : [ {
+      "category" : "PERFORMANCE",
+      "metric" : "gc_pause_ms",
+      "count" : 60,
+      "sumMs" : 150000,
+      "avgMs" : 2500.0,
+      "p95Ms" : 2500.0
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "LEVEL",
+      "metric" : "warn_lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:e8ebab:WARN [search-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:50:00Z",
+    "lineStart" : 6601,
+    "lineEnd" : 6660,
+    "chars" : 10250,
+    "anomalous" : true,
+    "reasons" : [ "HARD:PerformanceParser", "RARE_SIGNATURE", "SPIKE:ERRORS|errors", "SPIKE:ERRORS|exceptions", "SPIKE:LEVEL|warn_lines" ],
+    "llmCalls" : 3,
+    "estTokens" : 5144,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 49,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "ERRORS",
+      "metric" : "exceptions",
+      "count" : 49,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "ERRORS",
+      "metric" : "exception:OutOfMemoryError",
+      "count" : 49,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "PERFORMANCE",
+      "metric" : "gc_pause_ms",
+      "count" : 11,
+      "sumMs" : 27500,
+      "avgMs" : 2500.0,
+      "p95Ms" : 2500.0
+    }, {
+      "category" : "PERFORMANCE",
+      "metric" : "oom",
+      "count" : 49,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "LEVEL",
+      "metric" : "warn_lines",
+      "count" : 11,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:e8ebab:WARN [search-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host",
+      "count" : 11,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:10a9a9:ERROR [search-service] tenantId=* traceId=* requestId=* sessionId=* userId=* hos",
+      "count" : 49,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:51:00Z",
+    "lineStart" : 6661,
+    "lineEnd" : 6720,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:52:00Z",
+    "lineStart" : 6721,
+    "lineEnd" : 6780,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:53:00Z",
+    "lineStart" : 6781,
+    "lineEnd" : 6840,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:54:00Z",
+    "lineStart" : 6841,
+    "lineEnd" : 6900,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:55:00Z",
+    "lineStart" : 6901,
+    "lineEnd" : 6960,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:56:00Z",
+    "lineStart" : 6961,
+    "lineEnd" : 7020,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:57:00Z",
+    "lineStart" : 7021,
+    "lineEnd" : 7080,
+    "chars" : 9377,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3852,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:58:00Z",
+    "lineStart" : 7081,
+    "lineEnd" : 7140,
+    "chars" : 9457,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3871,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T10:59:00Z",
+    "lineStart" : 7141,
+    "lineEnd" : 7200,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:00:00Z",
+    "lineStart" : 7201,
+    "lineEnd" : 7260,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:01:00Z",
+    "lineStart" : 7261,
+    "lineEnd" : 7320,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:02:00Z",
+    "lineStart" : 7321,
+    "lineEnd" : 7380,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:03:00Z",
+    "lineStart" : 7381,
+    "lineEnd" : 7440,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:04:00Z",
+    "lineStart" : 7441,
+    "lineEnd" : 7500,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:05:00Z",
+    "lineStart" : 7501,
+    "lineEnd" : 7560,
+    "chars" : 9427,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3864,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:06:00Z",
+    "lineStart" : 7561,
+    "lineEnd" : 7620,
+    "chars" : 9457,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3871,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:07:00Z",
+    "lineStart" : 7621,
+    "lineEnd" : 7680,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:08:00Z",
+    "lineStart" : 7681,
+    "lineEnd" : 7740,
+    "chars" : 9447,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3869,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:09:00Z",
+    "lineStart" : 7741,
+    "lineEnd" : 7800,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:10:00Z",
+    "lineStart" : 7801,
+    "lineEnd" : 7860,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:11:00Z",
+    "lineStart" : 7861,
+    "lineEnd" : 7920,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:12:00Z",
+    "lineStart" : 7921,
+    "lineEnd" : 7980,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:13:00Z",
+    "lineStart" : 7981,
+    "lineEnd" : 8040,
+    "chars" : 10435,
+    "anomalous" : true,
+    "reasons" : [ "RARE_SIGNATURE", "SPIKE:AUTH|auth_403", "SPIKE:ERRORS|errors" ],
+    "llmCalls" : 3,
+    "estTokens" : 4992,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 40,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "AUTH",
+      "metric" : "auth_403",
+      "count" : 40,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:c97598:ERROR [auth-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host=",
+      "count" : 40,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:14:00Z",
+    "lineStart" : 8041,
+    "lineEnd" : 8100,
+    "chars" : 10919,
+    "anomalous" : true,
+    "reasons" : [ "RARE_SIGNATURE", "SPIKE:AUTH|auth_403", "SPIKE:ERRORS|errors" ],
+    "llmCalls" : 3,
+    "estTokens" : 5113,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "AUTH",
+      "metric" : "auth_403",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:c97598:ERROR [auth-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host=",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:15:00Z",
+    "lineStart" : 8101,
+    "lineEnd" : 8160,
+    "chars" : 9991,
+    "anomalous" : true,
+    "reasons" : [ "RARE_SIGNATURE", "SPIKE:AUTH|auth_403", "SPIKE:ERRORS|errors" ],
+    "llmCalls" : 3,
+    "estTokens" : 4880,
+    "metrics" : [ {
+      "category" : "ERRORS",
+      "metric" : "errors",
+      "count" : 20,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "AUTH",
+      "metric" : "auth_403",
+      "count" : 20,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    }, {
+      "category" : "SIGNATURE",
+      "metric" : "sig:c97598:ERROR [auth-service] tenantId=* traceId=* requestId=* sessionId=* userId=* host=",
+      "count" : 20,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:16:00Z",
+    "lineStart" : 8161,
+    "lineEnd" : 8220,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:17:00Z",
+    "lineStart" : 8221,
+    "lineEnd" : 8280,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:18:00Z",
+    "lineStart" : 8281,
+    "lineEnd" : 8340,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:19:00Z",
+    "lineStart" : 8341,
+    "lineEnd" : 8400,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:20:00Z",
+    "lineStart" : 8401,
+    "lineEnd" : 8460,
+    "chars" : 9427,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3864,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:21:00Z",
+    "lineStart" : 8461,
+    "lineEnd" : 8520,
+    "chars" : 9427,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3863,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:22:00Z",
+    "lineStart" : 8521,
+    "lineEnd" : 8580,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:23:00Z",
+    "lineStart" : 8581,
+    "lineEnd" : 8640,
+    "chars" : 9477,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3876,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:24:00Z",
+    "lineStart" : 8641,
+    "lineEnd" : 8700,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:25:00Z",
+    "lineStart" : 8701,
+    "lineEnd" : 8760,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:26:00Z",
+    "lineStart" : 8761,
+    "lineEnd" : 8820,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:27:00Z",
+    "lineStart" : 8821,
+    "lineEnd" : 8880,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:28:00Z",
+    "lineStart" : 8881,
+    "lineEnd" : 8940,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:29:00Z",
+    "lineStart" : 8941,
+    "lineEnd" : 9000,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:30:00Z",
+    "lineStart" : 9001,
+    "lineEnd" : 9060,
+    "chars" : 9427,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3864,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:31:00Z",
+    "lineStart" : 9061,
+    "lineEnd" : 9120,
+    "chars" : 9427,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3863,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:32:00Z",
+    "lineStart" : 9121,
+    "lineEnd" : 9180,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:33:00Z",
+    "lineStart" : 9181,
+    "lineEnd" : 9240,
+    "chars" : 9477,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3876,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:34:00Z",
+    "lineStart" : 9241,
+    "lineEnd" : 9300,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:35:00Z",
+    "lineStart" : 9301,
+    "lineEnd" : 9360,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:36:00Z",
+    "lineStart" : 9361,
+    "lineEnd" : 9420,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:37:00Z",
+    "lineStart" : 9421,
+    "lineEnd" : 9480,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:38:00Z",
+    "lineStart" : 9481,
+    "lineEnd" : 9540,
+    "chars" : 9447,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3869,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:39:00Z",
+    "lineStart" : 9541,
+    "lineEnd" : 9600,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:40:00Z",
+    "lineStart" : 9601,
+    "lineEnd" : 9660,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:41:00Z",
+    "lineStart" : 9661,
+    "lineEnd" : 9720,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:42:00Z",
+    "lineStart" : 9721,
+    "lineEnd" : 9780,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:43:00Z",
+    "lineStart" : 9781,
+    "lineEnd" : 9840,
+    "chars" : 9447,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3869,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:44:00Z",
+    "lineStart" : 9841,
+    "lineEnd" : 9900,
+    "chars" : 9437,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3866,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:45:00Z",
+    "lineStart" : 9901,
+    "lineEnd" : 9960,
+    "chars" : 9497,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3881,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 60,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  }, {
+    "bucket" : "2026-07-15T11:46:00Z",
+    "lineStart" : 9961,
+    "lineEnd" : 10000,
+    "chars" : 6333,
+    "anomalous" : false,
+    "reasons" : [ ],
+    "llmCalls" : 2,
+    "estTokens" : 3090,
+    "metrics" : [ {
+      "category" : "TRAFFIC",
+      "metric" : "lines",
+      "count" : 40,
+      "sumMs" : null,
+      "avgMs" : null,
+      "p95Ms" : null
+    } ]
+  } ]
+}

@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { isDemo } from '../demo/demoMode';
+import * as demo from '../demo/demoApi';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
@@ -51,21 +53,31 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Route each call to the in-browser demo backend while demo mode is on, else to
+ * the real API. Decided per call, because demo mode starts and ends at runtime.
+ */
+function demoAware(real, fake) {
+  return Object.fromEntries(
+    Object.keys(real).map((name) => [name, (...args) => (isDemo() ? fake : real)[name](...args)])
+  );
+}
+
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
   guest: () => api.post('/auth/guest'),
 };
 
-export const sessionAPI = {
+export const sessionAPI = demoAware({
   list: () => api.get('/sessions'),
   get: (id) => api.get(`/sessions/${id}`),
   create: (title) => api.post('/sessions', title ? { title } : {}),
   rename: (id, title) => api.patch(`/sessions/${id}`, { title }),
   remove: (id) => api.delete(`/sessions/${id}`),
-};
+}, demo.sessionAPI);
 
-export const documentAPI = {
+const realDocumentAPI = {
   list: (sessionId) => api.get(`/sessions/${sessionId}/documents`),
 
   // Legacy stream-through upload (kept as a fallback). Prefer uploadDirect.
@@ -97,7 +109,7 @@ export const documentAPI = {
    * confirm so the backend records the row and kicks off the pipeline.
    */
   uploadDirect: async (sessionId, file, onUploadProgress) => {
-    const { data: presign } = await documentAPI.presign(sessionId, file);
+    const { data: presign } = await realDocumentAPI.presign(sessionId, file);
     if (presign.duplicate) {
       // Identical file already processed — nothing to upload.
       return { data: presign.document, duplicate: true };
@@ -109,11 +121,13 @@ export const documentAPI = {
       timeout: 0, // large files; let the browser manage it
       onUploadProgress,
     });
-    return documentAPI.confirm(sessionId, presign.documentId, file);
+    return realDocumentAPI.confirm(sessionId, presign.documentId, file);
   },
 };
 
-export const analysisAPI = {
+export const documentAPI = demoAware(realDocumentAPI, demo.documentAPI);
+
+export const analysisAPI = demoAware({
   metrics: (sessionId, params) => api.get(`/sessions/${sessionId}/metrics`, { params }),
   findings: (sessionId, params) => api.get(`/sessions/${sessionId}/findings`, { params }),
   incidents: (sessionId) => api.get(`/sessions/${sessionId}/incidents`),
@@ -127,9 +141,11 @@ export const analysisAPI = {
     api.post(`/sessions/${sessionId}/drilldown`, { question }, { timeout: 130000 }),
   drilldownHistory: (sessionId) => api.get(`/sessions/${sessionId}/drilldown`),
   drilldownClear: (sessionId) => api.delete(`/sessions/${sessionId}/drilldown`),
-};
+}, demo.analysisAPI);
 
-export function streamProgress(sessionId, { onUpdate, onDone, onError } = {}) {
+export function streamProgress(sessionId, handlers = {}) {
+  if (isDemo()) return demo.streamProgress(sessionId, handlers);
+  const { onUpdate, onDone, onError } = handlers;
   const token = localStorage.getItem('token');
   const controller = new AbortController();
   const url = `${API_BASE_URL}/sessions/${sessionId}/progress`;

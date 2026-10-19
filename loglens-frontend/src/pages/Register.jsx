@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth';
 
 /**
  * Enhanced Register Page with better UX
@@ -85,7 +85,7 @@ export default function Register() {
       } else {
         setError(result.error || 'Registration failed. Please try again.');
       }
-    } catch (err) {
+    } catch {
       setError('Connection error. Please check your internet connection.');
     } finally {
       setLoading(false);
@@ -102,27 +102,27 @@ export default function Register() {
       yellow: 'bg-yellow-500',
       blue: 'bg-blue-500',
       green: 'bg-green-500',
-      gray: 'bg-gray-300',
+      gray: 'bg-slate-300',
     };
     return colors[passwordStrength.color] || colors.gray;
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-white to-pink-50 py-12">
       <div className="max-w-md w-full mx-4">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-600 to-pink-500 rounded-2xl mb-4 shadow-lg shadow-violet-500/30">
             <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-600 mt-2">Join LogLens and start learning smarter</p>
+          <h1 className="text-3xl font-bold text-slate-900">Create Account</h1>
+          <p className="text-slate-600 mt-2">Join LogLens and start learning smarter</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+        <div className="bg-white rounded-2xl shadow-xl shadow-violet-500/5 border border-slate-100 p-8 space-y-6">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Error Alert */}
             {error && (
@@ -138,7 +138,7 @@ export default function Register() {
 
             {/* Full Name Field */}
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="fullName" className="block text-sm font-medium text-slate-700 mb-1">
                 Full Name
               </label>
               <input
@@ -147,7 +147,7 @@ export default function Register() {
                 type="text"
                 autoComplete="name"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
                 placeholder="John Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -157,7 +157,7 @@ export default function Register() {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
                 Email Address
               </label>
               <input
@@ -166,7 +166,7 @@ export default function Register() {
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -176,7 +176,7 @@ export default function Register() {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
                 Password
               </label>
               <div className="relative">
@@ -186,7 +186,7 @@ export default function Register() {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors pr-12"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors pr-12"
                   placeholder="Create a strong password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -194,7 +194,7 @@ export default function Register() {
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
@@ -214,17 +214,17 @@ export default function Register() {
               {password && (
                 <div className="mt-2">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-500">Password strength</span>
+                    <span className="text-xs text-slate-500">Password strength</span>
                     <span className={`text-xs font-medium ${
                       passwordStrength.color === 'red' ? 'text-red-600' :
                       passwordStrength.color === 'yellow' ? 'text-yellow-600' :
                       passwordStrength.color === 'blue' ? 'text-blue-600' :
-                      passwordStrength.color === 'green' ? 'text-green-600' : 'text-gray-600'
+                      passwordStrength.color === 'green' ? 'text-green-600' : 'text-slate-600'
                     }`}>
                       {passwordStrength.label}
                     </span>
                   </div>
-                  <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                     <div
                       className={`h-full ${getStrengthColor()} transition-all duration-300`}
                       style={{ width: getStrengthBarWidth() }}
@@ -235,7 +235,7 @@ export default function Register() {
                   <div className="mt-2 grid grid-cols-2 gap-1">
                     {passwordStrength.checks && (
                       <>
-                        <div className={`text-xs flex items-center ${passwordStrength.checks.length ? 'text-green-600' : 'text-gray-400'}`}>
+                        <div className={`text-xs flex items-center ${passwordStrength.checks.length ? 'text-green-600' : 'text-slate-400'}`}>
                           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             {passwordStrength.checks.length ? (
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -245,7 +245,7 @@ export default function Register() {
                           </svg>
                           8+ characters
                         </div>
-                        <div className={`text-xs flex items-center ${passwordStrength.checks.uppercase ? 'text-green-600' : 'text-gray-400'}`}>
+                        <div className={`text-xs flex items-center ${passwordStrength.checks.uppercase ? 'text-green-600' : 'text-slate-400'}`}>
                           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             {passwordStrength.checks.uppercase ? (
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -255,7 +255,7 @@ export default function Register() {
                           </svg>
                           Uppercase
                         </div>
-                        <div className={`text-xs flex items-center ${passwordStrength.checks.lowercase ? 'text-green-600' : 'text-gray-400'}`}>
+                        <div className={`text-xs flex items-center ${passwordStrength.checks.lowercase ? 'text-green-600' : 'text-slate-400'}`}>
                           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             {passwordStrength.checks.lowercase ? (
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -265,7 +265,7 @@ export default function Register() {
                           </svg>
                           Lowercase
                         </div>
-                        <div className={`text-xs flex items-center ${passwordStrength.checks.number ? 'text-green-600' : 'text-gray-400'}`}>
+                        <div className={`text-xs flex items-center ${passwordStrength.checks.number ? 'text-green-600' : 'text-slate-400'}`}>
                           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             {passwordStrength.checks.number ? (
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -284,7 +284,7 @@ export default function Register() {
 
             {/* Confirm Password Field */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-1">
                 Confirm Password
               </label>
               <input
@@ -293,10 +293,10 @@ export default function Register() {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors ${
                   confirmPassword && password !== confirmPassword
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                    : 'border-gray-300'
+                    : 'border-slate-300'
                 }`}
                 placeholder="Confirm your password"
                 value={confirmPassword}
@@ -312,7 +312,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={loading || (confirmPassword && password !== confirmPassword)}
-              className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-pink-500 hover:brightness-110 text-white shadow-lg shadow-violet-500/25 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? (
                 <>
@@ -331,25 +331,27 @@ export default function Register() {
           {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-slate-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Already have an account?</span>
+              <span className="px-2 bg-white text-slate-500">Already have an account?</span>
             </div>
           </div>
 
           {/* Sign In Link */}
           <Link
             to="/login"
-            className="w-full py-3 px-4 border-2 border-indigo-600 text-indigo-600 font-medium rounded-lg hover:bg-indigo-50 transition-colors flex items-center justify-center"
+            className="w-full py-3 px-4 border-2 border-violet-600 text-violet-600 font-medium rounded-lg hover:bg-violet-50 transition-colors flex items-center justify-center"
           >
             Sign in instead
           </Link>
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-500 text-sm mt-8">
-          By creating an account, you agree to our Terms of Service and Privacy Policy
+        <p className="text-center text-slate-500 text-sm mt-8">
+          <Link to="/" className="hover:text-violet-700">
+            ← Back to the LogLens overview
+          </Link>
         </p>
       </div>
     </div>
