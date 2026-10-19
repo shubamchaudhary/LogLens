@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import bench from '../demo/bench.json';
 import BarChart from '../components/BarChart';
 import HeapChart, { LiveSetBars } from '../components/HeapChart';
 import GateExplainer from '../components/GateExplainer';
+import TestedGrid from '../components/TestedGrid';
+import { loadFixture } from '../demo/demoApi';
 import { Heading, Section, SiteHeader } from '../components/Site';
 import Icon from '../components/Icon';
 import { REPO_URL } from '../config';
@@ -13,6 +15,7 @@ import { fmtBytes, fmtNum } from '../utils/format';
 // come from src/demo/bench.json, generated from bench/results and evals/results.
 
 const NAV = [
+  ['#tested', 'Summary'],
   ['#ingest', 'Ingest'],
   ['#faults', 'Faults'],
   ['#quality', 'Quality'],
@@ -63,6 +66,14 @@ const RETRIEVER = { vector_only: 'Vector', fts_only: 'Full text', hybrid_rrf: 'H
 
 export default function Benchmarks() {
   usePublicTheme();
+  const [lines1g, setLines1g] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    loadFixture().then((f) => !cancelled && setLines1g(f.stats.lines));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   useEffect(() => {
     document.title = 'Benchmarks · DeepLogLens';
     return () => {
@@ -96,6 +107,12 @@ export default function Benchmarks() {
           <Icon name="github" className="h-4 w-4" /> Raw results and scripts
         </a>
       </section>
+
+      {/* Summary */}
+      <Section id="tested">
+        <Heading kicker="Tested at scale" title="The headline numbers" />
+        <TestedGrid lines1g={lines1g} />
+      </Section>
 
       {/* Ingest */}
       <Section id="ingest">

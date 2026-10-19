@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react';
+
 // The system on one diagram, plus the seven steps a log file takes through it.
 // Picking a step lights up the boxes and arrows it uses (steps: utils/pipeline.js).
 
@@ -150,5 +152,72 @@ export function ArchitectureSteps({ steps }) {
         </li>
       ))}
     </ol>
+  );
+}
+
+/**
+ * Wide screens: one big diagram pinned on the left while the steps scroll past on the
+ * right. The step in the middle of the screen lights up its part of the diagram.
+ */
+export function ArchitectureStory({ steps }) {
+  const [active, setActive] = useState(0);
+  const items = useRef([]);
+
+  useEffect(() => {
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && setActive(Number(e.target.dataset.step))),
+      { rootMargin: '-50% 0px -50% 0px' }
+    );
+    items.current.forEach((el) => el && io.observe(el));
+    return () => io.disconnect();
+  }, [steps.length]);
+
+  const jump = (i) => items.current[i]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_19rem] gap-12 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <div className="sticky top-16 flex h-[calc(100vh-4rem)] flex-col justify-center">
+        <div className="mb-3 flex items-baseline justify-between">
+          <span className="font-mono text-xs text-muted">
+            <span className="font-semibold text-accent">{String(active + 1).padStart(2, '0')}</span> / {String(steps.length).padStart(2, '0')}
+          </span>
+          <span className="font-display text-sm font-bold text-ink">{steps[active].title}</span>
+        </div>
+        <div className="panel p-6 xl:p-8">
+          <ArchitectureDiagram step={steps[active]} />
+        </div>
+        <div className="mt-4 flex gap-1.5">
+          {steps.map((s, i) => (
+            <button
+              key={s.key}
+              onClick={() => jump(i)}
+              aria-label={`Step ${i + 1}: ${s.title}`}
+              className={`h-1.5 flex-1 rounded-full transition-colors ${i <= active ? 'bg-violet-600' : 'bg-line hover:bg-line2'}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <ol className="py-[18vh]">
+        {steps.map((s, i) => {
+          const on = active === i;
+          return (
+            <li
+              key={s.key}
+              ref={(el) => (items.current[i] = el)}
+              data-step={i}
+              className={`flex min-h-[55vh] flex-col justify-center border-l-2 pl-6 transition-all duration-500 ${
+                on ? 'border-violet-500 opacity-100' : 'border-line opacity-35'
+              }`}
+            >
+              <span className="font-mono text-xs font-semibold text-accent">{String(i + 1).padStart(2, '0')}</span>
+              <h3 className="mt-1 font-display text-xl font-extrabold tracking-tight text-ink">{s.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-body">{s.body}</p>
+              <span className="mt-3 self-start rounded-md bg-sand px-2 py-0.5 font-mono text-[11px] text-accent">{s.metric}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
