@@ -95,9 +95,18 @@ public final class WindowEvalCli {
             }
             String content = w.content();
             List<String> metricLines = new ArrayList<>();
+            List<Map<String, Object>> metricRows = new ArrayList<>();
             for (MetricRow m : metrics.get(w)) {
                 metricLines.add(m.category() + "." + m.metric() + " count=" + m.count()
                     + (m.p95Ms() == null ? "" : " p95=" + m.p95Ms() + "ms"));
+                Map<String, Object> mr = new LinkedHashMap<>();
+                mr.put("category", m.category());
+                mr.put("metric", m.metric());
+                mr.put("count", m.count());
+                mr.put("sumMs", m.sumMs());
+                mr.put("avgMs", m.avgMs());
+                mr.put("p95Ms", m.p95Ms());
+                metricRows.add(mr);
             }
             List<String> segments = RecordAwareSplitter.split(content, maxChars);
             long tokens = 0;
@@ -114,6 +123,7 @@ public final class WindowEvalCli {
             r.put("reasons", reasons);
             r.put("llmCalls", segments.size());
             r.put("estTokens", tokens);
+            r.put("metrics", metricRows);
             records.add(r);
         }
 
