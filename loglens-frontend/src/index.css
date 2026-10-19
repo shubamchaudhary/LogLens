@@ -34,3 +34,19 @@
     @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm transition placeholder:text-slate-400 focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100;
   }
 }
+
+/* Architecture diagram: data moving along the active step's arrows. */
+.arch-flow {
+  stroke-dasharray: 6 5;
+  animation: arch-flow 0.9s linear infinite;
+}
+@keyframes arch-flow {
+  to {
+    stroke-dashoffset: -11;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arch-flow {
+    animation: none;
+  }
+}

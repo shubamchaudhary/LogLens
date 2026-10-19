@@ -10,6 +10,7 @@ import LogFileViewer from './LogFileViewer';
 import Icon from './Icon';
 import OverviewTab from './tabs/OverviewTab';
 import IncidentsTab from './tabs/IncidentsTab';
+import UnderHoodTab from './tabs/UnderHoodTab';
 import { isDemo } from '../demo/demoMode';
 import { loadFixture, skipReplay } from '../demo/demoApi';
 import { fmtClock } from '../utils/format';
@@ -18,6 +19,7 @@ const TABS = [
   ['overview', 'Overview', 'chart'],
   ['incidents', 'Incidents', 'layers'],
   ['ask', 'Ask', 'message'],
+  ['hood', 'Under the hood', 'cpu'],
 ];
 
 /**
@@ -219,6 +221,7 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
                   <IncidentsTab sessionId={sessionId} incidents={data?.incidents} focus={focus} onOpenFile={openFile} />
                 )}
                 {tab === 'ask' && <AskPanel sessionId={sessionId} suggestions={data?.suggestions} onOpenFile={openFile} />}
+                {tab === 'hood' && <UnderHoodTab data={data} guest={guest} />}
               </div>
             )}
           </div>
