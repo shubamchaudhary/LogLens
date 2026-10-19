@@ -30,6 +30,16 @@
   .chip {
     @apply inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs font-medium text-slate-600;
   }
+  /* Public pages (landing, benchmarks, sign-in): paper background, hairline panels. */
+  .panel {
+    @apply rounded-xl border border-line bg-white;
+  }
+  .kicker {
+    @apply font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-700;
+  }
+  .num-badge {
+    @apply flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-violet-600 to-pink-500 font-mono text-xs font-bold text-white;
+  }
   .input {
     @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm transition placeholder:text-slate-400 focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100;
   }

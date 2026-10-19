@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/auth';
+import AuthShell from '../components/AuthShell';
 
 /**
  * Enhanced Register Page with better UX
@@ -108,21 +109,9 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-white to-pink-50 py-12">
-      <div className="max-w-md w-full mx-4">
-        {/* Logo/Brand */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-600 to-pink-500 rounded-2xl mb-4 shadow-lg shadow-violet-500/30">
-            <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900">Create Account</h1>
-          <p className="text-slate-600 mt-2">Create an account to analyze your own logs</p>
-        </div>
-
+    <AuthShell title="Create an account" subtitle="Upload and analyse your own logs.">
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-violet-500/5 border border-slate-100 p-8 space-y-6">
+        <div className="panel space-y-6 p-6 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Error Alert */}
             {error && (
@@ -347,13 +336,6 @@ export default function Register() {
           </Link>
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-slate-500 text-sm mt-8">
-          <Link to="/" className="hover:text-violet-700">
-            ← Back to DeepLogLens
-          </Link>
-        </p>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

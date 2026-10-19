@@ -8,6 +8,7 @@ import Register from './pages/Register';
 
 // The app shell (markdown renderer, tabs) loads on demand so the landing page stays light.
 const AppLayout = lazy(() => import('./pages/AppLayout'));
+const Benchmarks = lazy(() => import('./pages/Benchmarks'));
 const loadingScreen = <div className="min-h-screen flex items-center justify-center text-slate-500">Loading…</div>;
 
 function PrivateRoute({ children }) {
@@ -49,6 +50,14 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/demo" element={<DemoEntry />} />
+          <Route
+            path="/benchmarks"
+            element={
+              <Suspense fallback={loadingScreen}>
+                <Benchmarks />
+              </Suspense>
+            }
+          />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
           <Route

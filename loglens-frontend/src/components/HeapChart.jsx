@@ -103,22 +103,21 @@ export default function HeapChart({ bench }) {
         <span className="flex items-center gap-1.5"><span className="w-4 border-t-2 border-dashed border-slate-400" /> hard cap</span>
       </div>
 
-      <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Fact k="Lines ingested" v={fmtNum(run.lines)} />
-        <Fact k="Live set, max / median" v={`${run.live.max} / ${run.live.median} MB`} tone="text-pink-700" />
-        <Fact k="Peak heap used" v={`${Math.round(run.peakHeapMb)} MB`} note="GC timing" />
-        <Fact k="Time in GC" v={`${run.gcShare}%`} note={`${run.live.fullGcs} full GCs`} />
+      <dl className="mt-4 grid grid-cols-3 gap-2">
+        <Fact k="Lines" v={fmtNum(run.lines)} />
+        <Fact k="Live set" v={`${run.live.max} MB`} tone="text-pink-700" />
+        <Fact k="Peak heap" v={`${Math.round(run.peakHeapMb)} MB`} />
       </dl>
     </div>
   );
 }
 
-function Fact({ k, v, note, tone = 'text-slate-900' }) {
+function Fact({ k, v, tone = 'text-slate-900' }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+    <div className="rounded-lg border border-line bg-paper/60 px-3 py-2">
       <dt className="text-[11px] text-slate-500">{k}</dt>
       <dd className={`text-base font-bold ${tone}`}>
-        {v} {note && <span className="text-[10px] font-normal text-slate-400">{note}</span>}
+        {v}
       </dd>
     </div>
   );
