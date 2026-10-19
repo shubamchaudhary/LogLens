@@ -82,7 +82,7 @@ const out = {
   setup: {
     hardware: '4 vCPU Xeon 2.1 GHz · 15 GB RAM · one VM for app, Postgres, Kafka and MinIO',
     jvm: 'OpenJDK 21 · SerialGC',
-    stack: 'Kafka 3.8 (KRaft) · Postgres 16.10 + pgvector 0.8.0 · MinIO · stub LLM',
+    stack: 'Kafka 3.8 · Postgres 16 + pgvector 0.8 · MinIO',
   },
   sizes,
   threads: parallel.runs.map((r) => ({

@@ -31,12 +31,9 @@ export default function HeapChart({ bench }) {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">Heap used while ingesting a {run.size} file</h3>
-          <p className="text-xs text-slate-500">
-            -Xmx{top}m, SerialGC, {run.threads} part threads · sampled with jstat every ~2 s
-          </p>
+          <h3 className="text-sm font-semibold text-slate-900">Heap while ingesting {run.size}</h3>
         </div>
-        <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs font-medium" role="tablist">
+        <div className="inline-flex rounded-lg border border-line bg-white p-0.5 text-xs font-medium" role="tablist">
           {bench.sizes.map((s, i) => (
             <button
               key={s.size}
@@ -98,9 +95,9 @@ export default function HeapChart({ bench }) {
       </div>
 
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-slate-500">
-        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-violet-600" /> heap used (rises, then a GC drops it)</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-y border-pink-600 bg-pink-500/20" /> live set: heap left after a full GC (median–max)</span>
-        <span className="flex items-center gap-1.5"><span className="w-4 border-t-2 border-dashed border-slate-400" /> hard cap</span>
+        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-violet-600" /> heap used</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-y border-pink-600 bg-pink-500/20" /> live set</span>
+        <span className="flex items-center gap-1.5"><span className="w-4 border-t-2 border-dashed border-slate-400" /> heap cap</span>
       </div>
 
       <dl className="mt-4 grid grid-cols-3 gap-2">
@@ -139,12 +136,9 @@ export function LiveSetBars({ bench }) {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">{by === 'size' ? 'Live set vs file size' : 'Live set vs part threads'}</h3>
-          <p className="text-xs text-slate-500">
-            {by === 'size' ? '-Xmx256m, 3 threads. The input grew 20×.' : 'Same 1 GB file, -Xmx1g, 4 vCPUs.'}
-          </p>
+          <h3 className="text-sm font-semibold text-slate-900">{by === 'size' ? 'Live set by file size' : 'Live set by threads'}</h3>
         </div>
-        <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs font-medium">
+        <div className="inline-flex rounded-lg border border-line bg-white p-0.5 text-xs font-medium">
           {[
             ['size', 'File size'],
             ['threads', 'Threads'],
@@ -179,9 +173,9 @@ export function LiveSetBars({ bench }) {
         ))}
       </div>
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-slate-500">
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-pink-600" /> live set (max)</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-pink-600" /> live set</span>
         {by === 'size' && (
-          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-slate-200" /> peak heap used</span>
+          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-slate-200" /> peak heap</span>
         )}
       </div>
     </div>
