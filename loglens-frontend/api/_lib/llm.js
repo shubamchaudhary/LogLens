@@ -5,7 +5,9 @@
 
 const GROQ_URL = () => process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1';
 const GEMINI_URL = () => process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
-export const CHAT_MODEL = () => process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+export const CHAT_MODEL = () => process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+// gpt-oss reasons before answering and those tokens count against max_tokens.
+const reasoning = (model) => (model.startsWith('openai/gpt-oss') ? { reasoning_effort: 'low' } : {});
 const EMBED_MODEL = 'gemini-embedding-001';
 export const EMBED_DIM = 768;
 
@@ -44,6 +46,7 @@ export async function chatJson(system, user, { maxTokens = 700, temperature = 0.
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: CHAT_MODEL(),
+        ...reasoning(CHAT_MODEL()),
         temperature,
         max_tokens: maxTokens,
         response_format: { type: 'json_object' },

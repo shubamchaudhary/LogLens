@@ -2,7 +2,8 @@
 // Has the LLM explain each incident from its evidence: title, summary, impact,
 // ranked probable causes (each citing evidence line numbers) and fixes. Counts,
 // times and evidence lines are computed by build-dataset.mjs; the model only
-// interprets them, and any cause whose cited lines aren't in the evidence is dropped.
+// interprets them, and any cause whose cited lines aren't in the evidence (or are only
+// the lines that fixed it) is dropped.
 //
 //   GROQ_API_KEYS=... node scripts/demo/enrich-incidents.mjs
 //
@@ -24,6 +25,7 @@ Rules:
 - Use only the evidence. Every cause must cite the line numbers that support it.
 - Counts and times must be copied from the evidence, never estimated.
 - Rank causes: the first is the most likely. Say what in the evidence points to it.
+- A deploy or config change shortly before the start is a prime suspect. Lines after the start that fix it (rollback, reload, restart) are how it ended, never a cause.
 - If something is an inference (not directly visible in a line), say so.
 Return only JSON:
 {"title": "max 9 words, names what broke and why",
@@ -60,6 +62,7 @@ function evidenceText(inc) {
 for (const inc of fixture.incidents) {
   const { json } = await chatJson(SYSTEM, evidenceText(inc), { maxTokens: 900, temperature: 0.2 });
   const valid = new Set(inc.evidence.map((e) => e.line));
+  const fixLines = new Set(inc.evidence.filter((e) => e.role === 'fix').map((e) => e.line));
   const causes = (json.causes || [])
     .map((c) => ({
       cause: String(c.cause || ''),
@@ -67,7 +70,8 @@ for (const inc of fixture.incidents) {
       why: String(c.why || ''),
       lines: (c.lines || []).map(Number).filter((n) => valid.has(n)),
     }))
-    .filter((c) => c.cause && c.lines.length);
+    // a cause resting only on the lines that ended the incident is the fix, not a cause
+    .filter((c) => c.cause && c.lines.length && !c.lines.every((n) => fixLines.has(n)));
   Object.assign(inc, {
     title: String(json.title || inc.title),
     summary: String(json.summary || ''),
