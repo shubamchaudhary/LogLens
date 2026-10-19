@@ -49,9 +49,8 @@ export default function Landing() {
       <SiteHeader links={NAV} />
 
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <SquareField />
-        <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pt-24">
+      <section>
+        <div className="mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pt-24">
           <p className="kicker">Log intelligence · GB-scale archives · AI-enabled Q&amp;A · Deep log analysis</p>
           <h1 className="mt-6 font-display text-4xl font-extrabold leading-[1.1] tracking-tight text-ink sm:text-5xl lg:text-[2.9rem]">
             Log intelligence for{' '}
@@ -210,18 +209,6 @@ function Kpi({ label, value, tone = 'text-ink' }) {
     <div className="rounded-lg border border-line bg-paper px-3 py-2">
       <div className="text-[11px] text-slate-500">{label}</div>
       <div className={`font-display text-lg font-bold ${tone}`}>{value}</div>
-    </div>
-  );
-}
-
-/** Faint grid of squares behind the hero, a few of them tinted (decoration only). */
-function SquareField() {
-  const tinted = new Set([3, 9, 14, 22, 27, 33, 38, 45]);
-  return (
-    <div className="pointer-events-none absolute -right-10 top-60 hidden grid-cols-8 gap-2 lg:grid" aria-hidden="true">
-      {Array.from({ length: 48 }, (_, i) => (
-        <span key={i} className={`h-10 w-10 rounded-md border border-line ${tinted.has(i) ? 'bg-[#efe3cf]' : 'bg-white/50'}`} />
-      ))}
     </div>
   );
 }

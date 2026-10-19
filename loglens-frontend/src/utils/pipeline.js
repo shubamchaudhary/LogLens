@@ -32,7 +32,7 @@ export function pipelineSteps(stats) {
     },
     {
       key: 'gate',
-      title: 'Find the unusual minutes',
+      title: 'Detect',
       body: 'Each minute is compared with the rest of the same log, using median-based baselines, rare error patterns, and hard rules such as out-of-memory or deadlocks. The minutes that stand out are flagged.',
       metric: stats ? `${stats.flaggedMinutes} of ${stats.minutes} minutes flagged` : 'unusual minutes flagged',
       nodes: ['workers', 'pg'],
