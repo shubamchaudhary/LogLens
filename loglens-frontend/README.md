@@ -42,6 +42,7 @@ npm run demo:extract         # events, failure templates, minute stats, line→b
 npm run demo:build           # incidents + src/demo/fixture.json + api/_lib/log-index.json
 GROQ_API_KEYS=... npm run demo:explain                       # LLM writes the incident explanations
 DATABASE_URL=... GEMINI_API_KEYS=... npm run demo:load-db    # schema, 127k events, embeddings
+node scripts/demo/build-bench.mjs    # bench/results → src/demo/bench.json (heap + live-set charts)
 ```
 
 ### Environment variables (Vercel → Settings → Environment Variables)
