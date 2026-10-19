@@ -220,7 +220,7 @@ function SquareField() {
   return (
     <div className="pointer-events-none absolute -right-10 top-60 hidden grid-cols-8 gap-2 lg:grid" aria-hidden="true">
       {Array.from({ length: 48 }, (_, i) => (
-        <span key={i} className={`h-10 w-10 rounded-md border border-line ${tinted.has(i) ? 'bg-[#efe3cf]' : 'bg-white/50'}`} />
+        <span key={i} className={`h-10 w-10 rounded-md border border-line ${tinted.has(i) ? 'bg-[#f5ede1]' : 'bg-white/50'}`} />
       ))}
     </div>
   );

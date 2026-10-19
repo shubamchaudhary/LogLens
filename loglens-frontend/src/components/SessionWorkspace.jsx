@@ -221,7 +221,7 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
                   <IncidentsTab sessionId={sessionId} incidents={data?.incidents} focus={focus} onOpenFile={openFile} />
                 )}
                 {tab === 'ask' && <AskPanel sessionId={sessionId} suggestions={data?.suggestions} onOpenFile={openFile} />}
-                {tab === 'hood' && <UnderHoodTab data={data} guest={guest} />}
+                {tab === 'hood' && <UnderHoodTab data={data} />}
               </div>
             )}
           </div>

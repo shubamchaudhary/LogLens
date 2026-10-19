@@ -12,9 +12,9 @@ export default {
         display: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
-        paper: '#faf7f0', // warm page background of the public pages
-        sand: '#f3efe6', // their secondary panels
-        line: '#e0d9cb', // their hairline borders
+        paper: '#fdfcf9', // warm page background of the public pages
+        sand: '#f7f4ee', // their secondary panels
+        line: '#e9e4da', // their hairline borders
         ink: '#14181c', // their headings
       },
       keyframes: {
