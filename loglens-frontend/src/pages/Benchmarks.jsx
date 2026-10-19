@@ -1,0 +1,322 @@
+import { useEffect } from 'react';
+import bench from '../demo/bench.json';
+import BarChart from '../components/BarChart';
+import HeapChart, { LiveSetBars } from '../components/HeapChart';
+import GateExplainer from '../components/GateExplainer';
+import { Heading, Section, SiteFooter, SiteHeader } from '../components/Site';
+import Icon from '../components/Icon';
+import { REPO_URL } from '../config';
+import { fmtBytes, fmtNum } from '../utils/format';
+
+// The repo's bench/BENCHMARKS.md and eval reports as charts and tables. All values
+// come from src/demo/bench.json, generated from bench/results and evals/results.
+
+const NAV = [
+  ['#ingest', 'Ingest'],
+  ['#faults', 'Faults'],
+  ['#quality', 'Quality'],
+  ['#vectors', 'Vectors'],
+];
+
+const SCENARIO = {
+  baseline: ['Clean run', 'reference'],
+  crash_after_part_commit: ['kill -9 after a part commit', '×3, before the offset commit'],
+  crash_after_enrich_commit: ['kill -9 after an LLM result commit', '×3, before the offset commit'],
+  replay_ingest: ['Replay the ingest topic', 'consumer group rewound to offset 0'],
+  replay_enrich: ['Replay the LLM topic', 'rewound to offset 0, drained to lag 0'],
+  rebalance: ['Kill one of two instances', 'partitions rebalance mid-run'],
+};
+
+const CASE = {
+  'malformed_lines.log': 'Malformed lines',
+  'non_utf8.log': 'Invalid UTF-8',
+  'nul_bytes.log': 'NUL bytes',
+  'empty.log': 'Empty file',
+  'archive.log.gz': 'gzip archive',
+  'huge_single_line.log': 'One 100 MB line',
+  'busy_minute.log': '120,000 lines in one minute',
+  poison_message: 'Message that is not JSON',
+};
+
+const LAYOUT = {
+  shared_hnsw: 'Shared table, planner’s choice',
+  shared_hnsw_forced: 'Shared HNSW, then filter',
+  shared_iterative: 'Shared, iterative scan',
+  shared_btree_exact: 'Shared, exact search',
+  partial_hnsw: 'Partial index per session',
+  partitioned: 'Partition per session',
+  per_session_table: 'Own table per session',
+};
+
+const LAYOUT_SHORT = {
+  shared_hnsw: 'Shared',
+  shared_hnsw_forced: 'Shared + filter',
+  shared_iterative: 'Iterative',
+  shared_btree_exact: 'Exact',
+  partial_hnsw: 'Partial index',
+  partitioned: 'Partition',
+  per_session_table: 'Own table',
+};
+
+const RETRIEVER = { vector_only: 'Vector', fts_only: 'Full text', hybrid_rrf: 'Hybrid (RRF)' };
+
+export default function Benchmarks() {
+  useEffect(() => {
+    document.title = 'Benchmarks · DeepLogLens';
+    return () => {
+      document.title = 'DeepLogLens · Log intelligence';
+    };
+  }, []);
+
+  const base = bench.chaos.rows.find((r) => r.scenario === 'baseline');
+  const matches = (r) => r.chunks === base.chunks && r.lineSum === base.lineSum && r.metricSum === base.metricSum && r.occurrences === base.occurrences;
+  const layouts = Object.keys(LAYOUT);
+  const sessions = [...new Set(bench.vector.rows.map((r) => r.session))];
+  const cell = (session, layout) => bench.vector.rows.find((r) => r.session === session && r.layout === layout);
+  const small = sessions.at(-1);
+  const g = bench.gate;
+
+  return (
+    <div className="min-h-screen overflow-x-clip bg-paper">
+      <SiteHeader links={NAV} />
+
+      <section className="mx-auto max-w-6xl px-4 pb-14 pt-16 sm:px-6 sm:pt-20">
+        <p className="kicker">Benchmarks</p>
+        <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">Measured on the real backend</h1>
+        <p className="mt-4 max-w-2xl text-lg text-slate-600">The production jar, real Kafka and Postgres, a stub LLM so the numbers describe LogLens, not a provider.</p>
+        <div className="mt-6 flex flex-wrap gap-2">
+          {[bench.setup.hardware, bench.setup.jvm, bench.setup.stack, `run ${bench.date}`].map((t) => (
+            <span key={t} className="rounded-md border border-line bg-white px-2.5 py-1 font-mono text-[11px] text-slate-600">
+              {t}
+            </span>
+          ))}
+        </div>
+        <a href={`${REPO_URL}/blob/main/bench/BENCHMARKS.md`} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-violet-700 hover:underline">
+          <Icon name="github" className="h-4 w-4" /> Raw results and scripts
+        </a>
+      </section>
+
+      {/* Ingest */}
+      <Section id="ingest">
+        <Heading kicker="01 · Ingest" title="Throughput at 100 MB to 2 GB" />
+        <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_1.6fr]">
+          <Panel title="MB/s by file size" sub={`-Xmx${bench.sizes[0].xmxMb}m · ${bench.sizes[0].threads} part threads`}>
+            <BarChart data={bench.sizes.map((s) => ({ label: s.size, v: s.mbPerS }))} series={[{ key: 'v', name: 'MB/s' }]} max={3} format={(v) => v.toFixed(2)} />
+          </Panel>
+          <Table
+            head={['File', 'Lines', 'Time', 'MB/s', 'Live set', 'Peak heap', 'RSS']}
+            rows={bench.sizes.map((s) => [s.size, fmtNum(s.lines), `${Math.round(s.ingestS)} s`, s.mbPerS.toFixed(2), `${s.live.max} MB`, `${Math.round(s.peakHeapMb)} MB`, `${s.peakRssMb} MB`])}
+            strong={4}
+          />
+        </div>
+        <div className="mt-4 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+          <div className="panel p-5 sm:p-6">
+            <HeapChart bench={bench} />
+          </div>
+          <div className="panel p-5 sm:p-6">
+            <LiveSetBars bench={bench} />
+          </div>
+        </div>
+        <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.6fr]">
+          <Panel title="MB/s by part threads" sub="same 1 GB file · 4 vCPUs · flat after 4">
+            <BarChart data={bench.threads.map((t) => ({ label: `${t.threads}`, v: t.mbPerS }))} series={[{ key: 'v', name: 'MB/s' }]} max={3} format={(v) => v.toFixed(2)} />
+          </Panel>
+          <Table
+            head={['Threads', 'Time', 'MB/s', 'Speed-up', 'Live set', 'Peak heap', 'RSS']}
+            rows={bench.threads.map((t) => [t.threads, `${Math.round(t.ingestS)} s`, t.mbPerS.toFixed(2), `${t.speedup.toFixed(2)}×`, `${t.live.max} MB`, `${Math.round(t.peakHeapMb)} MB`, `${t.peakRssMb} MB`])}
+            strong={3}
+          />
+        </div>
+      </Section>
+
+      {/* Faults */}
+      <Section id="faults">
+        <Heading kicker="02 · Faults" title="Crashes and replays change nothing" lead={`Each run ingests ${bench.chaos.file} (${fmtBytes(bench.chaos.bytes)}) and is compared with a clean run.`} />
+        <div className="mt-8">
+          <Table
+            head={['Scenario', 'Windows', 'Line sum', 'Metric sum', 'Findings', 'Redeliveries skipped', '']}
+            rows={bench.chaos.rows.map((r) => [
+              <span key="s">
+                <span className="block font-semibold text-slate-900">{SCENARIO[r.scenario]?.[0] || r.scenario}</span>
+                <span className="block text-[11px] text-slate-500">{SCENARIO[r.scenario]?.[1]}</span>
+              </span>,
+              fmtNum(r.chunks),
+              fmtNum(r.lineSum),
+              fmtNum(r.metricSum),
+              fmtNum(r.occurrences),
+              fmtNum(r.skips),
+              r.scenario === 'baseline' ? '' : <Check key="c" ok={matches(r)} />,
+            ])}
+          />
+        </div>
+        <div className="mt-10">
+          <h3 className="text-lg font-semibold text-slate-900">Hostile input</h3>
+          <p className="text-sm text-slate-500">-Xmx256m. Every upload must end parsed or FAILED with a reason, never stuck.</p>
+          <div className="mt-4">
+            <Table
+              head={['Input', 'Size', 'Outcome', 'Time', '']}
+              rows={bench.robustness.map((r) => [
+                <span key="c" className="font-semibold text-slate-900">{CASE[r.case] || r.case}</span>,
+                r.bytes != null ? fmtBytes(r.bytes) : '–',
+                <span key="o">
+                  <Status s={r.status} />
+                  {(r.note || r.error) && (
+                    <span className="ml-2 inline-block max-w-[16rem] truncate align-middle text-[11px] text-slate-500" title={r.note || r.error}>
+                      {r.note || r.error.replace(/^Ingest failed: /, '')}
+                    </span>
+                  )}
+                </span>,
+                r.seconds != null ? `${r.seconds} s` : '–',
+                <Check key="k" ok label="clean end" />,
+              ])}
+            />
+          </div>
+        </div>
+      </Section>
+
+      {/* Quality */}
+      <Section id="quality">
+        <Heading kicker="03 · Quality" title="Anomaly detection and Q&A retrieval" lead="Production parsers and gate run by the eval harness on labelled logs. No LLM calls, $0." />
+        <div className="mt-8 grid gap-4 lg:grid-cols-2">
+          <Panel title="F1 per dataset" sub="labelled corpora, then held-out seeds the rules never saw">
+            <BarChart
+              data={[...g.synthetic.map((d) => ({ label: d.dataset.replace('eval_', '').replace('noise', ' noise'), v: d.f1 })), ...g.heldout.map((d) => ({ label: `seed ${d.dataset.match(/\d+/)[0]}`, v: d.f1 }))]}
+              series={[{ key: 'v', name: 'F1' }]}
+              max={1}
+              format={(v) => v.toFixed(2)}
+            />
+          </Panel>
+          <Panel title="LLM calls saved by traffic level" sub="same generator, only lines per second changes">
+            <BarChart data={g.volume.map((v) => ({ label: `${v.linesPerS}/s`, v: v.callReduction * 100 }))} series={[{ key: 'v', name: 'saved', cls: 'bg-pink-500' }]} max={100} format={(v) => `${Math.round(v)}%`} />
+          </Panel>
+        </div>
+        <div className="mt-4">
+          <Table
+            head={['Dataset', 'Lines', 'Precision', 'Recall', 'F1', 'False alarms / h', 'Incidents found', 'Calls saved']}
+            rows={g.synthetic.map((d) => [
+              d.dataset.replace('eval_', ''),
+              fmtNum(d.lines),
+              d.precision.toFixed(2),
+              d.recall.toFixed(2),
+              d.f1.toFixed(3),
+              d.falseAlarmsPerHour,
+              `${Math.round(d.incidentRecall * d.incidents)} / ${d.incidents}`,
+              `${Math.round(d.callReduction * 1000) / 10}%`,
+            ])}
+            strong={4}
+          />
+        </div>
+        <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.25fr]">
+          <Panel title="The count-spike rule" sub="median + MAD, on ten minutes you can edit">
+            <GateExplainer />
+          </Panel>
+          <div className="space-y-4">
+            <Panel title={`Retrieval recall on ${bench.retrieval.questions} golden questions`} sub="top 5 / 10 / 30 chunks · the grader reads 30">
+              <BarChart
+                data={bench.retrieval.rows.map((r) => ({ label: RETRIEVER[r.retriever] || r.retriever, r5: r.r5, r10: r.r10, r30: r.r30 }))}
+                series={[
+                  { key: 'r5', name: 'recall@5' },
+                  { key: 'r10', name: 'recall@10' },
+                  { key: 'r30', name: 'recall@30' },
+                ]}
+                max={1}
+                format={(v) => v.toFixed(2)}
+                highlight={2}
+                height={140}
+              />
+            </Panel>
+            <Table
+              head={['Retriever', 'R@5', 'R@10', 'R@30', 'MRR', 'p50', 'p95']}
+              rows={bench.retrieval.rows.map((r) => [RETRIEVER[r.retriever] || r.retriever, r.r5.toFixed(2), r.r10.toFixed(2), r.r30.toFixed(2), r.mrr.toFixed(2), `${Math.round(r.p50)} ms`, `${Math.round(r.p95)} ms`])}
+              strong={3}
+            />
+          </div>
+        </div>
+      </Section>
+
+      {/* Vectors */}
+      <Section id="vectors">
+        <Heading kicker="04 · Vectors" title="One table per session keeps small tenants at 100% recall" lead={`${fmtNum(bench.vector.vectors)} vectors (${bench.vector.dim}-d), HNSW, ef_search 40. A small tenant holds 0.83% of the rows.`} />
+        <div className="mt-8 grid gap-4 lg:grid-cols-[0.9fr_1.6fr]">
+          <Panel title="Recall@10 for the small tenant" sub={`session ${small}, by table layout`}>
+            <BarChart
+              data={layouts.map((l) => ({ label: LAYOUT_SHORT[l], v: cell(small, l)?.recall ?? 0 }))}
+              series={[{ key: 'v', name: 'recall@10' }]}
+              max={1}
+              format={(v) => v.toFixed(2)}
+              highlight={layouts.length - 1}
+            />
+          </Panel>
+          <Table
+            head={['Layout', ...sessions.map((s) => `${s} recall · p50`)]}
+            rows={layouts.map((l) => [
+              <span key="l" className={l === 'per_session_table' ? 'font-semibold text-violet-700' : 'text-slate-900'}>
+                {LAYOUT[l]}
+              </span>,
+              ...sessions.map((s) => {
+                const c = cell(s, l);
+                return c ? `${c.recall.toFixed(2)} · ${c.p50} ms` : '–';
+              }),
+            ])}
+          />
+        </div>
+      </Section>
+
+      <SiteFooter />
+    </div>
+  );
+}
+
+function Panel({ title, sub, children }) {
+  return (
+    <div className="panel p-5 sm:p-6">
+      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+      {sub && <p className="mb-5 text-xs text-slate-500">{sub}</p>}
+      {children}
+    </div>
+  );
+}
+
+function Table({ head, rows, strong }) {
+  return (
+    <div className="panel overflow-x-auto">
+      <table className="w-full min-w-max text-left text-sm">
+        <thead>
+          <tr className="border-b border-line bg-paper/60">
+            {head.map((h, i) => (
+              <th key={i} className="whitespace-nowrap px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} className="border-b border-line last:border-0">
+              {r.map((c, j) => (
+                <td key={j} className={`whitespace-nowrap px-4 py-2.5 font-mono text-[13px] ${j === strong ? 'font-semibold text-slate-900' : j === 0 ? 'font-sans text-slate-800' : 'text-slate-600'}`}>
+                  {c}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Check({ ok, label = 'matches' }) {
+  return ok ? (
+    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 font-sans text-[11px] font-semibold text-emerald-700">
+      <Icon name="check" className="h-3 w-3" /> {label}
+    </span>
+  ) : (
+    <span className="rounded-md bg-rose-50 px-1.5 py-0.5 font-sans text-[11px] font-semibold text-rose-700">differs</span>
+  );
+}
+
+function Status({ s }) {
+  const cls = s === 'FAILED' ? 'bg-amber-50 text-amber-700' : s === 'DLQ' ? 'bg-sky-50 text-sky-700' : 'bg-emerald-50 text-emerald-700';
+  return <span className={`rounded-md px-1.5 py-0.5 font-sans text-[11px] font-semibold ${cls}`}>{s === 'FAILED' ? 'FAILED, with reason' : s}</span>;
+}

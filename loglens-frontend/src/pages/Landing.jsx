@@ -1,54 +1,48 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/auth';
-import { REPO_URL } from '../config';
+import { Link } from 'react-router-dom';
 import { loadFixture } from '../demo/demoApi';
 import bench from '../demo/bench.json';
 import TimelineChart from '../components/TimelineChart';
 import HeapChart, { LiveSetBars } from '../components/HeapChart';
-import GateExplainer from '../components/GateExplainer';
-import { ArchitectureDiagram, StepRail } from '../components/Architecture';
+import { ArchitectureStory } from '../components/Architecture';
+import { Heading, Section, SiteFooter, SiteHeader } from '../components/Site';
+import Icon from '../components/Icon';
+import { useGuestLaunch } from '../hooks/useGuestLaunch';
 import { pipelineSteps } from '../utils/pipeline';
-import Icon, { Logo } from '../components/Icon';
-import { fmtNum } from '../utils/format';
+import { fmtClock, fmtNum } from '../utils/format';
+import { SEVERITY_STYLES } from '../utils/severity';
 
-// Every number on this page is measured. The 1 GB log's numbers come from its
-// fixture (the production parsers and gate); the rest from bench/ and evals/.
+// Every number on this page is measured: the 1 GB log's from its fixture (production
+// parsers and gate), the rest from bench/ and evals/ via src/demo/bench.json.
 
-const PROBLEMS = [
-  { title: 'Volume', body: 'A 1 GB log is 5.4 million lines. No context window holds it.' },
-  { title: 'Counting', body: 'Ask “how many 503s?” and an LLM estimates from what it sees. It does not count.' },
-  { title: 'Trust', body: 'An answer without line numbers is an answer nobody can check.' },
-  { title: 'Cost', body: 'You pay for every minute of logs to learn about the few minutes that matter.' },
-];
-
-const GATE_AB = [
-  { k: 'F1 on labelled minutes', before: '0.576', after: '0.901' },
-  { k: 'False alarms per hour', before: '14.8', after: '1.5' },
-  { k: 'LLM calls saved at 50 lines/s', before: '0.3%', after: '74.3%' },
-  { k: 'Injected incidents caught', before: '12 / 12', after: '12 / 12' },
-];
-
-const PROOF = [
-  { value: '3 × kill -9', label: 'identical counts', body: 'The JVM killed right after a DB commit, before the offset commit. Before the marker-row fix, enrichment counts drifted +5.8%.' },
-  { value: '8 / 8', label: 'bad inputs end cleanly', body: 'A NUL byte, a gzip file, one 100 MB line, 120k lines in a minute. Before: 3 sessions hung and one consumer died.' },
-  { value: '100% vs 7%', label: 'vector recall', body: 'A small tenant on a shared HNSW index got 7% recall@10. Its own table per session: 100%, in 0.24 ms.' },
-  { value: '0.39 → 0.76', label: 'recall@10', body: 'An eval showed “hybrid” search had been vector-only: the full-text leg silently matched nothing.' },
+const FEATURES = [
+  { icon: 'search', title: 'Root cause per failure', body: 'Ranked causes, each citing the log lines behind it.' },
+  { icon: 'message', title: 'Ask the logs', body: 'AI Q&A over the whole archive, with line citations.' },
+  { icon: 'chart', title: 'Exact numbers', body: 'Every count comes from parsers, never from the LLM.' },
+  { icon: 'layers', title: 'GB-scale ingest', body: 'Streamed through Kafka with flat memory.' },
+  { icon: 'filter', title: 'Cheap AI', body: 'Only abnormal minutes are sent to the model.' },
+  { icon: 'activity', title: 'Live pipeline', body: 'Watch every stage run, from upload to report.' },
 ];
 
 const STACK = [
-  ['Backend', 'Java 17 · Spring Boot 3 · Spring Kafka · JdbcTemplate'],
-  ['AI', 'Python · FastAPI · LangGraph · Groq · Gemini embeddings'],
-  ['Data', 'PostgreSQL 16 · pgvector (HNSW) · full-text search'],
-  ['Infra', 'Kafka (Redpanda) · S3 / MinIO / B2 · Docker · React + Vite on Vercel'],
+  { group: 'Backend', items: ['Java 17', 'Spring Boot 3', 'Spring Kafka', 'JdbcTemplate'] },
+  { group: 'AI', items: ['LangGraph', 'FastAPI', 'Groq', 'Gemini embeddings'] },
+  { group: 'Data', items: ['PostgreSQL 16', 'pgvector · HNSW', 'Full-text search'] },
+  { group: 'Infra', items: ['Kafka · Redpanda', 'S3 · MinIO · B2', 'Docker', 'React + Vite'] },
 ];
 
+const NAV = [
+  ['#architecture', 'Architecture'],
+  ['#memory', 'Memory'],
+  ['#testing', 'Testing'],
+  ['/benchmarks', 'Benchmarks'],
+];
+
+const pct = (x) => `${Math.round(x * 1000) / 10}%`;
+
 export default function Landing() {
-  const { user, guestLogin } = useAuth();
-  const navigate = useNavigate();
+  const { launch, busy } = useGuestLaunch();
   const [fixture, setFixture] = useState(null);
-  const [step, setStep] = useState(0);
-  const [autoplay, setAutoplay] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,395 +53,273 @@ export default function Landing() {
   }, []);
 
   const stats = fixture?.stats;
+  const saved = stats ? 1 - stats.llmCallsGated / stats.llmCallsUngated : null;
   const steps = pipelineSteps(stats && { ...stats, incidents: fixture.incidents.length });
-  const saved = stats ? (Math.round((1 - stats.llmCallsGated / stats.llmCallsUngated) * 1000) / 10).toFixed(1) : null;
-
-  // Walk through the steps on its own until the visitor picks one.
-  useEffect(() => {
-    if (!autoplay) return undefined;
-    const t = setInterval(() => setStep((s) => (s + 1) % steps.length), 4500);
-    return () => clearInterval(t);
-  }, [autoplay, steps.length]);
-  const pick = (i) => {
-    setAutoplay(false);
-    setStep(i);
-  };
-
-  const launch = async () => {
-    if (!user) await guestLogin();
-    navigate('/app');
-  };
-
   const big = bench.sizes.at(-1);
-  const liveMin = Math.min(...bench.sizes.map((s) => s.live.median));
-  const liveMax = Math.max(...bench.sizes.map((s) => s.live.max));
+  const liveLo = Math.min(...bench.sizes.map((s) => s.live.median));
+  const liveHi = Math.max(...bench.sizes.map((s) => s.live.max));
+  const medium = bench.gate.synthetic.find((d) => d.dataset.includes('medium'));
+  const hybrid = bench.retrieval.rows.find((r) => r.retriever.startsWith('hybrid'));
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white">
-      <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <Logo />
-          <nav className="hidden items-center gap-7 text-sm text-slate-600 md:flex">
-            <a href="#how" className="hover:text-violet-700">How it works</a>
-            <a href="#gate" className="hover:text-violet-700">The gate</a>
-            <a href="#memory" className="hover:text-violet-700">Memory</a>
-            <a href="#proof" className="hover:text-violet-700">Proof</a>
-          </nav>
-          <div className="flex items-center gap-2">
-            <a href={REPO_URL} target="_blank" rel="noreferrer" className="btn-ghost hidden sm:inline-flex" title="Source on GitHub">
-              <Icon name="github" className="h-4 w-4" /> GitHub
-            </a>
-            {!user && (
-              <Link to="/login" className="btn-ghost hidden sm:inline-flex">
-                Sign in
-              </Link>
-            )}
-            <button onClick={launch} className="btn-primary px-4 py-2">
-              {user ? 'Open app' : 'Try it'} <Icon name="arrowRight" className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen overflow-x-clip bg-paper">
+      <SiteHeader links={NAV} />
 
       {/* Hero */}
-      <section className="relative">
-        <div className="pointer-events-none absolute -left-40 -top-24 h-96 w-96 rounded-full bg-fuchsia-200/40 blur-3xl" />
-        <div className="pointer-events-none absolute -right-40 top-48 h-96 w-96 rounded-full bg-sky-200/40 blur-3xl" />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pb-14 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[1.05fr_1fr]">
-          <div>
-            <Kicker>Log analysis · Spring Boot · Kafka · LangGraph · pgvector</Kicker>
-            <h1 className="mt-5 text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900 sm:text-[3.4rem]">
-              Find the outage in <span className="text-gradient">1 GB of logs</span>, with the lines that prove it
-            </h1>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
-              Code parses every line into exact per-minute counts. Statistics pick the few abnormal minutes. Only those
-              reach an LLM, which explains them. You get incidents with causes and citations, and a chat that answers
-              from the logs.
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <button onClick={launch} className="btn-primary px-6 py-3 text-base">
-                <Icon name="play" className="h-4 w-4" /> Open the 1 GB demo
-              </button>
-              <a href="#how" className="btn-secondary px-6 py-3 text-base">
-                See how it works
-              </a>
-            </div>
-            <Callout className="mt-6 max-w-xl">
-              <b>No sign-up.</b> The demo replays a real run of the production parsers on a 1 GB, 5.4M-line log with six
-              outages. The Ask tab is live: it searches that log in Postgres and cites its lines.
-            </Callout>
-          </div>
+      <section className="relative overflow-hidden">
+        <SquareField />
+        <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pt-24">
+          <p className="kicker">Log intelligence · GB scale · AI root cause</p>
+          <h1 className="mt-5 max-w-4xl font-display text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900 sm:text-6xl">
+            Deep-analyse millions of log lines,{' '}
+            <span className="bg-gradient-to-r from-violet-600 to-pink-500 bg-[length:100%_6px] bg-bottom bg-no-repeat pb-1">at GB scale</span>
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-600">
+            Upload a log archive. DeepLogLens finds the failures, explains the root cause of each one, and answers your
+            questions about the logs, pointing at the exact lines.
+          </p>
 
-          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 shadow-2xl shadow-violet-500/10">
-            <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-4 py-2.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
-              <span className="ml-3 truncate font-mono text-[11px] text-slate-400">deeploglens-1gb.log · overview</span>
-            </div>
-            <div className="p-4">
-              {fixture ? (
-                <>
-                  <div className="mb-3 grid grid-cols-3 gap-2">
-                    <Mini label="Log lines" value={fmtNum(stats.lines)} />
-                    <Mini label="Minutes to the LLM" value={`${stats.flaggedMinutes}/${stats.minutes}`} />
-                    <Mini label="Incidents" value={fixture.incidents.length} tone="text-violet-700" />
-                  </div>
-                  <div className="card p-3">
-                    <TimelineChart series={fixture.timeline} incidents={fixture.incidents} onSelectIncident={launch} height={140} />
-                  </div>
-                  <ul className="mt-3 space-y-1.5">
-                    {fixture.incidents.slice(0, 3).map((inc, i) => (
-                      <li key={inc.id} className="flex items-center gap-2 truncate text-xs text-slate-600">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-600 text-[10px] font-bold text-white">
-                          {i + 1}
-                        </span>
-                        <span className="truncate">{inc.title}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : (
-                <div className="h-72 animate-pulse rounded-2xl bg-slate-100" />
-              )}
-            </div>
-          </div>
-        </div>
+          <ul className="mt-10 grid max-w-4xl gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((f) => (
+              <li key={f.title} className="flex gap-3">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-white text-violet-600">
+                  <Icon name={f.icon} className="h-4 w-4" />
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold text-slate-900">{f.title}</span>
+                  <span className="block text-sm text-slate-500">{f.body}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
 
-        {/* Measured numbers */}
-        <div className="relative mx-auto grid max-w-6xl grid-cols-2 gap-3 px-4 pb-16 sm:px-6 lg:grid-cols-4">
-          <Stat value={big.size} label={`ingested in a ${big.xmxMb} MB heap`} note={`live set ${liveMin}–${liveMax} MB at every file size`} />
-          <Stat
-            value={saved ? `${saved}%` : '…'}
-            label="fewer LLM calls"
-            note={stats ? `${fmtNum(stats.llmCallsGated)} vs ${fmtNum(stats.llmCallsUngated)} on this 1 GB log` : 'on this 1 GB log'}
-            accent
-          />
-          <Stat value="0.90" label="F1, anomaly gate" note="0.58 with fixed thresholds" />
-          <Stat value="0.76" label="recall@10, hybrid search" note="0.39 before an eval caught a bug" />
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <button onClick={launch} disabled={busy} className="btn-primary px-6 py-3 text-base">
+              <Icon name="play" className="h-4 w-4" /> Guest analysis on a 1 GB log
+            </button>
+            <Link to="/login" className="btn-secondary px-6 py-3 text-base">
+              Sign in
+            </Link>
+            <span className="font-mono text-xs text-slate-500 sm:ml-2">no sign-up · 5.4M lines · 6 outages</span>
+          </div>
         </div>
       </section>
 
-      {/* Problem */}
-      <Section id="problem" tone="bg-slate-50">
-        <Kicker>The problem</Kicker>
-        <H2>Pasting logs into a chatbot fails four ways</H2>
-        <Lead>
-          It is 3 AM and checkout returns 503. You need three answers: what broke, since when, and how many users were
-          hit. A chatbot gives you none of them reliably.
-        </Lead>
-        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {PROBLEMS.map((p, i) => (
-            <div key={p.title} className="card p-5">
-              <span className="font-mono text-xs text-slate-400">0{i + 1}</span>
-              <h3 className="mt-2 font-semibold text-slate-900">{p.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{p.body}</p>
+      {/* The report */}
+      <section className="px-4 pb-16 sm:px-6">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-2xl border border-line bg-white shadow-2xl shadow-violet-900/10">
+          <div className="flex items-center gap-2 border-b border-line bg-paper/60 px-4 py-2.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+            <span className="ml-3 truncate font-mono text-[11px] text-slate-500">deeploglens-1gb.log · report</span>
+          </div>
+          {fixture ? (
+            <div className="p-4 sm:p-6">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                <Kpi label="Log lines" value={fmtNum(stats.lines)} />
+                <Kpi label="ERROR lines" value={fmtNum(stats.errorLines)} tone="text-rose-600" />
+                <Kpi label="WARN lines" value={fmtNum(stats.warnLines)} tone="text-amber-600" />
+                <Kpi label="Minutes flagged" value={`${stats.flaggedMinutes}/${stats.minutes}`} />
+                <Kpi label="LLM calls" value={fmtNum(stats.llmCallsGated)} tone="text-violet-700" />
+                <Kpi label="Incidents" value={fixture.incidents.length} tone="text-violet-700" />
+              </div>
+              <div className="mt-4 rounded-xl border border-line p-3 sm:p-4">
+                <TimelineChart series={fixture.timeline} incidents={fixture.incidents} onSelectIncident={launch} height={200} />
+              </div>
+              <ol className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {fixture.incidents.map((inc, i) => (
+                  <li key={inc.id}>
+                    <button onClick={launch} className="flex h-full w-full gap-3 rounded-xl border border-line p-3 text-left transition hover:border-violet-300 hover:bg-violet-50/40">
+                      <span className="num-badge rounded-full">{i + 1}</span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold leading-snug text-slate-900">{inc.title}</span>
+                        <span className="mt-1 flex items-center gap-2 text-[11px] text-slate-500">
+                          <span className="font-mono">
+                            {fmtClock(inc.start).slice(0, 5)}–{fmtClock(inc.end).slice(0, 5)}
+                          </span>
+                          <span className={`rounded border px-1.5 text-[10px] font-semibold ${SEVERITY_STYLES[inc.severity]?.chip || ''}`}>{inc.severity}</span>
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
             </div>
-          ))}
+          ) : (
+            <div className="m-6 h-96 animate-pulse rounded-xl bg-paper" />
+          )}
         </div>
-      </Section>
+      </section>
 
-      {/* How it works */}
-      <Section id="how">
-        <Kicker>How it works</Kicker>
-        <H2>Code counts. Statistics choose. The LLM explains.</H2>
-        <Lead>
-          One rule explains most of the design: Kafka moves facts, blob storage moves bytes, Postgres holds the truth.
-          Pick a step to see the path it takes{autoplay ? ' (it walks through them on its own until you do)' : ''}.
-        </Lead>
-        <div className="mt-10 card hidden p-4 sm:p-6 md:block">
-          <ArchitectureDiagram step={steps[step]} />
+      {/* Three numbers */}
+      <section className="px-4 pb-20 sm:px-6">
+        <div className="mx-auto grid max-w-6xl gap-3 md:grid-cols-3">
+          <Metric value={big.size} label="archive tested, constant heap" note={`live set ${liveLo}–${liveHi} MB under a ${big.xmxMb} MB cap`} />
+          <Metric
+            value={saved != null ? pct(saved) : '…'}
+            label="fewer LLM calls"
+            note={stats ? `${fmtNum(stats.llmCallsGated)} instead of ${fmtNum(stats.llmCallsUngated)} on the 1 GB guest log` : 'on the 1 GB guest log'}
+            accent
+          />
+          <Metric value={medium.f1.toFixed(2)} label="F1 on labelled incidents" note={`every injected incident found · recall@30 ${hybrid.r30.toFixed(2)} on golden Q&A`} />
         </div>
-        <div className="mt-4">
-          <StepRail steps={steps} active={step} onSelect={pick} />
-        </div>
-        <Callout className="mt-8">
-          <b>Failure is assumed, not exceptional.</b> Kafka offsets are committed only after the database commit, and
-          every unit of work writes a marker row in the same transaction as its data, so a redelivered message changes
-          nothing. Replaying the enrichment topic from offset 0 used to redo 8,820 LLM calls; now every item is skipped by
-          its marker.
-        </Callout>
-      </Section>
+      </section>
 
-      {/* Gate */}
-      <Section id="gate" tone="bg-slate-50">
-        <Kicker>The anomaly gate</Kicker>
-        <H2>Only abnormal minutes reach the LLM</H2>
-        <Lead>
-          Each minute is compared with the rest of its own session, not with a fixed threshold. That is what makes the
-          LLM bill follow the incidents instead of the file size.
-        </Lead>
-        <div className="mt-10 grid gap-6 lg:grid-cols-2">
-          <div className="card p-6">
-            <h3 className="text-sm font-semibold text-slate-900">On this 1 GB log</h3>
-            {stats ? (
-              <>
-                <p className="mt-3 text-5xl font-extrabold tracking-tight text-gradient">{saved}%</p>
-                <p className="text-sm text-slate-600">fewer LLM calls than sending every window</p>
-                <div className="mt-6 space-y-3">
-                  <CallBar label="Every window" value={stats.llmCallsUngated} max={stats.llmCallsUngated} cls="bg-slate-300" />
-                  <CallBar label="Flagged windows only" value={stats.llmCallsGated} max={stats.llmCallsUngated} cls="bg-gradient-to-r from-violet-600 to-pink-500" />
-                </div>
-                <p className="mt-4 text-xs text-slate-500">
-                  {stats.flaggedMinutes} of {stats.minutes} minutes flagged ({fmtNum(stats.flaggedChunks)} of {fmtNum(stats.chunks)} windows). A window
-                  larger than 5,000 characters takes several calls, which is why the counts are this high.
-                </p>
-              </>
-            ) : (
-              <div className="mt-4 h-40 animate-pulse rounded-xl bg-slate-100" />
-            )}
-            <Callout className="mt-5">
-              The saving depends on how much of the log is abnormal: <b>87.5%</b> on the 10k-line sample log, <b>{saved ?? '…'}%</b>{' '}
-              on this one, about <b>74%</b> on an incident-dense benchmark.
-            </Callout>
-          </div>
-          <div className="card p-6">
-            <h3 className="text-sm font-semibold text-slate-900">Why the median, not the mean</h3>
-            <p className="mb-5 mt-0.5 text-xs text-slate-500">The gate’s count-spike rule, on ten minutes you can edit.</p>
-            <GateExplainer />
-          </div>
-        </div>
-        <div className="mt-6 card overflow-hidden">
-          <div className="grid grid-cols-[1.6fr_1fr_1fr] gap-2 border-b border-slate-100 bg-slate-50 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            <span>Same build, flag switched</span>
-            <span>Fixed thresholds</span>
-            <span>Session statistics</span>
-          </div>
-          {GATE_AB.map((r) => (
-            <div key={r.k} className="grid grid-cols-[1.6fr_1fr_1fr] gap-2 border-b border-slate-100 px-5 py-2.5 text-sm last:border-0">
-              <span className="text-slate-600">{r.k}</span>
-              <span className="font-mono text-slate-500">{r.before}</span>
-              <span className="font-mono font-semibold text-slate-900">{r.after}</span>
-            </div>
-          ))}
-          <p className="bg-slate-50 px-5 py-3 text-xs leading-relaxed text-slate-500">
-            Fixed thresholds (“flag any ERROR line”) saved 77% at 1 line/s and 0% at 20 lines/s, because every busy minute
-            contains a harmless ERROR. Nothing in the code showed it; measuring on labelled logs did.
-          </p>
+      {/* Architecture */}
+      <Section id="architecture">
+        <Heading
+          kicker="Architecture"
+          title="Code counts. Statistics choose. The LLM explains."
+          lead="Kafka moves facts, blob storage moves bytes, Postgres holds the truth. Here is what happens to a file, step by step."
+        />
+        <div className="mt-12">
+          <ArchitectureStory steps={steps} />
         </div>
       </Section>
 
       {/* Memory */}
       <Section id="memory">
-        <Kicker>Bounded memory</Kicker>
-        <H2>
-          A {big.size} file in a {big.xmxMb} MB heap
-        </H2>
-        <Lead>
-          The splitter reads the file once and hands out byte ranges; each worker holds only its ~5 MB part. So memory
-          follows the number of threads, not the size of the file. These are the real runs from <code className="text-[0.9em]">bench/</code>.
-        </Lead>
-        <div className="mt-10 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-          <div className="card p-5 sm:p-6">
+        <Heading kicker="Memory" title={`${big.size} of logs, flat memory`} />
+        <div className="mt-10 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+          <div className="panel p-5 sm:p-6">
             <HeapChart bench={bench} />
           </div>
-          <div className="card p-5 sm:p-6">
+          <div className="panel p-5 sm:p-6">
             <LiveSetBars bench={bench} />
           </div>
         </div>
-        <Callout className="mt-6">
-          <b>The first measurement misled me.</b> Peak heap went from 186 MB to 228 MB as the file grew, which looked like
-          a leak. It was the top of the GC sawtooth, which follows when the collector decides to run. The live set, the
-          heap left after a full GC, stayed between {liveMin} and {liveMax} MB from 100 MB to 2 GB.
-        </Callout>
       </Section>
 
-      {/* Proof */}
-      <Section id="proof" tone="bg-slate-50">
-        <Kicker>Measured, not claimed</Kicker>
-        <H2>Every number is reproducible</H2>
-        <Lead>
-          The benchmarks and evals ship in the repo, including the runs that went badly. Each of these found a real bug
-          first, and is a before/after number now.
-        </Lead>
-        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {PROOF.map((p) => (
-            <div key={p.label} className="card p-5">
-              <div className="text-2xl font-extrabold tracking-tight text-slate-900">{p.value}</div>
-              <div className="text-sm font-medium text-violet-700">{p.label}</div>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">{p.body}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-6 grid gap-3 md:grid-cols-2">
-          <div className="card p-5">
-            <h3 className="font-semibold text-slate-900">Read the raw results</h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
-              Throughput, GC logs, chaos and robustness runs, and the vector-isolation experiment, with the scripts that
-              produced them.
-            </p>
-            <a href={`${REPO_URL}/blob/main/bench/BENCHMARKS.md`} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-violet-700 hover:underline">
-              Benchmarks <Icon name="arrowRight" className="h-3.5 w-3.5" />
-            </a>
-          </div>
-          <div className="card p-5">
-            <h3 className="font-semibold text-slate-900">Where it falls short</h3>
-            <ul className="mt-1.5 space-y-1.5 text-sm leading-relaxed text-slate-600">
-              <li>• The gate misses slow drifts, and a session that is abnormal from start to finish, because the median moves with it.</li>
-              <li>• In the full app, citations point to 60-second windows with their line range, not to single lines.</li>
-              <li>• This guest demo replays a precomputed run. Uploading your own file needs an account and the backend.</li>
-            </ul>
-          </div>
-        </div>
+      {/* Testing */}
+      <Section id="testing">
+        <Heading kicker="Testing" title="Tested with numbers, not demos" lead="What every claim on this page was measured against. All of it reruns from the repo." />
+        <TestGrid />
+        <Link to="/benchmarks" className="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold text-violet-700 hover:underline">
+          See every benchmark <Icon name="arrowRight" className="h-4 w-4" />
+        </Link>
       </Section>
 
       {/* Stack */}
       <Section id="stack">
-        <Kicker>Stack</Kicker>
-        <H2>Built with</H2>
-        <dl className="mt-8 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          {STACK.map(([k, v]) => (
-            <div key={k} className="flex flex-col gap-1 px-5 py-3.5 sm:flex-row sm:gap-6">
-              <dt className="w-24 shrink-0 text-sm font-semibold text-violet-700">{k}</dt>
-              <dd className="text-sm text-slate-700">{v}</dd>
+        <Heading kicker="Tech stack" title="Java for the heavy lifting, Python for the graphs" />
+        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {STACK.map((g) => (
+            <div key={g.group} className="panel p-5">
+              <p className="kicker text-slate-500">{g.group}</p>
+              <ul className="mt-4 space-y-2.5">
+                {g.items.map((t) => (
+                  <li key={t} className="flex items-center gap-2.5 font-display text-[15px] font-semibold text-slate-900">
+                    <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-500" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
             </div>
           ))}
-        </dl>
+        </div>
       </Section>
 
-      <section className="px-4 pb-20 sm:px-6">
-        <div className="mx-auto max-w-4xl rounded-3xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 p-10 text-center text-white shadow-2xl shadow-violet-500/30 sm:p-14">
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Find the six outages yourself</h2>
-          <p className="mx-auto mt-3 max-w-xl text-white/85">
-            An expired certificate, a bad deploy, a Redis failover, a Kafka rebalance loop, an OOM crash loop and database
-            deadlocks. Watch the pipeline find them, then ask it why.
-          </p>
-          <button onClick={launch} className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 font-semibold text-violet-700 shadow-lg transition hover:bg-violet-50">
-            <Icon name="play" className="h-4 w-4" /> Open the 1 GB demo
-          </button>
+      <SiteFooter />
+    </div>
+  );
+}
+
+/** What it was tested on, with the result. Numbers come from bench.json. */
+function TestGrid() {
+  const g = bench.gate;
+  const f1s = g.synthetic.map((d) => d.f1);
+  const held = g.heldout.map((d) => d.f1);
+  const incidents = g.synthetic.reduce((n, d) => n + d.incidents, 0);
+  const allFound = g.synthetic.every((d) => d.incidentRecall === 1);
+  const minCut = Math.min(...g.volume.map((v) => v.callReduction));
+  const rates = g.volume.map((v) => v.linesPerS);
+  const hybrid = bench.retrieval.rows.find((r) => r.retriever.startsWith('hybrid'));
+  const base = bench.chaos.rows.find((r) => r.scenario === 'baseline');
+  const faults = bench.chaos.rows.filter((r) => r.scenario !== 'baseline');
+  const exact = faults.every(
+    (r) => r.chunks === base.chunks && r.lineSum === base.lineSum && r.metricSum === base.metricSum && r.occurrences === base.occurrences
+  );
+  const clean = bench.robustness.filter((r) => r.status && !/PARSING|CHUNKING/.test(r.status)).length;
+  const own = bench.vector.rows.filter((r) => r.layout === 'per_session_table');
+  const big = bench.sizes.at(-1);
+
+  const tests = [
+    {
+      what: 'Anomaly detection',
+      on: `${g.synthetic.length} labelled 6 h logs · ${incidents} injected incidents`,
+      result: `F1 ${Math.min(...f1s).toFixed(2)}–${Math.max(...f1s).toFixed(2)}`,
+      sub: allFound ? `${incidents} / ${incidents} incidents found` : '',
+    },
+    { what: 'Unseen data', on: `${g.heldout.length} held-out generator seeds`, result: `F1 ${Math.min(...held).toFixed(2)}–${Math.max(...held).toFixed(2)}`, sub: 'rules never tuned on them' },
+    { what: 'Real-world logs', on: 'Loghub BGL with labelled alerts', result: `recall ${g.bgl.recall.toFixed(1)}`, sub: `${pct(g.bgl.callReduction)} fewer LLM calls` },
+    { what: 'Traffic levels', on: `${rates[0]} to ${rates.at(-1)} lines per second`, result: `≥ ${Math.floor(minCut * 100)}% fewer calls`, sub: 'at every rate tested' },
+    { what: 'Q&A retrieval', on: `${bench.retrieval.questions} golden questions with gold lines`, result: `recall@30 ${hybrid.r30.toFixed(2)}`, sub: `p95 ${Math.round(hybrid.p95)} ms` },
+    { what: 'Crash safety', on: 'kill -9 ×3, rebalance, Kafka replay from 0', result: exact ? 'identical counts' : 'see benchmarks', sub: `${faults.length} / ${faults.length} scenarios match a clean run` },
+    { what: 'Hostile input', on: 'NUL bytes, gzip, one 100 MB line, …', result: `${clean} / ${bench.robustness.length} handled`, sub: 'every upload ends in a clear state' },
+    { what: 'Scale', on: `100 MB → ${big.size} at -Xmx${big.xmxMb}m`, result: `${(big.lines / 1e6).toFixed(1)}M lines`, sub: 'no out-of-memory, flat live set' },
+    {
+      what: 'Tenant isolation',
+      on: `${fmtNum(bench.vector.vectors)} vectors, 3 tenants`,
+      result: `recall ${Math.min(...own.map((r) => r.recall)).toFixed(1)}`,
+      sub: `own table per session · ≤ ${Math.max(...own.map((r) => r.p50))} ms`,
+    },
+  ];
+
+  return (
+    <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {tests.map((t, i) => (
+        <div key={t.what} className="panel flex flex-col p-5">
+          <div className="flex items-center gap-2.5">
+            <span className="font-mono text-xs text-slate-400">{String(i + 1).padStart(2, '0')}</span>
+            <span className="text-sm font-semibold text-slate-900">{t.what}</span>
+          </div>
+          <p className="mt-1 text-sm text-slate-500">{t.on}</p>
+          <p className="mt-4 font-display text-2xl font-extrabold tracking-tight text-slate-900">{t.result}</p>
+          <p className="text-xs text-violet-700">{t.sub}</p>
         </div>
-      </section>
-
-      <footer className="border-t border-slate-100">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-slate-500 sm:flex-row sm:px-6">
-          <Logo />
-          <span>Open-source portfolio project · runs on free tiers</span>
-          <a href={REPO_URL} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 font-medium hover:text-violet-700">
-            <Icon name="github" className="h-4 w-4" /> GitHub
-          </a>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-function Section({ id, tone = '', children }) {
-  return (
-    <section id={id} className={`scroll-mt-16 py-20 ${tone}`}>
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">{children}</div>
-    </section>
-  );
-}
-
-function Kicker({ children }) {
-  return <p className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-violet-700">{children}</p>;
-}
-
-function H2({ children }) {
-  return <h2 className="mt-3 max-w-3xl text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">{children}</h2>;
-}
-
-function Lead({ children }) {
-  return <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-600">{children}</p>;
-}
-
-function Callout({ children, className = '' }) {
-  return (
-    <div className={`rounded-xl border border-slate-200 border-l-4 border-l-violet-500 bg-white px-4 py-3 text-sm leading-relaxed text-slate-600 ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-function Stat({ value, label, note, accent = false }) {
-  return (
-    <div className="card p-4 sm:p-5">
-      <div className={`text-2xl font-extrabold tracking-tight sm:text-3xl ${accent ? 'text-gradient' : 'text-slate-900'}`}>{value}</div>
-      <div className="mt-0.5 text-sm font-medium text-slate-700">{label}</div>
-      <div className="mt-1 text-xs text-slate-400">{note}</div>
-    </div>
-  );
-}
-
-function Mini({ label, value, tone = 'text-slate-900' }) {
-  return (
-    <div className="card p-2.5">
-      <div className="text-[10px] font-medium text-slate-500">{label}</div>
-      <div className={`text-base font-bold ${tone}`}>{value}</div>
-    </div>
-  );
-}
-
-function CallBar({ label, value, max, cls }) {
-  return (
-    <div>
-      <div className="mb-1 flex justify-between text-xs">
-        <span className="text-slate-500">{label}</span>
-        <span className="font-semibold text-slate-800">{fmtNum(value)} calls</span>
+      ))}
+      <div className="panel flex items-center gap-3 border-dashed p-5 sm:col-span-2 lg:col-span-3">
+        <Icon name="shield" className="h-5 w-5 shrink-0 text-violet-600" />
+        <p className="text-sm text-slate-600">
+          Every pull request reruns the seeded anomaly eval in CI. The build fails if F1, incident recall or the LLM-call
+          saving drops below its threshold.
+        </p>
       </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
-        <div className={`h-full rounded-full ${cls}`} style={{ width: `${Math.max((value / max) * 100, 0.5)}%` }} />
-      </div>
+    </div>
+  );
+}
+
+function Metric({ value, label, note, accent = false }) {
+  return (
+    <div className="panel p-6">
+      <div className={`font-display text-5xl font-extrabold tracking-tight ${accent ? 'text-gradient' : 'text-slate-900'}`}>{value}</div>
+      <div className="mt-2 text-base font-semibold text-slate-800">{label}</div>
+      <div className="mt-1 text-sm text-slate-500">{note}</div>
+    </div>
+  );
+}
+
+function Kpi({ label, value, tone = 'text-slate-900' }) {
+  return (
+    <div className="rounded-lg border border-line bg-paper/50 px-3 py-2">
+      <div className="text-[11px] text-slate-500">{label}</div>
+      <div className={`font-display text-lg font-bold ${tone}`}>{value}</div>
+    </div>
+  );
+}
+
+/** Faint grid of squares behind the hero, a few of them tinted (decoration only). */
+function SquareField() {
+  const tinted = new Set([3, 9, 14, 22, 27, 33, 38, 45]);
+  return (
+    <div className="pointer-events-none absolute -right-10 top-16 hidden grid-cols-8 gap-2 opacity-70 lg:grid" aria-hidden="true">
+      {Array.from({ length: 48 }, (_, i) => (
+        <span
+          key={i}
+          className={`h-10 w-10 rounded-md border ${tinted.has(i) ? 'border-violet-200 bg-gradient-to-br from-violet-100 to-pink-100' : 'border-line bg-white/40'}`}
+        />
+      ))}
     </div>
   );
 }

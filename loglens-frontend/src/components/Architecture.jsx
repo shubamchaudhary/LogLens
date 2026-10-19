@@ -1,30 +1,32 @@
+import { useEffect, useRef, useState } from 'react';
+
 // The system on one diagram, plus the seven steps a log file takes through it.
 // Picking a step lights up the boxes and arrows it uses (steps: utils/pipeline.js).
 
 const W = 160;
 const H = 64;
 const NODES = {
-  browser: { x: 20, y: 170, title: 'Browser', sub: 'React on Vercel' },
-  blob: { x: 220, y: 40, title: 'Blob store', sub: 'S3 API · bytes only' },
-  api: { x: 220, y: 170, title: 'Spring Boot API', sub: 'REST + SSE progress' },
-  kafka: { x: 420, y: 170, title: 'Kafka', sub: '6 topics · pointers only' },
-  python: { x: 420, y: 300, title: 'Python · LangGraph', sub: 'report + Q&A graphs' },
+  browser: { x: 20, y: 170, title: 'Browser', sub: 'React' },
+  blob: { x: 220, y: 40, title: 'Blob store', sub: 'bytes only' },
+  api: { x: 220, y: 170, title: 'Spring Boot', sub: 'REST + SSE' },
+  kafka: { x: 420, y: 170, title: 'Kafka', sub: 'pointers only' },
+  python: { x: 420, y: 300, title: 'LangGraph', sub: 'Python graphs' },
   workers: { x: 620, y: 170, title: 'Workers', sub: 'split · parse · gate' },
-  llm: { x: 820, y: 40, title: 'LLM providers', sub: 'Groq chat · Gemini embed' },
-  pg: { x: 820, y: 170, title: 'Postgres + pgvector', sub: 'the single truth' },
+  llm: { x: 820, y: 40, title: 'LLMs', sub: 'Groq · Gemini' },
+  pg: { x: 820, y: 170, title: 'Postgres', sub: '+ pgvector' },
 };
 
 // [id, svg path, label, label x, label y]
 const EDGES = [
-  ['browser-blob', 'M180 186 L220 90', 'presigned PUT', 120, 128],
+  ['browser-blob', 'M180 186 L220 90', 'presigned PUT', 112, 128],
   ['browser-api', 'M180 210 L220 210', '', 0, 0],
   ['api-kafka', 'M380 202 L420 202', '', 0, 0],
   ['kafka-workers', 'M580 202 L620 202', '', 0, 0],
   ['workers-blob', 'M700 170 L700 72 L380 72', 'ranged GET', 540, 64],
-  ['workers-llm', 'M780 182 L820 96', 'flagged only', 742, 134],
+  ['workers-llm', 'M780 182 L820 96', 'flagged only', 738, 136],
   ['workers-pg', 'M780 214 L820 214', '', 0, 0],
-  ['api-python', 'M300 234 L300 332 L420 332', 'analyze · ask', 362, 324],
-  ['python-pg', 'M580 332 L900 332 L900 234', 'hybrid SQL', 740, 324],
+  ['api-python', 'M300 234 L300 332 L420 332', 'analyze · ask', 362, 322],
+  ['python-pg', 'M580 332 L900 332 L900 234', 'hybrid SQL', 740, 322],
 ];
 
 export function ArchitectureDiagram({ step }) {
@@ -53,7 +55,7 @@ export function ArchitectureDiagram({ step }) {
               markerEnd={`url(#${on ? 'arch-arrow-on' : 'arch-arrow'})`}
             />
             {label && (
-              <text x={lx} y={ly} textAnchor="middle" className={`text-[12.5px] font-medium ${on ? 'fill-violet-700' : 'fill-slate-500'}`}>
+              <text x={lx} y={ly} textAnchor="middle" className={`text-[15px] font-medium ${on ? 'fill-violet-700' : 'fill-slate-500'}`}>
                 {label}
               </text>
             )}
@@ -73,10 +75,10 @@ export function ArchitectureDiagram({ step }) {
               strokeWidth={on ? 2 : 1}
               className={on ? 'fill-violet-50 stroke-violet-500' : 'fill-white stroke-slate-300'}
             />
-            <text x={nd.x + W / 2} y={nd.y + 28} textAnchor="middle" className="fill-slate-900 text-[15px] font-semibold">
+            <text x={nd.x + W / 2} y={nd.y + 30} textAnchor="middle" className="fill-slate-900 text-[20px] font-semibold">
               {nd.title}
             </text>
-            <text x={nd.x + W / 2} y={nd.y + 47} textAnchor="middle" className="fill-slate-500 text-[12px]">
+            <text x={nd.x + W / 2} y={nd.y + 51} textAnchor="middle" className="fill-slate-500 text-[14px]">
               {nd.sub}
             </text>
           </g>
@@ -124,6 +126,75 @@ export function StepRail({ steps, active, onSelect }) {
         </div>
         <p className="mt-1 text-sm leading-relaxed text-slate-600">{s.body}</p>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The steps one after another, each with its own explanation. While the visitor
+ * scrolls, the step in the middle of the screen lights up the sticky diagram.
+ */
+export function ArchitectureStory({ steps }) {
+  const [active, setActive] = useState(0);
+  const items = useRef([]);
+
+  useEffect(() => {
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && setActive(Number(e.target.dataset.step))),
+      { rootMargin: '-45% 0px -45% 0px' }
+    );
+    items.current.forEach((el) => el && io.observe(el));
+    return () => io.disconnect();
+  }, [steps.length]);
+
+  return (
+    <div className="grid gap-10 lg:grid-cols-[1.45fr_1fr]">
+      <div className="hidden md:block lg:sticky lg:top-24 lg:self-start">
+        <div className="panel p-4 sm:p-5">
+          <ArchitectureDiagram step={steps[active]} />
+        </div>
+        <div className="mt-3 flex items-center gap-1.5">
+          {steps.map((s, i) => (
+            <span key={s.key} className={`h-1 flex-1 rounded-full transition-colors ${i <= active ? 'bg-violet-600' : 'bg-line'}`} />
+          ))}
+        </div>
+        <p className="mt-2 font-mono text-[11px] text-slate-500">
+          step {active + 1} / {steps.length} · {steps[active].title.toLowerCase()}
+        </p>
+      </div>
+
+      <ol className="space-y-3">
+        {steps.map((s, i) => {
+          const on = active === i;
+          return (
+            <li
+              key={s.key}
+              ref={(el) => (items.current[i] = el)}
+              data-step={i}
+              className={`rounded-xl border p-5 transition-all duration-300 sm:p-6 ${
+                on ? 'border-violet-200 bg-white shadow-lg shadow-violet-500/5' : 'border-transparent'
+              }`}
+            >
+              <div className="flex items-baseline gap-3">
+                <span className={`font-display text-3xl font-extrabold ${on ? 'text-gradient' : 'text-slate-300'}`}>
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <h3 className="kicker">{s.title}</h3>
+              </div>
+              <p className="mt-2 text-xl font-semibold leading-snug tracking-tight text-slate-900">{s.lead}</p>
+              <p className="mt-2 text-[15px] leading-relaxed text-slate-600">{s.body}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-1.5">
+                {s.tags.map((t) => (
+                  <span key={t} className="rounded-md border border-line bg-paper px-2 py-0.5 text-xs font-medium text-slate-600">
+                    {t}
+                  </span>
+                ))}
+                <span className="ml-auto rounded-md bg-violet-50 px-2 py-0.5 font-mono text-xs font-medium text-violet-700">{s.metric}</span>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }
