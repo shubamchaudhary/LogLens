@@ -1,18 +1,29 @@
-import { Link } from 'react-router-dom';
-import { REPO_URL } from '../config';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useGuestLaunch } from '../hooks/useGuestLaunch';
 import Icon, { Logo } from './Icon';
 
-// Shared frame of the public pages (landing, benchmarks): header, footer, sections.
+// Shared frame of the public pages (landing, benchmarks): header and sections.
 
-export function SiteHeader({ links = [] }) {
+/** `back`: show a Back button (to the previous page in the app, or home). */
+export function SiteHeader({ links = [], back = false }) {
   const { launch, busy, user } = useGuestLaunch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  // 'default' means this page was opened directly, so there is no in-app page to go back to.
+  const goBack = () => (location.key === 'default' ? navigate('/') : navigate(-1));
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-paper/85 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-line bg-paper/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <Link to="/" aria-label="DeepLogLens home">
-          <Logo />
-        </Link>
+        <div className="flex items-center gap-3">
+          {back && (
+            <button onClick={goBack} className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-violet-300 hover:text-violet-700">
+              <Icon name="arrowRight" className="h-4 w-4 rotate-180" /> Back
+            </button>
+          )}
+          <Link to="/" aria-label="DeepLogLens home">
+            <Logo />
+          </Link>
+        </div>
         <nav className="hidden items-center gap-7 text-sm text-slate-600 md:flex">
           {links.map(([href, label]) =>
             href.startsWith('/') ? (
@@ -41,24 +52,6 @@ export function SiteHeader({ links = [] }) {
   );
 }
 
-export function SiteFooter() {
-  return (
-    <footer className="border-t border-line">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-slate-500 sm:flex-row sm:px-6">
-        <Logo />
-        <div className="flex items-center gap-5">
-          <Link to="/benchmarks" className="hover:text-violet-700">
-            Benchmarks
-          </Link>
-          <a href={REPO_URL} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-violet-700">
-            <Icon name="github" className="h-4 w-4" /> Source
-          </a>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
 export function Section({ id, children, className = '' }) {
   return (
     <section id={id} className={`scroll-mt-16 border-t border-line py-20 ${className}`}>
@@ -71,7 +64,7 @@ export function Heading({ kicker, title, lead }) {
   return (
     <div className="max-w-3xl">
       <p className="kicker">{kicker}</p>
-      <h2 className="mt-3 font-display text-3xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-[2.6rem]">{title}</h2>
+      <h2 className="mt-3 font-display text-3xl font-extrabold leading-tight tracking-tight text-ink sm:text-[2.6rem]">{title}</h2>
       {lead && <p className="mt-4 text-base leading-relaxed text-slate-600">{lead}</p>}
     </div>
   );

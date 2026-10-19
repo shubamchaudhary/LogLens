@@ -3,7 +3,7 @@ import bench from '../demo/bench.json';
 import BarChart from '../components/BarChart';
 import HeapChart, { LiveSetBars } from '../components/HeapChart';
 import GateExplainer from '../components/GateExplainer';
-import { Heading, Section, SiteFooter, SiteHeader } from '../components/Site';
+import { Heading, Section, SiteHeader } from '../components/Site';
 import Icon from '../components/Icon';
 import { REPO_URL } from '../config';
 import { fmtBytes, fmtNum } from '../utils/format';
@@ -20,11 +20,11 @@ const NAV = [
 
 const SCENARIO = {
   baseline: ['Clean run', 'reference'],
-  crash_after_part_commit: ['kill -9 after a part commit', '×3, before the offset commit'],
-  crash_after_enrich_commit: ['kill -9 after an LLM result commit', '×3, before the offset commit'],
-  replay_ingest: ['Replay the ingest topic', 'consumer group rewound to offset 0'],
-  replay_enrich: ['Replay the LLM topic', 'rewound to offset 0, drained to lag 0'],
-  rebalance: ['Kill one of two instances', 'partitions rebalance mid-run'],
+  crash_after_part_commit: ['Process killed while parsing', 'kill -9, three times, right after a commit'],
+  crash_after_enrich_commit: ['Process killed while explaining', 'kill -9, three times, right after an LLM result'],
+  replay_ingest: ['Ingest topic replayed', 'Kafka consumer group rewound to the start'],
+  replay_enrich: ['LLM topic replayed', 'rewound to the start and fully drained'],
+  rebalance: ['One of two instances stopped', 'partitions move to the survivor mid-run'],
 };
 
 const CASE = {
@@ -35,7 +35,7 @@ const CASE = {
   'archive.log.gz': 'gzip archive',
   'huge_single_line.log': 'One 100 MB line',
   'busy_minute.log': '120,000 lines in one minute',
-  poison_message: 'Message that is not JSON',
+  poison_message: 'A message that is not JSON',
 };
 
 const LAYOUT = {
@@ -78,12 +78,11 @@ export default function Benchmarks() {
 
   return (
     <div className="min-h-screen overflow-x-clip bg-paper">
-      <SiteHeader links={NAV} />
+      <SiteHeader links={NAV} back />
 
       <section className="mx-auto max-w-6xl px-4 pb-14 pt-16 sm:px-6 sm:pt-20">
         <p className="kicker">Benchmarks</p>
-        <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">Measured on the real backend</h1>
-        <p className="mt-4 max-w-2xl text-lg text-slate-600">The production jar, real Kafka and Postgres, a stub LLM so the numbers describe LogLens, not a provider.</p>
+        <h1 className="mt-4 font-display text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">Measured numbers</h1>
         <div className="mt-6 flex flex-wrap gap-2">
           {[bench.setup.hardware, bench.setup.jvm, bench.setup.stack, `run ${bench.date}`].map((t) => (
             <span key={t} className="rounded-md border border-line bg-white px-2.5 py-1 font-mono text-[11px] text-slate-600">
@@ -131,52 +130,54 @@ export default function Benchmarks() {
 
       {/* Faults */}
       <Section id="faults">
-        <Heading kicker="02 · Faults" title="Crashes and replays change nothing" lead={`Each run ingests ${bench.chaos.file} (${fmtBytes(bench.chaos.bytes)}) and is compared with a clean run.`} />
-        <div className="mt-8">
-          <Table
-            head={['Scenario', 'Windows', 'Line sum', 'Metric sum', 'Findings', 'Redeliveries skipped', '']}
-            rows={bench.chaos.rows.map((r) => [
-              <span key="s">
-                <span className="block font-semibold text-slate-900">{SCENARIO[r.scenario]?.[0] || r.scenario}</span>
-                <span className="block text-[11px] text-slate-500">{SCENARIO[r.scenario]?.[1]}</span>
-              </span>,
-              fmtNum(r.chunks),
-              fmtNum(r.lineSum),
-              fmtNum(r.metricSum),
-              fmtNum(r.occurrences),
-              fmtNum(r.skips),
-              r.scenario === 'baseline' ? '' : <Check key="c" ok={matches(r)} />,
-            ])}
-          />
+        <Heading kicker="02 · Faults" title="Crashes and replays give the same result" />
+        <div className="mt-8 panel flex flex-wrap items-center gap-x-8 gap-y-2 bg-sand px-5 py-4">
+          <span className="text-sm font-semibold text-ink">Clean run</span>
+          {[
+            [base.chunks, 'windows'],
+            [base.lineSum, 'lines'],
+            [base.metricSum, 'metric total'],
+            [base.occurrences, 'findings'],
+          ].map(([v, k]) => (
+            <span key={k} className="text-sm text-slate-600">
+              <span className="font-display font-bold text-ink">{fmtNum(v)}</span> {k}
+            </span>
+          ))}
         </div>
-        <div className="mt-10">
-          <h3 className="text-lg font-semibold text-slate-900">Hostile input</h3>
-          <p className="text-sm text-slate-500">-Xmx256m. Every upload must end parsed or FAILED with a reason, never stuck.</p>
-          <div className="mt-4">
-            <Table
-              head={['Input', 'Size', 'Outcome', 'Time', '']}
-              rows={bench.robustness.map((r) => [
-                <span key="c" className="font-semibold text-slate-900">{CASE[r.case] || r.case}</span>,
-                r.bytes != null ? fmtBytes(r.bytes) : '–',
-                <span key="o">
-                  <Status s={r.status} />
-                  {(r.note || r.error) && (
-                    <span className="ml-2 inline-block max-w-[16rem] truncate align-middle text-[11px] text-slate-500" title={r.note || r.error}>
-                      {r.note || r.error.replace(/^Ingest failed: /, '')}
-                    </span>
-                  )}
-                </span>,
-                r.seconds != null ? `${r.seconds} s` : '–',
-                <Check key="k" ok label="clean end" />,
-              ])}
-            />
-          </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {bench.chaos.rows
+            .filter((r) => r.scenario !== 'baseline')
+            .map((r) => (
+              <div key={r.scenario} className="panel p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="font-semibold text-ink">{SCENARIO[r.scenario]?.[0] || r.scenario}</h3>
+                  <Check ok={matches(r)} label="identical" />
+                </div>
+                <p className="mt-1 text-sm text-slate-500">{SCENARIO[r.scenario]?.[1]}</p>
+                <p className="mt-4 font-mono text-xs text-slate-600">
+                  {fmtNum(r.chunks)} windows · {fmtNum(r.lineSum)} lines · {fmtNum(r.occurrences)} findings
+                </p>
+                {r.skips > 0 && <p className="mt-1 text-xs text-violet-700">{fmtNum(r.skips)} repeated deliveries recognised and skipped</p>}
+              </div>
+            ))}
+        </div>
+
+        <h3 className="mt-12 font-display text-xl font-extrabold text-ink">Unusual input</h3>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {bench.robustness.map((r) => (
+            <div key={r.case} className="panel p-4">
+              <p className="text-sm font-semibold text-ink">{CASE[r.case] || r.case}</p>
+              <p className="font-mono text-[11px] text-slate-400">{r.bytes != null ? fmtBytes(r.bytes) : 'Kafka message'}</p>
+              <p className="mt-3 text-sm text-slate-700">{outcome(r)}</p>
+              {r.seconds != null && <p className="font-mono text-[11px] text-slate-500">{r.seconds} s</p>}
+            </div>
+          ))}
         </div>
       </Section>
 
       {/* Quality */}
       <Section id="quality">
-        <Heading kicker="03 · Quality" title="Anomaly detection and Q&A retrieval" lead="Production parsers and gate run by the eval harness on labelled logs. No LLM calls, $0." />
+        <Heading kicker="03 · Quality" title="Anomaly detection and Q&A retrieval" lead="On labelled logs where every incident line is known." />
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
           <Panel title="F1 per dataset" sub="labelled corpora, then held-out seeds the rules never saw">
             <BarChart
@@ -236,7 +237,7 @@ export default function Benchmarks() {
 
       {/* Vectors */}
       <Section id="vectors">
-        <Heading kicker="04 · Vectors" title="One table per session keeps small tenants at 100% recall" lead={`${fmtNum(bench.vector.vectors)} vectors (${bench.vector.dim}-d), HNSW, ef_search 40. A small tenant holds 0.83% of the rows.`} />
+        <Heading kicker="04 · Vectors" title="One table per session keeps small tenants at 100% recall" lead={`${fmtNum(bench.vector.vectors)} vectors across three tenants; the smallest holds 0.83% of the rows.`} />
         <div className="mt-8 grid gap-4 lg:grid-cols-[0.9fr_1.6fr]">
           <Panel title="Recall@10 for the small tenant" sub={`session ${small}, by table layout`}>
             <BarChart
@@ -262,7 +263,6 @@ export default function Benchmarks() {
         </div>
       </Section>
 
-      <SiteFooter />
     </div>
   );
 }
@@ -316,7 +316,8 @@ function Check({ ok, label = 'matches' }) {
   );
 }
 
-function Status({ s }) {
-  const cls = s === 'FAILED' ? 'bg-amber-50 text-amber-700' : s === 'DLQ' ? 'bg-sky-50 text-sky-700' : 'bg-emerald-50 text-emerald-700';
-  return <span className={`rounded-md px-1.5 py-0.5 font-sans text-[11px] font-semibold ${cls}`}>{s === 'FAILED' ? 'FAILED, with reason' : s}</span>;
+function outcome(r) {
+  if (r.status === 'FAILED') return 'Rejected with a clear message';
+  if (r.status === 'DLQ') return 'Set aside in the dead-letter queue; the next upload runs';
+  return r.lines != null ? `Parsed, ${fmtNum(r.lines)} line${r.lines === 1 ? '' : 's'}` : 'Parsed';
 }

@@ -1,5 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
-
 // The system on one diagram, plus the seven steps a log file takes through it.
 // Picking a step lights up the boxes and arrows it uses (steps: utils/pipeline.js).
 
@@ -23,7 +21,7 @@ const EDGES = [
   ['api-kafka', 'M380 202 L420 202', '', 0, 0],
   ['kafka-workers', 'M580 202 L620 202', '', 0, 0],
   ['workers-blob', 'M700 170 L700 72 L380 72', 'ranged GET', 540, 64],
-  ['workers-llm', 'M780 182 L820 96', 'flagged only', 738, 136],
+  ['workers-llm', 'M780 182 L820 96', 'flagged only', 852, 143],
   ['workers-pg', 'M780 214 L820 214', '', 0, 0],
   ['api-python', 'M300 234 L300 332 L420 332', 'analyze · ask', 362, 322],
   ['python-pg', 'M580 332 L900 332 L900 234', 'hybrid SQL', 740, 322],
@@ -130,71 +128,27 @@ export function StepRail({ steps, active, onSelect }) {
   );
 }
 
-/**
- * The steps one after another, each with its own explanation. While the visitor
- * scrolls, the step in the middle of the screen lights up the sticky diagram.
- */
-export function ArchitectureStory({ steps }) {
-  const [active, setActive] = useState(0);
-  const items = useRef([]);
-
-  useEffect(() => {
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => e.isIntersecting && setActive(Number(e.target.dataset.step))),
-      { rootMargin: '-45% 0px -45% 0px' }
-    );
-    items.current.forEach((el) => el && io.observe(el));
-    return () => io.disconnect();
-  }, [steps.length]);
-
+/** Each step as a full-width diagram with its explanation underneath, one after another. */
+export function ArchitectureSteps({ steps }) {
   return (
-    <div className="grid gap-10 lg:grid-cols-[1.45fr_1fr]">
-      <div className="hidden md:block lg:sticky lg:top-24 lg:self-start">
-        <div className="panel p-4 sm:p-5">
-          <ArchitectureDiagram step={steps[active]} />
-        </div>
-        <div className="mt-3 flex items-center gap-1.5">
-          {steps.map((s, i) => (
-            <span key={s.key} className={`h-1 flex-1 rounded-full transition-colors ${i <= active ? 'bg-violet-600' : 'bg-line'}`} />
-          ))}
-        </div>
-        <p className="mt-2 font-mono text-[11px] text-slate-500">
-          step {active + 1} / {steps.length} · {steps[active].title.toLowerCase()}
-        </p>
-      </div>
-
-      <ol className="space-y-3">
-        {steps.map((s, i) => {
-          const on = active === i;
-          return (
-            <li
-              key={s.key}
-              ref={(el) => (items.current[i] = el)}
-              data-step={i}
-              className={`rounded-xl border p-5 transition-all duration-300 sm:p-6 ${
-                on ? 'border-violet-200 bg-white shadow-lg shadow-violet-500/5' : 'border-transparent'
-              }`}
-            >
-              <div className="flex items-baseline gap-3">
-                <span className={`font-display text-3xl font-extrabold ${on ? 'text-gradient' : 'text-slate-300'}`}>
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <h3 className="kicker">{s.title}</h3>
+    <ol className="space-y-16 sm:space-y-20">
+      {steps.map((s, i) => (
+        <li key={s.key}>
+          <figure>
+            <div className="panel p-3 sm:p-6">
+              <ArchitectureDiagram step={s} />
+            </div>
+            <figcaption className="mx-auto mt-6 grid max-w-4xl gap-x-8 gap-y-3 sm:grid-cols-[auto_1fr]">
+              <span className="font-display text-4xl font-extrabold leading-none text-gradient sm:text-5xl">{String(i + 1).padStart(2, '0')}</span>
+              <div>
+                <h3 className="font-display text-2xl font-extrabold tracking-tight text-ink">{s.title}</h3>
+                <p className="mt-2 text-[17px] leading-relaxed text-slate-600">{s.body}</p>
+                <p className="mt-3 inline-block rounded-md bg-sand px-2.5 py-1 font-mono text-xs font-medium text-violet-700">{s.metric}</p>
               </div>
-              <p className="mt-2 text-xl font-semibold leading-snug tracking-tight text-slate-900">{s.lead}</p>
-              <p className="mt-2 text-[15px] leading-relaxed text-slate-600">{s.body}</p>
-              <div className="mt-4 flex flex-wrap items-center gap-1.5">
-                {s.tags.map((t) => (
-                  <span key={t} className="rounded-md border border-line bg-paper px-2 py-0.5 text-xs font-medium text-slate-600">
-                    {t}
-                  </span>
-                ))}
-                <span className="ml-auto rounded-md bg-violet-50 px-2 py-0.5 font-mono text-xs font-medium text-violet-700">{s.metric}</span>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-    </div>
+            </figcaption>
+          </figure>
+        </li>
+      ))}
+    </ol>
   );
 }
