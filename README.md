@@ -10,7 +10,10 @@ work runs **off the request path, behind a durable queue** — so the system is 
 never loses work, and scales its reasoning cost with the number of *incidents*, not the
 size of the logs.
 
-🔗 **Live:** [deeploglens.vercel.app](https://deeploglens.vercel.app)
+🔗 **Live demo:** [deeploglens.vercel.app](https://deeploglens.vercel.app) (or [/demo](https://deeploglens.vercel.app/demo)
+to jump straight in). The hosted backend is paused to stay on free tiers, so the demo replays the
+pipeline in the browser on a real 10k-line log: the metrics and anomaly flags are the production
+parsers' output for that file. See [`loglens-frontend/README.md`](loglens-frontend/README.md#demo-mode-what-recruiters-see).
 
 ---
 

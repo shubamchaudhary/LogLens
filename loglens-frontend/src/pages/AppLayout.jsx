@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/auth';
 import { sessionAPI } from '../services/api';
+import { resetDemo } from '../demo/demoApi';
 import SessionSidebar from '../components/SessionSidebar';
 import SessionWorkspace from '../components/SessionWorkspace';
+import Icon, { Logo } from '../components/Icon';
 
 /**
  * v2 shell: a sidebar of the user's log-analysis sessions and a workspace for
@@ -14,6 +17,7 @@ export default function AppLayout() {
   const [sessions, setSessions] = useState([]);
   const [currentId, setCurrentId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [replayKey, setReplayKey] = useState(0);
 
   const isGuest = user?.isGuest === true;
   const guestSessionId = user?.guestSessionId;
@@ -75,14 +79,31 @@ export default function AppLayout() {
     setSessions((prev) => prev.map((s) => (s.id === patch.id ? { ...s, ...patch } : s)));
   }, []);
 
+  // Demo only: wipe the finished replay and run it again from the upload step.
+  const handleReplay = async () => {
+    resetDemo();
+    await loadSessions();
+    setReplayKey((k) => k + 1);
+  };
+
   const current = sessions.find((s) => s.id === currentId) || null;
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading…</div>;
+    return <div className="flex min-h-screen items-center justify-center text-slate-500">Loading…</div>;
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-[100dvh] flex-col overflow-hidden md:flex-row">
+      {/* Phone/tablet top bar; the sidebar takes over from md up. */}
+      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2.5 md:hidden">
+        <Link to="/">
+          <Logo />
+        </Link>
+        <button onClick={logout} className="btn-ghost">
+          <Icon name="logout" className="h-3.5 w-3.5" /> {isGuest ? 'Exit demo' : 'Log out'}
+        </button>
+      </div>
+
       <SessionSidebar
         sessions={sessions}
         currentId={currentId}
@@ -96,22 +117,24 @@ export default function AppLayout() {
       />
 
       {current ? (
-        <SessionWorkspace key={current.id} session={current} onStatusChange={patchSession} isGuest={isGuest} />
+        <SessionWorkspace
+          key={`${current.id}:${replayKey}`}
+          session={current}
+          onStatusChange={patchSession}
+          onReplay={user?.isDemo ? handleReplay : undefined}
+        />
       ) : (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <h2 className="text-lg font-semibold text-gray-800">No session selected</h2>
-            <p className="text-sm text-gray-500 mt-1 mb-4">
+            <h2 className="text-lg font-semibold text-slate-800">No session selected</h2>
+            <p className="mb-4 mt-1 text-sm text-slate-500">
               {isGuest
                 ? 'The demo session is loading...'
                 : 'Create a session to upload logs and run the analysis pipeline.'}
             </p>
             {!isGuest && (
-              <button
-                onClick={handleCreate}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium"
-              >
-                New session
+              <button onClick={handleCreate} className="btn-primary">
+                <Icon name="plus" className="h-4 w-4" /> New session
               </button>
             )}
           </div>

@@ -1,29 +1,27 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { useState } from 'react';
 import { authAPI } from '../services/api';
+import { AuthContext } from './auth';
+import { GUEST_MODE } from '../config';
+import { enterDemo, exitDemo, isDemo } from '../demo/demoMode';
 
-const AuthContext = createContext();
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
-};
+function storedUser() {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  const isGuest = localStorage.getItem('isGuest') === 'true';
+  // A guest token saved before the replay demo existed points at the live
+  // backend; in replay mode send that visitor to the demo instead.
+  if (isGuest && GUEST_MODE === 'replay' && !isDemo()) enterDemo();
+  return {
+    token,
+    guestSessionId: localStorage.getItem('guestSessionId'),
+    isGuest,
+    isDemo: isDemo(),
+  };
+}
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (token) {
-      const guestSessionId = localStorage.getItem('guestSessionId');
-      const isGuest = localStorage.getItem('isGuest') === 'true';
-      setUser({ token, guestSessionId, isGuest });
-    }
-    setLoading(false);
-  }, [token]);
+  const [user, setUser] = useState(storedUser);
+  const loading = false;
 
   const login = async (email, password) => {
     try {
@@ -32,7 +30,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', token);
       localStorage.removeItem('guestSessionId');
       localStorage.removeItem('isGuest');
-      setToken(token);
+      exitDemo();
       setUser({ userId, email: userEmail, token });
       return { success: true };
     } catch (error) {
@@ -41,13 +39,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   const guestLogin = async () => {
+    if (GUEST_MODE === 'replay') {
+      // The demo runs in the browser against the bundled fixture; no backend call.
+      enterDemo();
+      localStorage.setItem('token', 'demo');
+      localStorage.setItem('isGuest', 'true');
+      localStorage.removeItem('guestSessionId');
+      setUser({ token: 'demo', guestSessionId: null, isGuest: true, isDemo: true });
+      return { success: true };
+    }
     try {
       const response = await authAPI.guest();
       const { token, guestSessionId } = response.data;
       localStorage.setItem('token', token);
       localStorage.setItem('guestSessionId', guestSessionId);
       localStorage.setItem('isGuest', 'true');
-      setToken(token);
       setUser({ token, guestSessionId, isGuest: true });
       return { success: true };
     } catch (error) {
@@ -61,7 +67,7 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.register({ email, password, fullName });
       const { token, userId, email: userEmail } = response.data;
       localStorage.setItem('token', token);
-      setToken(token);
+      exitDemo();
       setUser({ userId, email: userEmail, token });
       return { success: true };
     } catch (error) {
@@ -111,12 +117,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('guestSessionId');
     localStorage.removeItem('isGuest');
-    setToken(null);
+    exitDemo();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, guestLogin, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, token: user?.token ?? null, login, guestLogin, register, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

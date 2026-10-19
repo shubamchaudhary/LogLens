@@ -1,26 +1,18 @@
 import { useState } from 'react';
 import { fmtRange } from '../../utils/format';
 import { analysisAPI } from '../../services/api';
-
-const SEVERITY = {
-  CRITICAL: 'bg-red-100 text-red-800 border-red-200',
-  ERROR: 'bg-orange-100 text-orange-800 border-orange-200',
-  WARN: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  INFO: 'bg-blue-100 text-blue-800 border-blue-200',
-};
-
-const SEVERITY_ORDER = ['CRITICAL', 'ERROR', 'WARN', 'INFO'];
+import { SEVERITY_ORDER, SEVERITY_STYLES } from '../../utils/severity';
+import Icon from '../Icon';
+import LogViewer from '../LogViewer';
 
 export default function FindingsTab({ sessionId, findings }) {
   const [severity, setSeverity] = useState('');
 
   if (!findings || findings.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
-        <p className="text-sm font-medium text-gray-700">No findings</p>
-        <p className="mt-1 text-sm text-gray-400">
-          The enrichment pass didn't flag anything for this session.
-        </p>
+      <div className="card p-10 text-center">
+        <p className="text-sm font-medium text-slate-700">No findings</p>
+        <p className="mt-1 text-sm text-slate-400">The enrichment pass didn't flag anything for this session.</p>
       </div>
     );
   }
@@ -30,11 +22,11 @@ export default function FindingsTab({ sessionId, findings }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={() => setSeverity('')}
-          className={`px-2.5 py-1 rounded-md text-xs font-medium border ${
-            severity === '' ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-200'
+          className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+            severity === '' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600'
           }`}
         >
           All ({findings.length})
@@ -43,13 +35,16 @@ export default function FindingsTab({ sessionId, findings }) {
           <button
             key={s}
             onClick={() => setSeverity(s)}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium border ${
-              severity === s ? 'ring-2 ring-offset-1 ring-gray-400' : ''
-            } ${SEVERITY[s]}`}
+            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${SEVERITY_STYLES[s].chip} ${
+              severity === s ? 'ring-2 ring-violet-300 ring-offset-1' : ''
+            }`}
           >
             {s} ({findings.filter((f) => f.severity === s).length})
           </button>
         ))}
+        <span className="ml-auto hidden text-xs text-slate-400 sm:block">
+          Explanations by the LLM · counts and times by the parsers
+        </span>
       </div>
 
       {shown.map((f) => (
@@ -65,6 +60,7 @@ function FindingCard({ sessionId, finding: f }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const count = f.evidenceChunkIds?.length || 0;
+  const sev = SEVERITY_STYLES[f.severity] || SEVERITY_STYLES.INFO;
 
   const toggle = async () => {
     const next = !open;
@@ -85,59 +81,40 @@ function FindingCard({ sessionId, finding: f }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <div className="flex items-center gap-2 flex-wrap">
-        <span
-          className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
-            SEVERITY[f.severity] || SEVERITY.INFO
-          }`}
-        >
+    <div className="card p-5 animate-fade-up">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-wide ${sev.chip}`}>
           {f.severity}
         </span>
-        {f.category && (
-          <span className="text-[11px] text-gray-500 bg-gray-100 rounded px-1.5 py-0.5">
-            {f.category}
-          </span>
-        )}
-        {f.occurrenceCount > 1 && (
-          <span className="text-[11px] text-gray-500">×{f.occurrenceCount}</span>
+        {f.category && <span className="chip font-mono text-[10px]">{f.category}</span>}
+        {f.occurrenceCount > 1 && <span className="text-[11px] font-medium text-slate-500">×{f.occurrenceCount} lines</span>}
+        {f.confidence != null && (
+          <span className="ml-auto text-[11px] text-slate-400">confidence {Number(f.confidence).toFixed(2)}</span>
         )}
       </div>
-      <h4 className="mt-1.5 text-sm font-semibold text-gray-900">{f.title}</h4>
-      {f.explanation && (
-        <p className="mt-2 text-sm text-gray-600 leading-relaxed">{f.explanation}</p>
-      )}
-      <div className="mt-2 flex items-center gap-3 text-[11px] text-gray-400">
-        <span>{fmtRange(f.timeRangeStart, f.timeRangeEnd)}</span>
+      <h4 className="mt-2 text-[15px] font-semibold text-slate-900">{f.title}</h4>
+      {f.explanation && <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{f.explanation}</p>}
+      <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-slate-400">
+        <span className="flex items-center gap-1">
+          <Icon name="clock" className="h-3.5 w-3.5" />
+          {fmtRange(f.timeRangeStart, f.timeRangeEnd)}
+        </span>
         {count > 0 && (
-          <button
-            onClick={toggle}
-            className="text-indigo-600 hover:text-indigo-700 font-medium"
-          >
-            {open ? 'Hide evidence' : `${count} evidence`}
+          <button onClick={toggle} className="flex items-center gap-1 font-semibold text-violet-600 hover:text-violet-700">
+            <Icon name="terminal" className="h-3.5 w-3.5" />
+            {open ? 'Hide evidence' : `View evidence (${count} chunk${count === 1 ? '' : 's'})`}
           </button>
         )}
       </div>
 
       {open && count > 0 && (
-        <div className="mt-3 space-y-1">
-          {loading && <p className="text-[11px] text-gray-400">Loading evidence…</p>}
-          {error && <p className="text-[11px] text-red-500">{error}</p>}
+        <div className="mt-3 space-y-2">
+          {loading && <p className="text-[11px] text-slate-400">Loading evidence…</p>}
+          {error && <p className="text-[11px] text-rose-500">{error}</p>}
           {evidence?.map((ev) => (
-            <div key={ev.chunkId}>
-              {(ev.lineStart != null || ev.lineEnd != null) && (
-                <p className="text-[10px] text-gray-400 mb-0.5">
-                  lines {ev.lineStart}–{ev.lineEnd}
-                </p>
-              )}
-              <pre className="text-[11px] bg-gray-900 text-gray-100 rounded-md p-2 overflow-x-auto whitespace-pre-wrap break-words">
-                {ev.content}
-              </pre>
-            </div>
+            <LogViewer key={ev.chunkId} content={ev.content} lineStart={ev.lineStart} />
           ))}
-          {evidence?.length === 0 && !loading && (
-            <p className="text-[11px] text-gray-400">No evidence lines found.</p>
-          )}
+          {evidence?.length === 0 && !loading && <p className="text-[11px] text-slate-400">No evidence lines found.</p>}
         </div>
       )}
     </div>
