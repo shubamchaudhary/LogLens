@@ -3,11 +3,12 @@
 // outputs of extract.mjs / build-dataset.mjs / enrich-incidents.mjs, and embeds
 // failure types and per-minute digests with Gemini (gemini-embedding-001, 768-d).
 //
+//   npm run demo:generate && npm run demo:extract     # ~75 s, recreates .data/
 //   DATABASE_URL=... GEMINI_API_KEYS=... node scripts/demo/load-db.mjs
 //
 // Re-runnable: it truncates and reloads everything except ask_usage.
 
-import { createReadStream, readFileSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -84,12 +85,17 @@ step(`${sigs.length} failure types embedded`);
 const fixture = JSON.parse(readFileSync(resolve(here, '../../src/demo/fixture.json'), 'utf8'));
 const extractMinutes = new Map(read('minutes.json').map((m) => [m.bucket, m]));
 const sigById = new Map(sigs.map((s) => [s.id, s]));
+// Rules that fired per minute come from the parser run; it is optional here (slow to
+// recompute), the flagged/unflagged verdict itself is already in the fixture timeline.
 const flagReasons = new Map();
-for (const w of read('windows.json').windows) {
-  if (!w.anomalous) continue;
-  const set = flagReasons.get(w.bucket) || new Set();
-  w.reasons.forEach((r) => set.add(r));
-  flagReasons.set(w.bucket, set);
+const windowsFile = resolve(DATA, 'windows.json');
+if (existsSync(windowsFile)) {
+  for (const w of read('windows.json').windows) {
+    if (!w.anomalous) continue;
+    const set = flagReasons.get(w.bucket) || new Set();
+    w.reasons.forEach((r) => set.add(r));
+    flagReasons.set(w.bucket, set);
+  }
 }
 const minutes = fixture.timeline.map((b) => {
   const m = extractMinutes.get(b.bucket);
