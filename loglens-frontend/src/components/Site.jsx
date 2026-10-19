@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useGuestLaunch } from '../hooks/useGuestLaunch';
+import { useTheme } from '../hooks/useTheme';
 import Icon, { Logo } from './Icon';
 
 // Shared frame of the public pages (landing, benchmarks): header and sections.
@@ -16,7 +17,7 @@ export function SiteHeader({ links = [], back = false }) {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3">
           {back && (
-            <button onClick={goBack} className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-violet-300 hover:text-violet-700">
+            <button onClick={goBack} className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink transition hover:border-accent/40 hover:text-accent">
               <Icon name="arrowRight" className="h-4 w-4 rotate-180" /> Back
             </button>
           )}
@@ -24,22 +25,23 @@ export function SiteHeader({ links = [], back = false }) {
             <Logo />
           </Link>
         </div>
-        <nav className="hidden items-center gap-7 text-sm text-slate-600 md:flex">
+        <nav className="hidden items-center gap-7 text-sm text-body md:flex">
           {links.map(([href, label]) =>
             href.startsWith('/') ? (
-              <Link key={href} to={href} className="hover:text-violet-700">
+              <Link key={href} to={href} className="hover:text-accent">
                 {label}
               </Link>
             ) : (
-              <a key={href} href={href} className="hover:text-violet-700">
+              <a key={href} href={href} className="hover:text-accent">
                 {label}
               </a>
             )
           )}
         </nav>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {!user && (
-            <Link to="/login" className="btn-ghost hidden text-sm sm:inline-flex">
+            <Link to="/login" className="hidden rounded-lg px-3 py-1.5 text-sm font-semibold text-body transition hover:text-accent sm:inline-flex">
               Sign in
             </Link>
           )}
@@ -49,6 +51,22 @@ export function SiteHeader({ links = [], back = false }) {
         </div>
       </div>
     </header>
+  );
+}
+
+/** ☾ / ☀ switch for the public pages' theme. */
+export function ThemeToggle() {
+  const [theme, toggle] = useTheme();
+  const dark = theme === 'dark';
+  return (
+    <button
+      onClick={toggle}
+      aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
+      title={dark ? 'Switch to light' : 'Switch to dark'}
+      className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-surface text-base text-body transition hover:border-accent/40 hover:text-accent"
+    >
+      {dark ? '☀' : '☾'}
+    </button>
   );
 }
 
@@ -65,7 +83,7 @@ export function Heading({ kicker, title, lead }) {
     <div className="max-w-3xl">
       <p className="kicker">{kicker}</p>
       <h2 className="mt-3 font-display text-3xl font-extrabold leading-tight tracking-tight text-ink sm:text-[2.6rem]">{title}</h2>
-      {lead && <p className="mt-4 text-base leading-relaxed text-slate-600">{lead}</p>}
+      {lead && <p className="mt-4 text-base leading-relaxed text-body">{lead}</p>}
     </div>
   );
 }

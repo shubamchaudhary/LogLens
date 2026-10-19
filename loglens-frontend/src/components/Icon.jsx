@@ -64,7 +64,7 @@ export function Logo({ compact = false }) {
       {!compact && (
         <span className="leading-tight">
           <span className="block text-base font-bold text-gradient">DeepLogLens</span>
-          <span className="block text-[11px] font-medium text-slate-500">Log intelligence</span>
+          <span className="block text-[11px] font-medium text-muted">Log intelligence</span>
         </span>
       )}
     </span>

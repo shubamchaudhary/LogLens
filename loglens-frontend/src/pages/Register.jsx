@@ -103,7 +103,7 @@ export default function Register() {
       yellow: 'bg-yellow-500',
       blue: 'bg-blue-500',
       green: 'bg-green-500',
-      gray: 'bg-slate-300',
+      gray: 'bg-line2',
     };
     return colors[passwordStrength.color] || colors.gray;
   };
@@ -115,7 +115,7 @@ export default function Register() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Error Alert */}
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+              <div className="bg-red-500/10 border-l-4 border-red-500 p-4 rounded-r-lg">
                 <div className="flex items-center">
                   <svg className="w-5 h-5 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -127,7 +127,7 @@ export default function Register() {
 
             {/* Full Name Field */}
             <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="fullName" className="block text-sm font-medium text-ink mb-1">
                 Full Name
               </label>
               <input
@@ -136,7 +136,7 @@ export default function Register() {
                 type="text"
                 autoComplete="name"
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
+                className="w-full bg-surface text-ink placeholder:text-dim px-4 py-3 border border-line rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
                 placeholder="John Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -146,7 +146,7 @@ export default function Register() {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-ink mb-1">
                 Email Address
               </label>
               <input
@@ -155,7 +155,7 @@ export default function Register() {
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
+                className="w-full bg-surface text-ink placeholder:text-dim px-4 py-3 border border-line rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -165,7 +165,7 @@ export default function Register() {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-ink mb-1">
                 Password
               </label>
               <div className="relative">
@@ -175,7 +175,7 @@ export default function Register() {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   required
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors pr-12"
+                  className="w-full bg-surface text-ink placeholder:text-dim px-4 py-3 border border-line rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors pr-12"
                   placeholder="Create a strong password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -183,7 +183,7 @@ export default function Register() {
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
@@ -203,17 +203,17 @@ export default function Register() {
               {password && (
                 <div className="mt-2">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-slate-500">Password strength</span>
+                    <span className="text-xs text-muted">Password strength</span>
                     <span className={`text-xs font-medium ${
                       passwordStrength.color === 'red' ? 'text-red-600' :
                       passwordStrength.color === 'yellow' ? 'text-yellow-600' :
                       passwordStrength.color === 'blue' ? 'text-blue-600' :
-                      passwordStrength.color === 'green' ? 'text-green-600' : 'text-slate-600'
+                      passwordStrength.color === 'green' ? 'text-green-600' : 'text-body'
                     }`}>
                       {passwordStrength.label}
                     </span>
                   </div>
-                  <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-line2 rounded-full overflow-hidden">
                     <div
                       className={`h-full ${getStrengthColor()} transition-all duration-300`}
                       style={{ width: getStrengthBarWidth() }}
@@ -224,7 +224,7 @@ export default function Register() {
                   <div className="mt-2 grid grid-cols-2 gap-1">
                     {passwordStrength.checks && (
                       <>
-                        <div className={`text-xs flex items-center ${passwordStrength.checks.length ? 'text-green-600' : 'text-slate-400'}`}>
+                        <div className={`text-xs flex items-center ${passwordStrength.checks.length ? 'text-green-600' : 'text-dim'}`}>
                           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             {passwordStrength.checks.length ? (
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -234,7 +234,7 @@ export default function Register() {
                           </svg>
                           8+ characters
                         </div>
-                        <div className={`text-xs flex items-center ${passwordStrength.checks.uppercase ? 'text-green-600' : 'text-slate-400'}`}>
+                        <div className={`text-xs flex items-center ${passwordStrength.checks.uppercase ? 'text-green-600' : 'text-dim'}`}>
                           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             {passwordStrength.checks.uppercase ? (
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -244,7 +244,7 @@ export default function Register() {
                           </svg>
                           Uppercase
                         </div>
-                        <div className={`text-xs flex items-center ${passwordStrength.checks.lowercase ? 'text-green-600' : 'text-slate-400'}`}>
+                        <div className={`text-xs flex items-center ${passwordStrength.checks.lowercase ? 'text-green-600' : 'text-dim'}`}>
                           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             {passwordStrength.checks.lowercase ? (
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -254,7 +254,7 @@ export default function Register() {
                           </svg>
                           Lowercase
                         </div>
-                        <div className={`text-xs flex items-center ${passwordStrength.checks.number ? 'text-green-600' : 'text-slate-400'}`}>
+                        <div className={`text-xs flex items-center ${passwordStrength.checks.number ? 'text-green-600' : 'text-dim'}`}>
                           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             {passwordStrength.checks.number ? (
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -273,7 +273,7 @@ export default function Register() {
 
             {/* Confirm Password Field */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-ink mb-1">
                 Confirm Password
               </label>
               <input
@@ -285,7 +285,7 @@ export default function Register() {
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors ${
                   confirmPassword && password !== confirmPassword
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                    : 'border-slate-300'
+                    : 'border-line'
                 }`}
                 placeholder="Confirm your password"
                 value={confirmPassword}
@@ -320,17 +320,17 @@ export default function Register() {
           {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-300"></div>
+              <div className="w-full border-t border-line"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-500">Already have an account?</span>
+              <span className="px-2 bg-surface text-muted">Already have an account?</span>
             </div>
           </div>
 
           {/* Sign In Link */}
           <Link
             to="/login"
-            className="w-full py-3 px-4 border-2 border-violet-600 text-violet-600 font-medium rounded-lg hover:bg-violet-50 transition-colors flex items-center justify-center"
+            className="w-full py-3 px-4 border-2 border-violet-600 text-accent font-medium rounded-lg hover:bg-accent-soft transition-colors flex items-center justify-center"
           >
             Sign in instead
           </Link>

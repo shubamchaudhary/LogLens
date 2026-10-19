@@ -3,6 +3,40 @@
 @tailwind utilities;
 
 @layer base {
+  /* Theme tokens. Light everywhere by default; the public pages (landing, benchmarks,
+     sign-in) switch <html data-theme="dark">, matching macbatch's dark palette. */
+  :root {
+    --paper: 253 252 249;
+    --sand: 247 244 238;
+    --surface: 255 255 255;
+    --line: 233 228 218;
+    --line2: 214 208 196;
+    --ink: 20 24 28;
+    --body: 71 85 105;
+    --muted: 100 116 139;
+    --dim: 148 163 184;
+    --accent: 109 40 217;
+    --accent-soft: 245 243 255;
+    --hot: 190 24 93;
+  }
+  html[data-theme='dark'] {
+    color-scheme: dark;
+    --paper: 11 13 16;
+    --sand: 22 27 33;
+    --surface: 18 22 27;
+    --line: 35 43 52;
+    --line2: 54 65 78;
+    --ink: 233 229 220;
+    --body: 176 184 194;
+    --muted: 147 156 168;
+    --dim: 107 115 126;
+    --accent: 196 181 253;
+    --accent-soft: 46 34 82;
+    --hot: 244 114 182;
+  }
+  html[data-theme='dark'] body {
+    background: rgb(var(--paper));
+  }
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
   }
@@ -32,10 +66,10 @@
   }
   /* Public pages (landing, benchmarks, sign-in): paper background, hairline panels. */
   .panel {
-    @apply rounded-xl border border-line bg-white;
+    @apply rounded-xl border border-line bg-surface;
   }
   .kicker {
-    @apply font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-700;
+    @apply font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-accent;
   }
   .num-badge {
     @apply flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-violet-600 to-pink-500 font-mono text-xs font-bold text-white;
@@ -59,4 +93,9 @@
   .arch-flow {
     animation: none;
   }
+}
+
+/* Gradient text needs lighter stops to read on the dark theme. */
+html[data-theme='dark'] .text-gradient {
+  background-image: linear-gradient(to right, #a78bfa, #e879f9, #f472b6);
 }

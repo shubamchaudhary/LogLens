@@ -55,7 +55,7 @@ export default function TimelineChart({ series, incidents = [], onSelectIncident
               <g key={s.bucket} opacity={hover == null || hover === i ? 1 : 0.55}>
                 {s.warns > 0 && <rect x={x} y={100 - he - hw} width={bw} height={hw} className="fill-amber-400" />}
                 {s.errors > 0 && <rect x={x} y={100 - he} width={bw} height={he} className="fill-rose-500" />}
-                {s.errors + s.warns === 0 && <rect x={x} y={99} width={bw} height={1} className="fill-slate-300" />}
+                {s.errors + s.warns === 0 && <rect x={x} y={99} width={bw} height={1} className="fill-line2" />}
               </g>
             );
           })}
@@ -78,19 +78,19 @@ export default function TimelineChart({ series, incidents = [], onSelectIncident
 
         {hovered && (
           <div
-            className="pointer-events-none absolute top-7 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-[11px] text-white shadow-lg"
+            className="pointer-events-none absolute top-7 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg bg-ink px-2.5 py-1.5 text-[11px] text-paper shadow-lg"
             style={{ left: pct(Math.min(Math.max(pos(hovered.bucket) + 0.5 / span, 0.08), 0.92)) }}
           >
             <div className="font-semibold">{fmtClock(hovered.bucket).slice(0, 5)} UTC</div>
             <div className="text-rose-300">{hovered.errors} ERROR</div>
             <div className="text-amber-200">{hovered.warns} WARN</div>
-            <div className="text-slate-400">{hovered.lines.toLocaleString('en-US')} lines</div>
+            <div className="text-dim">{hovered.lines.toLocaleString('en-US')} lines</div>
             {hovered.flagged && <div className="text-violet-300">flagged by the anomaly gate</div>}
           </div>
         )}
       </div>
 
-      <div className="relative mt-1.5 h-4 border-t border-slate-200 text-[10px] text-slate-400">
+      <div className="relative mt-1.5 h-4 border-t border-line text-[10px] text-dim">
         {ticks.map((t) => (
           <span key={t.bucket} className="absolute top-1 -translate-x-1/2" style={{ left: pct(pos(t.bucket)) }}>
             {fmtClock(t.bucket).slice(0, 5)}
@@ -98,7 +98,7 @@ export default function TimelineChart({ series, incidents = [], onSelectIncident
         ))}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] text-slate-500">
+      <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] text-muted">
         <Legend cls="bg-rose-500" label="ERROR lines / min" />
         <Legend cls="bg-amber-400" label="WARN lines / min" />
         {flagged.length > 0 && <Legend cls="bg-violet-600" label="Minute flagged by the anomaly gate" />}

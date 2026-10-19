@@ -8,6 +8,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script>
+      // Paint the public pages dark before React loads (src/hooks/useTheme.js owns the theme after that).
+      if (['/', '/benchmarks', '/login', '/register'].includes(location.pathname)) {
+        var t = 'dark';
+        try { if (localStorage.getItem('deeploglens-theme') === 'light') t = 'light'; } catch (e) {}
+        document.documentElement.dataset.theme = t;
+      }
+    </script>
     <title>DeepLogLens · Log intelligence</title>
   </head>
   <body>
