@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { isDemo } from '../demo/demoMode';
 import * as demo from '../demo/demoApi';
+import { timeline } from '../utils/analysis';
+import { askView, incidentView } from '../utils/views';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
@@ -127,11 +129,11 @@ const realDocumentAPI = {
 
 export const documentAPI = demoAware(realDocumentAPI, demo.documentAPI);
 
-export const analysisAPI = demoAware({
+// Raw backend endpoints (signed-in sessions).
+const backend = {
   metrics: (sessionId, params) => api.get(`/sessions/${sessionId}/metrics`, { params }),
   findings: (sessionId, params) => api.get(`/sessions/${sessionId}/findings`, { params }),
   incidents: (sessionId) => api.get(`/sessions/${sessionId}/incidents`),
-  report: (sessionId) => api.get(`/sessions/${sessionId}/report`),
   evidence: (sessionId, chunkIds) =>
     api.get(`/sessions/${sessionId}/evidence`, {
       params: { chunkIds },
@@ -141,6 +143,40 @@ export const analysisAPI = demoAware({
     api.post(`/sessions/${sessionId}/drilldown`, { question }, { timeout: 130000 }),
   drilldownHistory: (sessionId) => api.get(`/sessions/${sessionId}/drilldown`),
   drilldownClear: (sessionId) => api.delete(`/sessions/${sessionId}/drilldown`),
+};
+
+// What the result tabs consume; the guest session serves the same shapes from demoApi.js.
+export const analysisAPI = demoAware({
+  overview: async (sessionId) => {
+    const [fin, inc, met] = await Promise.all([
+      backend.findings(sessionId),
+      backend.incidents(sessionId),
+      backend.metrics(sessionId),
+    ]);
+    const findings = fin.data || [];
+    return {
+      status: 200,
+      data: {
+        series: timeline(met.data || []),
+        incidents: (inc.data || []).map((x) => incidentView(x, findings)),
+        stats: null,
+        file: null,
+        suggestions: ['What caused the errors?', 'When did the first error happen?', 'Which service failed most?'],
+      },
+    };
+  },
+  ask: async (sessionId, question) => {
+    const { data } = await backend.drilldown(sessionId, question);
+    const ids = data.citations || [];
+    const rows = ids.length ? (await backend.evidence(sessionId, ids).catch(() => ({ data: [] }))).data : [];
+    return { status: 200, data: askView(question, data.answer, rows) };
+  },
+  askHistory: async (sessionId) => {
+    const { data } = await backend.drilldownHistory(sessionId);
+    return { status: 200, data: (data || []).map((m) => askView(m.question, m.answer, [])) };
+  },
+  askClear: (sessionId) => backend.drilldownClear(sessionId),
+  evidence: backend.evidence,
 }, demo.analysisAPI);
 
 export function streamProgress(sessionId, handlers = {}) {

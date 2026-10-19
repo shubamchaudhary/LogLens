@@ -5,45 +5,42 @@ import { isTerminal } from '../utils/status';
 import ProgressTracker from './ProgressTracker';
 import PipelineConsole from './PipelineConsole';
 import UploadPanel from './UploadPanel';
-import DrilldownPanel from './DrilldownPanel';
-import DemoBanner from './DemoBanner';
+import AskPanel from './AskPanel';
+import LogFileViewer from './LogFileViewer';
 import Icon from './Icon';
 import OverviewTab from './tabs/OverviewTab';
-import ReportTab from './tabs/ReportTab';
-import FindingsTab from './tabs/FindingsTab';
 import IncidentsTab from './tabs/IncidentsTab';
-import MetricsTab from './tabs/MetricsTab';
 import { isDemo } from '../demo/demoMode';
 import { loadFixture, skipReplay } from '../demo/demoApi';
+import { fmtClock } from '../utils/format';
 
 const TABS = [
   ['overview', 'Overview', 'chart'],
-  ['report', 'Report', 'file'],
-  ['findings', 'Findings', 'list'],
   ['incidents', 'Incidents', 'layers'],
-  ['metrics', 'Metrics', 'grid'],
   ['ask', 'Ask', 'message'],
 ];
 
 /**
- * Main panel for one session: upload → live progress → result tabs + drill-down.
+ * Main panel for one session: upload → live progress → Overview / Incidents / Ask.
  * Progress is driven by the SSE stream; when the run reaches a terminal state we
- * pull the metrics/findings/incidents/report the pipeline produced.
+ * load the results.
  */
 export default function SessionWorkspace({ session, onStatusChange, onReplay }) {
   const sessionId = session.id;
-  const demo = isDemo();
+  const guest = isDemo();
   const [progress, setProgress] = useState({
     status: session.analysisStatus,
     enriched: session.enrichedWindows ?? 0,
     total: session.totalWindows ?? 0,
   });
   const [tab, setTab] = useState('overview');
-  const [results, setResults] = useState(null);
+  const [focus, setFocus] = useState(null);
+  const [data, setData] = useState(null);
   const [stats, setStats] = useState(null);
   const [loadingResults, setLoadingResults] = useState(false);
   const [starting, setStarting] = useState(false);
   const [consoleLines, setConsoleLines] = useState([]);
+  const [viewer, setViewer] = useState(null); // { line, highlight }
   const startedAt = useRef(0);
   const mounted = useRef(true);
 
@@ -55,25 +52,14 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
   }, []);
 
   useEffect(() => {
-    if (demo) loadFixture().then((f) => mounted.current && setStats(f.stats));
-  }, [demo]);
+    if (guest) loadFixture().then((f) => mounted.current && setStats(f.stats));
+  }, [guest]);
 
   const loadResults = useCallback(async () => {
     setLoadingResults(true);
     try {
-      const [rep, fin, inc, met] = await Promise.all([
-        analysisAPI.report(sessionId),
-        analysisAPI.findings(sessionId),
-        analysisAPI.incidents(sessionId),
-        analysisAPI.metrics(sessionId),
-      ]);
-      if (!mounted.current) return;
-      setResults({
-        report: rep.status === 204 ? null : rep.data,
-        findings: fin.data || [],
-        incidents: inc.data || [],
-        metrics: met.data || [],
-      });
+      const res = await analysisAPI.overview(sessionId);
+      if (mounted.current) setData(res.data);
     } catch (e) {
       console.error('Failed to load analysis results', e);
     } finally {
@@ -89,7 +75,7 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
       total: session.totalWindows ?? 0,
     };
     setProgress(seed);
-    setResults(null);
+    setData(null);
     setStarting(false);
     setTab('overview');
     setConsoleLines([]);
@@ -125,26 +111,30 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
   const status = progress.status;
   const showUpload = status === 'CREATED' && !starting;
   const showProgress = !isTerminal(status) && !showUpload;
+  const file = data?.file;
+
+  const openIncident = (id) => {
+    setFocus(id);
+    setTab('incidents');
+  };
+  const openFile = file ? (line, highlight) => setViewer({ line, highlight }) : undefined;
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {demo && <DemoBanner />}
-
-      {/* Header */}
       <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur sm:px-6">
         <div className="min-w-0">
           <h2 className="truncate text-base font-semibold text-slate-900">{session.title}</h2>
           <p className="truncate font-mono text-[11px] text-slate-400">{sessionId}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {demo && showProgress && (
+          {guest && showProgress && (
             <button onClick={skipReplay} className="btn-ghost">
               <Icon name="skip" className="h-3.5 w-3.5" /> Skip to results
             </button>
           )}
-          {demo && isTerminal(status) && onReplay && (
+          {guest && isTerminal(status) && onReplay && (
             <button onClick={onReplay} className="btn-ghost">
-              <Icon name="rotate" className="h-3.5 w-3.5" /> Replay analysis
+              <Icon name="rotate" className="h-3.5 w-3.5" /> Run again
             </button>
           )}
           <StatusBadge status={status} />
@@ -164,11 +154,11 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
           <div className="mx-auto mt-4 max-w-3xl">
             <div className="mb-6 text-center">
               <h3 className="text-xl font-bold tracking-tight text-slate-900">
-                {demo ? 'Run the pipeline on a real log file' : 'Upload a log to analyze'}
+                {guest ? 'Analyze a 1 GB production log' : 'Upload a log to analyze'}
               </h3>
               <p className="mx-auto mt-1 max-w-xl text-sm text-slate-500">
-                We'll split it, compute exact metrics with deterministic parsers, send only the anomalous minutes to an
-                LLM, and correlate the findings into incidents.
+                It gets split into parts, every line is parsed into exact metrics, only the unusual minutes go to an
+                LLM, and the findings are grouped into incidents you can question.
               </p>
             </div>
             <UploadPanel
@@ -184,20 +174,20 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
 
         {showProgress && (
           <div className="mx-auto mt-2 max-w-4xl space-y-4">
-            <ProgressTracker progress={progress} />
+            <ProgressTracker progress={progress} stats={stats} />
             {consoleLines.length > 0 && <PipelineConsole lines={consoleLines} running />}
           </div>
         )}
 
         {isTerminal(status) && (
           <div className="mx-auto max-w-6xl">
-            <div className="-mx-4 mb-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+            <div className="-mx-4 mb-4 flex items-center justify-between gap-3 overflow-x-auto px-4 sm:mx-0 sm:px-0">
               <div className="inline-flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
                 {TABS.map(([key, label, icon]) => (
                   <button
                     key={key}
                     onClick={() => setTab(key)}
-                    className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                    className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-1.5 text-sm font-medium transition ${
                       tab === key
                         ? 'bg-gradient-to-r from-violet-600 to-pink-500 text-white shadow'
                         : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
@@ -205,27 +195,48 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
                   >
                     <Icon name={icon} className="h-3.5 w-3.5" />
                     {label}
+                    {key === 'incidents' && data?.incidents && (
+                      <span className={`rounded-full px-1.5 text-[10px] ${tab === key ? 'bg-white/25' : 'bg-slate-100'}`}>
+                        {data.incidents.length}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
+              {file && (
+                <button onClick={() => setViewer({ line: 1 })} className="btn-ghost shrink-0">
+                  <Icon name="file" className="h-3.5 w-3.5" /> {file.name}
+                </button>
+              )}
             </div>
 
-            {tab === 'ask' ? (
-              <DrilldownPanel sessionId={sessionId} />
-            ) : loadingResults && !results ? (
+            {loadingResults && !data ? (
               <div className="card p-10 text-center text-sm text-slate-400">Loading results…</div>
             ) : (
               <div key={tab} className="animate-fade-up">
-                {tab === 'overview' && <OverviewTab results={results} stats={stats} onOpenTab={setTab} />}
-                {tab === 'report' && <ReportTab report={results?.report} />}
-                {tab === 'findings' && <FindingsTab sessionId={sessionId} findings={results?.findings} />}
-                {tab === 'incidents' && <IncidentsTab incidents={results?.incidents} findings={results?.findings} />}
-                {tab === 'metrics' && <MetricsTab metrics={results?.metrics} />}
+                {tab === 'overview' && <OverviewTab data={data} onOpenIncident={openIncident} onOpenFile={openFile} />}
+                {tab === 'incidents' && (
+                  <IncidentsTab sessionId={sessionId} incidents={data?.incidents} focus={focus} onOpenFile={openFile} />
+                )}
+                {tab === 'ask' && <AskPanel sessionId={sessionId} suggestions={data?.suggestions} onOpenFile={openFile} />}
               </div>
             )}
           </div>
         )}
       </div>
+
+      {viewer && file && (
+        <LogFileViewer
+          file={file}
+          line={viewer.line}
+          highlight={viewer.highlight}
+          jumps={(data?.incidents || []).map((inc, i) => ({
+            line: inc.evidence?.find((e) => e.role === 'first')?.line || inc.evidence?.[0]?.line,
+            label: `#${i + 1} ${fmtClock(inc.start).slice(0, 5)}`,
+          })).filter((j) => j.line)}
+          onClose={() => setViewer(null)}
+        />
+      )}
     </div>
   );
 }

@@ -20,14 +20,16 @@ export default function TimelineChart({ series, incidents = [], onSelectIncident
   const pct = (v) => `${(v * 100).toFixed(3)}%`;
 
   const bands = incidents
-    .filter((inc) => inc.timeRangeStart)
+    .filter((inc) => inc.start)
     .map((inc, i) => {
-      const x0 = pos(inc.timeRangeStart);
-      const x1 = pos(inc.timeRangeEnd || inc.timeRangeStart) + 1 / span;
+      const x0 = pos(inc.start);
+      const x1 = pos(inc.end || inc.start) + 1 / span;
       return { inc, i, x0, w: Math.max(x1 - x0, 1 / span) };
     });
 
-  const ticks = series.filter((s) => new Date(s.bucket).getUTCMinutes() % 30 === 0);
+  const tickEvery = span > 360 ? 60 : 30;
+  const ticks = series.filter((s) => new Date(s.bucket).getUTCMinutes() % tickEvery === 0);
+  const flagged = series.filter((s) => s.flagged);
   const hovered = hover != null ? series[hover] : null;
 
   const onMove = (e) => {
@@ -57,6 +59,9 @@ export default function TimelineChart({ series, incidents = [], onSelectIncident
               </g>
             );
           })}
+          {flagged.map((s) => (
+            <rect key={`f${s.bucket}`} x={pos(s.bucket) * 1000} y="98.5" width={Math.max(1000 / span, 1.5)} height="1.5" className="fill-violet-600" />
+          ))}
         </svg>
 
         {bands.map(({ inc, i, x0, w }) => (
@@ -79,7 +84,8 @@ export default function TimelineChart({ series, incidents = [], onSelectIncident
             <div className="font-semibold">{fmtClock(hovered.bucket).slice(0, 5)} UTC</div>
             <div className="text-rose-300">{hovered.errors} ERROR</div>
             <div className="text-amber-200">{hovered.warns} WARN</div>
-            <div className="text-slate-400">{hovered.lines} lines</div>
+            <div className="text-slate-400">{hovered.lines.toLocaleString('en-US')} lines</div>
+            {hovered.flagged && <div className="text-violet-300">flagged by the anomaly gate</div>}
           </div>
         )}
       </div>
@@ -95,7 +101,8 @@ export default function TimelineChart({ series, incidents = [], onSelectIncident
       <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] text-slate-500">
         <Legend cls="bg-rose-500" label="ERROR lines / min" />
         <Legend cls="bg-amber-400" label="WARN lines / min" />
-        {bands.length > 0 && <Legend cls="bg-violet-500/20" label="Correlated incident" />}
+        {flagged.length > 0 && <Legend cls="bg-violet-600" label="Minute flagged by the anomaly gate" />}
+        {bands.length > 0 && <Legend cls="bg-violet-500/20" label="Incident" />}
         <span className="ml-auto">peak {max} / min · UTC</span>
       </div>
     </div>

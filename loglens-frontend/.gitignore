@@ -28,3 +28,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# demo data (generated, ~1 GB)
+scripts/demo/.data/

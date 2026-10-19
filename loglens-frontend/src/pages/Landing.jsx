@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/auth';
 import { REPO_URL } from '../config';
 import { loadFixture } from '../demo/demoApi';
-import { timeline, totals } from '../utils/analysis';
 import TimelineChart from '../components/TimelineChart';
 import Icon, { Logo } from '../components/Icon';
 
@@ -48,7 +47,7 @@ export default function Landing() {
   useEffect(() => {
     let cancelled = false;
     loadFixture().then((f) => {
-      if (!cancelled) setPreview({ series: timeline(f.metrics), totals: totals(f.metrics), f });
+      if (!cancelled) setPreview(f);
     });
     return () => {
       cancelled = true;
@@ -81,7 +80,7 @@ export default function Landing() {
               </Link>
             )}
             <button onClick={launch} className="btn-primary px-4 py-2">
-              {user ? 'Open app' : 'Live demo'} <Icon name="arrowRight" className="h-4 w-4" />
+              {user ? 'Open app' : 'Try it'} <Icon name="arrowRight" className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -105,14 +104,14 @@ export default function Landing() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <button onClick={launch} className="btn-primary w-full px-7 py-3 text-base sm:w-auto">
-              <Icon name="play" className="h-4 w-4" /> Run the live demo
+              <Icon name="play" className="h-4 w-4" /> Analyze a 1 GB log
             </button>
             <a href={REPO_URL} target="_blank" rel="noreferrer" className="btn-secondary w-full px-7 py-3 text-base sm:w-auto">
               <Icon name="github" className="h-4 w-4" /> View source
             </a>
           </div>
           <p className="mt-3 text-xs text-slate-400">
-            No sign-up. The demo runs in your browser on a real 10,000-line log, replaying the pipeline.
+            No sign-up. A full day of production logs from 10 services: 1 GB, 5.4 million lines, six real-world outages.
           </p>
 
           {/* Stats */}
@@ -142,20 +141,20 @@ export default function Landing() {
             <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
             <span className="ml-3 truncate font-mono text-[11px] text-slate-400">
-              LogLens · {preview?.f.file.name || 'owner_sample_10k.log'} · overview
+              DeepLogLens · {preview?.file.name || 'deeploglens-1gb.log'} · overview
             </span>
           </div>
           <div className="p-4 sm:p-6">
             {preview ? (
               <>
                 <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <Mini label="Log lines" value={preview.totals.lines.toLocaleString('en-US')} />
-                  <Mini label="ERROR lines" value={preview.totals.errors} tone="text-rose-600" />
-                  <Mini label="Windows to LLM" value={`${preview.f.stats.flagged}/${preview.f.stats.windows}`} />
-                  <Mini label="Incidents" value={preview.f.incidents.length} tone="text-violet-700" />
+                  <Mini label="Log lines" value={preview.stats.lines.toLocaleString('en-US')} />
+                  <Mini label="ERROR lines" value={preview.stats.errorLines.toLocaleString('en-US')} tone="text-rose-600" />
+                  <Mini label="Minutes sent to the LLM" value={`${preview.stats.flaggedMinutes}/${preview.stats.minutes}`} />
+                  <Mini label="Incidents" value={preview.incidents.length} tone="text-violet-700" />
                 </div>
                 <div className="card p-4">
-                  <TimelineChart series={preview.series} incidents={preview.f.incidents} onSelectIncident={launch} height={150} />
+                  <TimelineChart series={preview.timeline} incidents={preview.incidents} onSelectIncident={launch} height={150} />
                 </div>
               </>
             ) : (
@@ -220,12 +219,13 @@ export default function Landing() {
       {/* CTA */}
       <section className="px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-4xl rounded-3xl bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-500 p-10 text-center text-white shadow-2xl shadow-violet-500/30 sm:p-14">
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">See it run on a real log</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">Find the six outages in 1 GB of logs</h2>
           <p className="mx-auto mt-3 max-w-xl text-white/85">
-            Watch the pipeline split, parse, gate and correlate, then open the report and ask it questions.
+            Expired certificates, a bad deploy, a Redis failover, a Kafka rebalance loop, an OOM crash loop and
+            database deadlocks. Watch the pipeline find them, then ask it why.
           </p>
           <button onClick={launch} className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 font-semibold text-violet-700 shadow-lg transition hover:bg-violet-50">
-            <Icon name="play" className="h-4 w-4" /> Run the live demo
+            <Icon name="play" className="h-4 w-4" /> Analyze the log
           </button>
         </div>
       </section>

@@ -4,10 +4,12 @@ const STAGE = {
   upload: 'text-sky-300',
   split: 'text-sky-300',
   parse: 'text-cyan-300',
-  gate: 'text-amber-300',
-  enrich: 'text-fuchsia-300',
+  detect: 'text-amber-300',
+  'fan-out': 'text-amber-300',
+  explain: 'text-fuchsia-300',
   embed: 'text-violet-300',
-  graph: 'text-pink-300',
+  correlate: 'text-pink-300',
+  verify: 'text-pink-300',
   report: 'text-pink-300',
   done: 'text-emerald-300',
 };
@@ -25,13 +27,13 @@ export default function PipelineConsole({ lines, running }) {
         <span className="h-2.5 w-2.5 rounded-full bg-rose-400/80" />
         <span className="h-2.5 w-2.5 rounded-full bg-amber-300/80" />
         <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
-        <span className="ml-2 font-mono text-[11px] text-slate-400">pipeline · kafka → parsers → llm → langgraph</span>
+        <span className="ml-2 font-mono text-[11px] text-slate-400">pipeline · kafka → parsers → anomaly gate → llm → langgraph</span>
       </div>
       <div ref={box} className="h-64 overflow-y-auto px-4 py-3 font-mono text-[11.5px] leading-6">
         {lines.map((l, i) => (
           <div key={i} className="flex gap-3 animate-fade-up">
             <span className="w-14 shrink-0 text-right text-slate-600">+{(l.t / 1000).toFixed(1)}s</span>
-            <span className={`w-14 shrink-0 ${STAGE[l.stage] || 'text-slate-400'}`}>{l.stage}</span>
+            <span className={`w-16 shrink-0 ${STAGE[l.stage] || 'text-slate-400'}`}>{l.stage}</span>
             <span className="min-w-0 break-words text-slate-200">{l.text}</span>
           </div>
         ))}

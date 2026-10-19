@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/auth';
-import { GUEST_MODE } from '../config';
 
 /**
  * Enhanced Login Page with better UX
@@ -11,7 +10,7 @@ import { GUEST_MODE } from '../config';
  * - Loading states with spinner
  * - Detailed error messages
  * - Welcome back message
- * - Guest login for recruiters/demos
+ * - Guest access (no account needed)
  */
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -99,19 +98,10 @@ export default function Login() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">LogLens</h1>
+          <h1 className="text-3xl font-bold text-slate-900">DeepLogLens</h1>
           <p className="text-slate-600 mt-2">Sign in to continue</p>
         </div>
 
-        {GUEST_MODE === 'replay' && (
-          <div className="mb-4 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-900">
-            <p className="font-semibold">Just looking? Use the demo.</p>
-            <p className="mt-0.5 text-violet-800/80">
-              Sign-in needs the live backend, which is paused on the free tier. The demo below runs the whole
-              pipeline in your browser on a real log file.
-            </p>
-          </div>
-        )}
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-xl shadow-violet-500/5 border border-slate-100 p-8 space-y-6">
@@ -223,7 +213,7 @@ export default function Login() {
               <div className="w-full border-t border-slate-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-500">New to LogLens?</span>
+              <span className="px-2 bg-white text-slate-500">New to DeepLogLens?</span>
             </div>
           </div>
 
@@ -241,7 +231,7 @@ export default function Login() {
               <div className="w-full border-t border-slate-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-500">Or explore without signing up</span>
+              <span className="px-2 bg-white text-slate-500">Or try it without an account</span>
             </div>
           </div>
 
@@ -257,7 +247,7 @@ export default function Login() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Entering as guest...
+                Opening…
               </>
             ) : (
               <>
@@ -265,7 +255,7 @@ export default function Login() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                View live demo (no sign-up)
+                Continue as guest (no sign-up)
               </>
             )}
           </button>
@@ -274,7 +264,7 @@ export default function Login() {
         {/* Footer */}
         <p className="text-center text-sm mt-8">
           <Link to="/" className="text-slate-500 hover:text-violet-700">
-            ← Back to the LogLens overview
+            ← Back to DeepLogLens
           </Link>
         </p>
       </div>

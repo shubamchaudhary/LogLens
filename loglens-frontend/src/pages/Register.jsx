@@ -118,7 +118,7 @@ export default function Register() {
             </svg>
           </div>
           <h1 className="text-3xl font-bold text-slate-900">Create Account</h1>
-          <p className="text-slate-600 mt-2">Join LogLens and start learning smarter</p>
+          <p className="text-slate-600 mt-2">Create an account to analyze your own logs</p>
         </div>
 
         {/* Card */}
@@ -350,7 +350,7 @@ export default function Register() {
         {/* Footer */}
         <p className="text-center text-slate-500 text-sm mt-8">
           <Link to="/" className="hover:text-violet-700">
-            ← Back to the LogLens overview
+            ← Back to DeepLogLens
           </Link>
         </p>
       </div>

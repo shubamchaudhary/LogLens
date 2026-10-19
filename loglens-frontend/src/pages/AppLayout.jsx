@@ -100,7 +100,7 @@ export default function AppLayout() {
           <Logo />
         </Link>
         <button onClick={logout} className="btn-ghost">
-          <Icon name="logout" className="h-3.5 w-3.5" /> {isGuest ? 'Exit demo' : 'Log out'}
+          <Icon name="logout" className="h-3.5 w-3.5" /> {isGuest ? 'Sign out' : 'Log out'}
         </button>
       </div>
 
@@ -111,7 +111,7 @@ export default function AppLayout() {
         onCreate={isGuest ? undefined : handleCreate}
         onRename={isGuest ? undefined : handleRename}
         onDelete={isGuest ? undefined : handleDelete}
-        email={isGuest ? 'Guest (Demo)' : user?.email}
+        email={isGuest ? 'Guest' : user?.email}
         onLogout={logout}
         isGuest={isGuest}
       />
@@ -129,7 +129,7 @@ export default function AppLayout() {
             <h2 className="text-lg font-semibold text-slate-800">No session selected</h2>
             <p className="mb-4 mt-1 text-sm text-slate-500">
               {isGuest
-                ? 'The demo session is loading...'
+                ? 'Loading…'
                 : 'Create a session to upload logs and run the analysis pipeline.'}
             </p>
             {!isGuest && (

@@ -36,11 +36,6 @@ export default function SessionSidebar({
         <Link to="/">
           <Logo />
         </Link>
-        {isGuest && (
-          <span className="rounded-full bg-gradient-to-r from-violet-600 to-pink-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-            Demo
-          </span>
-        )}
       </div>
 
       {!isGuest && (
@@ -55,7 +50,7 @@ export default function SessionSidebar({
       <div className="flex-1 space-y-1 overflow-y-auto px-2">
         {sessions.length === 0 && (
           <p className="mt-6 px-2 text-center text-xs text-slate-400">
-            {isGuest ? 'Loading demo session...' : 'No sessions yet. Create one to upload logs.'}
+            {isGuest ? 'Loading…' : 'No sessions yet. Create one to upload logs.'}
           </p>
         )}
         {sessions.map((s) => (
@@ -91,7 +86,7 @@ export default function SessionSidebar({
           {email}
         </p>
         <button onClick={onLogout} className="btn-secondary w-full py-2">
-          <Icon name="logout" className="h-4 w-4" /> {isGuest ? 'Exit demo' : 'Log out'}
+          <Icon name="logout" className="h-4 w-4" /> {isGuest ? 'Sign out' : 'Log out'}
         </button>
       </div>
     </div>
