@@ -3,12 +3,11 @@ import { Link } from 'react-router-dom';
 import { loadFixture } from '../demo/demoApi';
 import bench from '../demo/bench.json';
 import TimelineChart from '../components/TimelineChart';
-import HeapChart, { LiveSetBars } from '../components/HeapChart';
+import HeapChart from '../components/HeapChart';
 import { ArchitectureSteps, ArchitectureStory } from '../components/Architecture';
 import { Heading, Section, SiteHeader } from '../components/Site';
 import Icon from '../components/Icon';
 import { useGuestLaunch } from '../hooks/useGuestLaunch';
-import { usePublicTheme } from '../hooks/useTheme';
 import { pipelineSteps } from '../utils/pipeline';
 import { fmtClock, fmtNum } from '../utils/format';
 
@@ -16,8 +15,8 @@ import { fmtClock, fmtNum } from '../utils/format';
 // parsers and gate), the rest from bench/ and evals/ via src/demo/bench.json.
 
 const NAV = [
-  ['#how', 'How it works'],
   ['#scale', 'Scale'],
+  ['#how', 'How it works'],
   ['/benchmarks', 'Benchmarks'],
 ];
 
@@ -32,7 +31,6 @@ const SEVERITY_CHIP = {
 };
 
 export default function Landing() {
-  usePublicTheme();
   const { launch, busy } = useGuestLaunch();
   const [fixture, setFixture] = useState(null);
 
@@ -62,7 +60,7 @@ export default function Landing() {
           <p className="kicker">Log intelligence · GB-scale archives · AI-enabled Q&amp;A · Deep log analysis</p>
           <h1 className="mt-6 font-display text-4xl font-extrabold leading-[1.1] tracking-tight text-ink sm:text-5xl lg:text-[2.9rem]">
             Log intelligence for{' '}
-            <span className="whitespace-nowrap bg-gradient-to-r from-violet-600 to-pink-500 bg-[length:100%_6px] bg-bottom bg-no-repeat pb-1">GB-scale archives</span>
+            <span className="whitespace-nowrap underline decoration-accent decoration-[5px] underline-offset-[10px]">GB-scale archives</span>
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-body">
             Upload a log archive. DeepLogLens reads every line, finds the failures, explains the root cause of each one,
@@ -126,22 +124,33 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Three numbers */}
-      <section className="px-4 pb-20 sm:px-6">
-        <div className="mx-auto grid max-w-6xl gap-3 md:grid-cols-3">
-          <Metric value={big.size} label="largest archive tested" note={`memory stays flat at ${liveLo}–${liveHi} MB`} />
-          <Metric
-            value={saved != null ? pct(saved) : '…'}
-            label="fewer LLM calls"
-            note={stats ? `${fmtNum(stats.llmCallsGated)} instead of ${fmtNum(stats.llmCallsUngated)} on the 1 GB log` : 'on the 1 GB log'}
-            accent
-          />
-          <Metric value={medium.f1.toFixed(2)} label="F1 score, incident detection" note="accuracy on logs with known incidents (1.0 is perfect)" />
+      {/* Scale */}
+      <Section id="scale">
+        <Heading kicker="Scale" title={`${big.size} of logs, flat memory`} />
+        <div className="panel mt-10 p-5 sm:p-8">
+          <HeapChart bench={bench} height={320} />
         </div>
-      </section>
+        <div className="mt-14 grid gap-12 md:grid-cols-3">
+          <Fact value={big.size}>
+            The largest archive tested. Memory stayed flat at <b className="text-ink">{liveLo}–{liveHi} MB</b> from the first line to the last.
+          </Fact>
+          <Fact value={saved != null ? pct(saved) : '…'} accent>
+            fewer LLM calls on the 1 GB log
+            {stats && (
+              <>
+                : <b className="text-ink">{fmtNum(stats.llmCallsGated)}</b> instead of {fmtNum(stats.llmCallsUngated)}
+              </>
+            )}
+            . Only the unusual minutes are sent to the model.
+          </Fact>
+          <Fact value={medium.f1.toFixed(2)}>
+            F1 score for finding incidents, on logs where every incident is known in advance. <b className="text-ink">1.00</b> would be perfect.
+          </Fact>
+        </div>
+      </Section>
 
       {/* How it works */}
-      <Section id="how">
+      <Section id="how" className="pb-24" wide>
         <Heading kicker="How it works" title="From one log file to a cited report" />
         <div className="mt-4 hidden lg:block">
           <ArchitectureStory steps={steps} />
@@ -151,29 +160,17 @@ export default function Landing() {
         </div>
       </Section>
 
-      {/* Scale */}
-      <Section id="scale" className="pb-24">
-        <Heading kicker="Scale" title={`${big.size} of logs, flat memory`} />
-        <div className="mt-10 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-          <div className="panel p-5 sm:p-6">
-            <HeapChart bench={bench} />
-          </div>
-          <div className="panel p-5 sm:p-6">
-            <LiveSetBars bench={bench} />
-          </div>
-        </div>
-      </Section>
-
     </div>
   );
 }
 
-function Metric({ value, label, note, accent = false }) {
+/** A measured fact written out: a big figure with one sentence under it. */
+function Fact({ value, accent = false, children }) {
   return (
-    <div className="panel p-6">
-      <div className={`font-display text-5xl font-extrabold tracking-tight ${accent ? 'text-gradient' : 'text-ink'}`}>{value}</div>
-      <div className="mt-2 text-base font-semibold text-ink">{label}</div>
-      <div className="mt-1 text-sm text-muted">{note}</div>
+    <div>
+      <span className="block h-1 w-10 rounded-full bg-accent" />
+      <p className={`mt-5 font-display text-5xl font-extrabold tracking-tight ${accent ? 'text-gradient' : 'text-ink'}`}>{value}</p>
+      <p className="mt-3 text-base leading-relaxed text-body">{children}</p>
     </div>
   );
 }

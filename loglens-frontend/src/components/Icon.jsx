@@ -58,12 +58,12 @@ export default function Icon({ name, className = 'h-4 w-4', strokeWidth = 2 }) {
 export function Logo({ compact = false }) {
   return (
     <span className="flex items-center gap-2.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-pink-500 text-white shadow-md shadow-violet-500/30">
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-on-accent">
         <Icon name="activity" className="h-5 w-5" strokeWidth={2.4} />
       </span>
       {!compact && (
         <span className="leading-tight">
-          <span className="block text-base font-bold text-gradient">DeepLogLens</span>
+          <span className="block text-base font-bold text-ink">DeepLogLens</span>
           <span className="block text-[11px] font-medium text-muted">Log intelligence</span>
         </span>
       )}

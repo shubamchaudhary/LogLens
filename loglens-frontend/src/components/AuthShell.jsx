@@ -2,13 +2,11 @@ import { Link } from 'react-router-dom';
 import bench from '../demo/bench.json';
 import { Logo } from './Icon';
 import { ThemeToggle } from './Site';
-import { usePublicTheme } from '../hooks/useTheme';
 
 // Frame of the sign-in and sign-up pages: what the product does on the left (wide
 // screens), the form on the right. Same paper style as the landing page.
 
 export default function AuthShell({ title, subtitle, children }) {
-  usePublicTheme();
   const big = bench.sizes.at(-1);
   const liveHi = Math.max(...bench.sizes.map((s) => s.live.max));
   const f1 = bench.gate.synthetic.find((d) => d.dataset.includes('medium')).f1;

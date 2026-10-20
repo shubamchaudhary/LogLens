@@ -7,7 +7,7 @@ import { fmtNum } from '../utils/format';
 
 const mmss = (s) => `${Math.floor(s / 60)}m ${String(Math.round(s % 60)).padStart(2, '0')}s`;
 
-export default function HeapChart({ bench }) {
+export default function HeapChart({ bench, height = 210 }) {
   const [sel, setSel] = useState(bench.sizes.length - 1);
   const [hover, setHover] = useState(null);
   const run = bench.sizes[sel];
@@ -52,23 +52,23 @@ export default function HeapChart({ bench }) {
       </div>
 
       <div className="mt-4 flex gap-2">
-        <div className="relative flex w-8 shrink-0 flex-col justify-between pb-5 text-right text-[10px] text-dim" style={{ height: 230 }}>
+        <div className="relative flex w-8 shrink-0 flex-col justify-between pb-5 text-right text-[10px] text-dim" style={{ height: height + 20 }}>
           {[top, (top * 3) / 4, top / 2, top / 4, 0].map((v) => (
             <span key={v}>{Math.round(v)}</span>
           ))}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="relative" style={{ height: 210 }} onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
+          <div className="relative" style={{ height }} onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
             <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1000 200" preserveAspectRatio="none" aria-hidden="true">
               {[0.25, 0.5, 0.75].map((f) => (
                 <line key={f} x1="0" x2="1000" y1={y(top * f)} y2={y(top * f)} className="stroke-line" vectorEffect="non-scaling-stroke" />
               ))}
-              <rect x="0" width="1000" y={y(run.live.max)} height={y(run.live.median) - y(run.live.max)} className="fill-pink-500/20" />
-              <path d={area} className="fill-violet-500/10" />
-              <path d={line} fill="none" strokeWidth="1.5" className="stroke-violet-600" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+              <rect x="0" width="1000" y={y(run.live.max)} height={y(run.live.median) - y(run.live.max)} className="fill-hot/20" />
+              <path d={area} className="fill-accent/10" />
+              <path d={line} fill="none" strokeWidth="1.5" className="stroke-accent" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
               <line x1="0" x2="1000" y1={y(top)} y2={y(top)} strokeWidth="1.5" strokeDasharray="6 4" className="stroke-line2" vectorEffect="non-scaling-stroke" />
-              <line x1="0" x2="1000" y1={y(run.live.max)} y2={y(run.live.max)} strokeWidth="1.5" className="stroke-pink-600" vectorEffect="non-scaling-stroke" />
-              <line x1="0" x2="1000" y1={y(run.live.median)} y2={y(run.live.median)} strokeWidth="1.5" className="stroke-pink-600" vectorEffect="non-scaling-stroke" />
+              <line x1="0" x2="1000" y1={y(run.live.max)} y2={y(run.live.max)} strokeWidth="1.5" className="stroke-hot" vectorEffect="non-scaling-stroke" />
+              <line x1="0" x2="1000" y1={y(run.live.median)} y2={y(run.live.median)} strokeWidth="1.5" className="stroke-hot" vectorEffect="non-scaling-stroke" />
               {pt && <line x1={x(pt[0])} x2={x(pt[0])} y1="0" y2="200" className="stroke-line2" vectorEffect="non-scaling-stroke" />}
             </svg>
             <span className="absolute right-1 rounded bg-surface/80 px-1 text-[10px] font-medium text-muted" style={{ top: `${(y(top) / 200) * 100}%`, transform: 'translateY(-115%)' }}>
@@ -95,8 +95,8 @@ export default function HeapChart({ bench }) {
       </div>
 
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-muted">
-        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-violet-600" /> heap used</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-y border-pink-600 bg-pink-500/20" /> live set</span>
+        <span className="flex items-center gap-1.5"><span className="h-0.5 w-4 rounded bg-accent" /> heap used</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-4 rounded-sm border-y border-hot bg-hot/20" /> live set</span>
         <span className="flex items-center gap-1.5"><span className="w-4 border-t-2 border-dashed border-line2" /> heap cap</span>
       </div>
 
@@ -165,7 +165,7 @@ export function LiveSetBars({ bench }) {
               {r.peak != null && (
                 <div className="w-1/3 max-w-6 rounded-t-[4px] bg-line2" style={{ height: `${(r.peak / max) * 100}%` }} />
               )}
-              <div className="w-1/3 max-w-6 rounded-t-[4px] bg-pink-600" style={{ height: `${(r.live / max) * 100}%` }} />
+              <div className="w-1/3 max-w-6 rounded-t-[4px] bg-hot" style={{ height: `${(r.live / max) * 100}%` }} />
             </div>
             <span className="mt-1.5 text-xs font-semibold text-ink">{r.live} MB</span>
             <span className="text-[11px] text-muted">{r.label}</span>
@@ -173,7 +173,7 @@ export function LiveSetBars({ bench }) {
         ))}
       </div>
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-muted">
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-pink-600" /> live set</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-hot" /> live set</span>
         {by === 'size' && (
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-line2" /> peak heap</span>
         )}

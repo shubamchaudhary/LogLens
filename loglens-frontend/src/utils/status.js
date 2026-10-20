@@ -2,14 +2,14 @@
 // module so components stay fast-refresh friendly).
 
 export const STATUS_STYLES = {
-  CREATED: { label: 'Not analysed', cls: 'bg-slate-100 text-slate-600 border-slate-200' },
-  CHUNKING: { label: 'Chunking', cls: 'bg-sky-50 text-sky-700 border-sky-200' },
-  PARSING: { label: 'Parsing', cls: 'bg-sky-50 text-sky-700 border-sky-200' },
-  ENRICHING: { label: 'Enriching', cls: 'bg-violet-50 text-violet-700 border-violet-200' },
-  CORRELATING: { label: 'Correlating', cls: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' },
-  REPORTING: { label: 'Reporting', cls: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200' },
-  DONE: { label: 'Done', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  FAILED: { label: 'Failed', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+  CREATED: { label: 'Not analysed', cls: 'bg-sand text-body border-line' },
+  CHUNKING: { label: 'Chunking', cls: 'bg-sky-500/10 text-sky-600 border-sky-500/30' },
+  PARSING: { label: 'Parsing', cls: 'bg-sky-500/10 text-sky-600 border-sky-500/30' },
+  ENRICHING: { label: 'Enriching', cls: 'bg-accent-soft text-accent border-accent/30' },
+  CORRELATING: { label: 'Correlating', cls: 'bg-accent-soft text-accent border-accent/30' },
+  REPORTING: { label: 'Reporting', cls: 'bg-accent-soft text-accent border-accent/30' },
+  DONE: { label: 'Done', cls: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' },
+  FAILED: { label: 'Failed', cls: 'bg-rose-500/10 text-rose-600 border-rose-500/30' },
 };
 
 const IN_PROGRESS = new Set(['CHUNKING', 'PARSING', 'ENRICHING', 'CORRELATING', 'REPORTING']);

@@ -6,7 +6,7 @@ import { logFileInfo } from '../utils/logFile';
 const PAGE = 200;
 const LEVEL = /\b(ERROR|WARN|INFO|DEBUG)\b/;
 const ROW = { ERROR: 'bg-rose-500/10 text-rose-200', WARN: 'bg-amber-400/10 text-amber-100' };
-const TAG = { ERROR: 'text-rose-400', WARN: 'text-amber-300', INFO: 'text-sky-400', DEBUG: 'text-slate-500' };
+const TAG = { ERROR: 'text-rose-400', WARN: 'text-amber-300', INFO: 'text-sky-400', DEBUG: 'text-muted' };
 
 /**
  * Pages through the 1 GB log by line number. Each page is one HTTP Range read
@@ -51,16 +51,16 @@ export default function LogFileViewer({ file, line: initialLine = 1, highlight, 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-2 backdrop-blur-sm sm:p-6" onClick={onClose}>
       <div
-        className="flex h-full max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="flex h-full max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
           <span className="icon-tile h-9 w-9">
             <Icon name="file" className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate font-mono text-sm font-semibold text-slate-900">{file?.name}</p>
-            <p className="text-xs text-slate-500">
+            <p className="truncate font-mono text-sm font-semibold text-ink">{file?.name}</p>
+            <p className="text-xs text-muted">
               {fmtBytes(file?.bytes)} · {total.toLocaleString('en-US')} lines · showing{' '}
               {start.toLocaleString('en-US')}–{Math.min(total, start + PAGE - 1).toLocaleString('en-US')}
             </p>
@@ -80,7 +80,7 @@ export default function LogFileViewer({ file, line: initialLine = 1, highlight, 
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-2">
+        <div className="flex flex-wrap items-center gap-2 border-b border-line bg-sand px-4 py-2">
           <button onClick={() => go(start - PAGE)} className="btn-ghost" disabled={start <= 1}>
             ← Prev
           </button>
@@ -99,7 +99,7 @@ export default function LogFileViewer({ file, line: initialLine = 1, highlight, 
               value={goto}
               onChange={(e) => setGoto(e.target.value)}
               placeholder="line #"
-              className="w-28 rounded-lg border border-slate-200 px-2 py-1 font-mono text-xs focus:border-violet-400 focus:outline-none"
+              className="w-28 rounded-lg border border-line px-2 py-1 font-mono text-xs focus:border-accent focus:outline-none"
             />
             <button className="btn-ghost">Go</button>
           </form>
@@ -109,11 +109,11 @@ export default function LogFileViewer({ file, line: initialLine = 1, highlight, 
             max={Math.max(1, total)}
             value={start}
             onChange={(e) => setStart(Number(e.target.value))}
-            className="mx-2 min-w-[120px] flex-1 accent-violet-600"
+            className="mx-2 min-w-[120px] flex-1 accent-accent"
             aria-label="Position in file"
           />
           {jumps.map((j) => (
-            <button key={j.line} onClick={() => go(j.line - 20)} className="chip hover:border-violet-300">
+            <button key={j.line} onClick={() => go(j.line - 20)} className="chip hover:border-accent/40">
               {j.label}
             </button>
           ))}
@@ -131,9 +131,9 @@ export default function LogFileViewer({ file, line: initialLine = 1, highlight, 
                 return (
                   <div
                     key={no}
-                    className={`flex gap-3 px-3 ${hit ? 'bg-violet-500/30 text-white' : ROW[level] || 'text-slate-300'}`}
+                    className={`flex gap-3 px-3 ${hit ? 'bg-accent/30 text-white' : ROW[level] || 'text-slate-300'}`}
                   >
-                    <span className="w-16 shrink-0 select-none text-right text-slate-600">{no}</span>
+                    <span className="w-16 shrink-0 select-none text-right text-body">{no}</span>
                     <span className="whitespace-pre-wrap break-all">
                       {level ? (
                         <>

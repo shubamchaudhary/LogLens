@@ -10,16 +10,15 @@ import LogFileViewer from './LogFileViewer';
 import Icon from './Icon';
 import OverviewTab from './tabs/OverviewTab';
 import IncidentsTab from './tabs/IncidentsTab';
-import UnderHoodTab from './tabs/UnderHoodTab';
 import { isDemo } from '../demo/demoMode';
 import { loadFixture, skipReplay } from '../demo/demoApi';
-import { fmtClock } from '../utils/format';
+import { fmtBytes, fmtClock, fmtNum, fmtRange, fmtTime } from '../utils/format';
+import { ThemeToggle } from './Site';
 
 const TABS = [
   ['overview', 'Overview', 'chart'],
   ['incidents', 'Incidents', 'layers'],
   ['ask', 'Ask', 'message'],
-  ['hood', 'Under the hood', 'cpu'],
 ];
 
 /**
@@ -39,6 +38,7 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
   const [focus, setFocus] = useState(null);
   const [data, setData] = useState(null);
   const [stats, setStats] = useState(null);
+  const [sample, setSample] = useState(null); // the guest log's file facts
   const [loadingResults, setLoadingResults] = useState(false);
   const [starting, setStarting] = useState(false);
   const [consoleLines, setConsoleLines] = useState([]);
@@ -54,7 +54,12 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
   }, []);
 
   useEffect(() => {
-    if (guest) loadFixture().then((f) => mounted.current && setStats(f.stats));
+    if (guest)
+      loadFixture().then((f) => {
+        if (!mounted.current) return;
+        setStats(f.stats);
+        setSample(f.file);
+      });
   }, [guest]);
 
   const loadResults = useCallback(async () => {
@@ -115,6 +120,19 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
   const showProgress = !isTerminal(status) && !showUpload;
   const file = data?.file;
 
+  // Something useful under the title: the log's size and time span, or when the session was made.
+  const facts = sample || file;
+  const subtitle = facts
+    ? [
+        facts.name,
+        fmtBytes(facts.bytes),
+        facts.lines && `${fmtNum(facts.lines)} lines`,
+        facts.from && fmtRange(facts.from, facts.to),
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : `Created ${fmtTime(session.createdAt)}`;
+
   const openIncident = (id) => {
     setFocus(id);
     setTab('incidents');
@@ -123,10 +141,10 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur sm:px-6">
+      <div className="flex items-center justify-between gap-3 border-b border-line bg-surface/80 px-4 py-3 backdrop-blur sm:px-6">
         <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold text-slate-900">{session.title}</h2>
-          <p className="truncate font-mono text-[11px] text-slate-400">{sessionId}</p>
+          <h2 className="truncate text-base font-semibold text-ink">{session.title}</h2>
+          <p className="truncate text-xs text-muted">{subtitle}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {guest && showProgress && (
@@ -140,29 +158,24 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
             </button>
           )}
           <StatusBadge status={status} />
+          <ThemeToggle />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         {status === 'FAILED' && (
-          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-4">
-            <p className="text-sm font-medium text-rose-800">Analysis failed</p>
-            {session.errorMessage && <p className="mt-1 text-sm text-rose-700">{session.errorMessage}</p>}
+          <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4">
+            <p className="text-sm font-medium text-rose-600">Analysis failed</p>
+            {session.errorMessage && <p className="mt-1 text-sm text-rose-600">{session.errorMessage}</p>}
             <p className="mt-1 text-xs text-rose-500">Any partial results are shown below.</p>
           </div>
         )}
 
         {showUpload && (
           <div className="mx-auto mt-4 max-w-3xl">
-            <div className="mb-6 text-center">
-              <h3 className="text-xl font-bold tracking-tight text-slate-900">
-                {guest ? 'Analyze a 1 GB production log' : 'Upload a log to analyze'}
-              </h3>
-              <p className="mx-auto mt-1 max-w-xl text-sm text-slate-500">
-                It gets split into parts, every line is parsed into exact metrics, only the unusual minutes go to an
-                LLM, and the findings are grouped into incidents you can question.
-              </p>
-            </div>
+            <h3 className="mb-6 text-center text-xl font-bold tracking-tight text-ink">
+              {guest ? 'Analyse a 1 GB production log' : 'Upload a log to analyse'}
+            </h3>
             <UploadPanel
               sessionId={sessionId}
               onUploaded={() => {
@@ -184,21 +197,21 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
         {isTerminal(status) && (
           <div className="mx-auto max-w-6xl">
             <div className="-mx-4 mb-4 flex items-center justify-between gap-3 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-              <div className="inline-flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+              <div className="inline-flex gap-1 rounded-xl border border-line bg-surface p-1 shadow-sm">
                 {TABS.map(([key, label, icon]) => (
                   <button
                     key={key}
                     onClick={() => setTab(key)}
                     className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-1.5 text-sm font-medium transition ${
                       tab === key
-                        ? 'bg-gradient-to-r from-violet-600 to-pink-500 text-white shadow'
-                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                        ? 'bg-accent text-on-accent shadow'
+                        : 'text-muted hover:bg-sand hover:text-ink'
                     }`}
                   >
                     <Icon name={icon} className="h-3.5 w-3.5" />
                     {label}
                     {key === 'incidents' && data?.incidents && (
-                      <span className={`rounded-full px-1.5 text-[10px] ${tab === key ? 'bg-white/25' : 'bg-slate-100'}`}>
+                      <span className={`rounded-full px-1.5 text-[10px] ${tab === key ? 'bg-surface/25' : 'bg-sand'}`}>
                         {data.incidents.length}
                       </span>
                     )}
@@ -221,7 +234,6 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
                   <IncidentsTab sessionId={sessionId} incidents={data?.incidents} focus={focus} onOpenFile={openFile} />
                 )}
                 {tab === 'ask' && <AskPanel sessionId={sessionId} suggestions={data?.suggestions} onOpenFile={openFile} />}
-                {tab === 'hood' && <UnderHoodTab data={data} />}
               </div>
             )}
           </div>

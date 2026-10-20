@@ -15,8 +15,8 @@ const BADGE = {
   WARN: 'text-amber-300',
   WARNING: 'text-amber-300',
   INFO: 'text-sky-400',
-  DEBUG: 'text-slate-500',
-  TRACE: 'text-slate-500',
+  DEBUG: 'text-muted',
+  TRACE: 'text-muted',
 };
 
 /**
@@ -54,7 +54,7 @@ export default function LogViewer({ content, lineStart, title, maxHeight = 'max-
         <pre className="font-mono text-[11px] leading-5">
           {rows.map((r, i) => (
             <div key={i} className={`flex gap-3 px-3 ${ROW[r.level] || 'text-slate-300'}`}>
-              {r.no != null && <span className="w-14 shrink-0 select-none text-right text-slate-600">{r.no}</span>}
+              {r.no != null && <span className="w-14 shrink-0 select-none text-right text-body">{r.no}</span>}
               <span className="whitespace-pre-wrap break-all">
                 <Highlighted text={r.text} level={r.level} />
               </span>
