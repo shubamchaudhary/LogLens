@@ -269,7 +269,7 @@ const fixture = {
   ],
   session: {
     id: '5d1c3a9e-7b42-4f0e-9c61-2a8d4e6f0b17',
-    title: 'shop-prod · all services · 15 Jul',
+    title: 'shop-prod · all services',
     analysisStatus: 'DONE',
     totalWindows: stats.workItems,
     enrichedWindows: stats.workItems,

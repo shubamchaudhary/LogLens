@@ -67,15 +67,51 @@ export const documentAPI = {
   },
 };
 
-async function postAsk(question, turns = []) {
+// One conversation per browser tab: the server keeps its turns (Redis) under this id,
+// so follow-up questions resolve against what was actually said. Clear starts a new one.
+const CONV_KEY = 'deeploglens-conversation';
+const newConversation = () => (crypto.randomUUID ? crypto.randomUUID() : `c-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+function conversationId(reset = false) {
+  try {
+    let id = sessionStorage.getItem(CONV_KEY);
+    if (!id || reset) sessionStorage.setItem(CONV_KEY, (id = newConversation()));
+    return id;
+  } catch {
+    return (conversationId.fallback = reset || !conversationId.fallback ? newConversation() : conversationId.fallback);
+  }
+}
+
+/** Asks /api/ask, streaming its steps to onStep; resolves with the final answer. */
+async function postAsk(question, { first, onStep } = {}) {
   const resp = await fetch('/api/ask', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, history: turns }),
+    headers: { 'Content-Type': 'application/json', Accept: 'application/x-ndjson' },
+    body: JSON.stringify({ question, conversationId: conversationId(), first }),
   });
-  const data = await resp.json().catch(() => ({}));
-  if (!resp.ok) throw Object.assign(new Error(data.error || 'ask failed'), { response: { status: resp.status, data } });
-  return data;
+  const fail = (data, status) => Object.assign(new Error(data.error || 'ask failed'), { response: { status, data } });
+  if (!(resp.headers.get('content-type') || '').includes('ndjson')) {
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw fail(data, resp.status);
+    return data;
+  }
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+  for (;;) {
+    const { done, value } = await reader.read();
+    buf += decoder.decode(value || new Uint8Array(), { stream: !done });
+    let nl;
+    while ((nl = buf.indexOf('\n')) >= 0) {
+      const line = buf.slice(0, nl).trim();
+      buf = buf.slice(nl + 1);
+      if (!line) continue;
+      const msg = JSON.parse(line);
+      if (msg.step) onStep?.(msg.step);
+      if (msg.result) return msg.result;
+      if (msg.error) throw fail(msg, msg.status || 502);
+    }
+    if (done) throw fail({ error: 'The answer was cut off. Please try again.' }, 502);
+  }
 }
 
 export const analysisAPI = {
@@ -84,16 +120,15 @@ export const analysisAPI = {
     const f = await loadFixture();
     return ok({ series: f.timeline, incidents: f.incidents, stats: f.stats, file: f.file, suggestions: f.suggestions });
   },
-  ask: async (sessionId, question) => {
-    // The last three exchanges go along, so follow-up questions keep their context.
-    const turns = history.slice(-3).map((h) => ({ question: h.question, answer: h.answer }));
-    const data = await postAsk(question, turns);
+  ask: async (sessionId, question, onStep) => {
+    const data = await postAsk(question, { first: history.length === 0, onStep });
     history.push({ ...data, question });
     return ok(data);
   },
   askHistory: async () => ok(history.map((h) => ({ ...h }))),
   askClear: async () => {
     history.length = 0;
+    conversationId(true);
     return ok(null, 204);
   },
   evidence: async () => ok([]), // incidents carry their evidence lines already

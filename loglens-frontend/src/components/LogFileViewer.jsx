@@ -11,8 +11,10 @@ const TAG = { ERROR: 'text-rose-400', WARN: 'text-amber-300', INFO: 'text-sky-40
 /**
  * Pages through the 1 GB log by line number. Each page is one HTTP Range read
  * on the server (/api/log), so nothing close to the whole file is transferred.
+ * `inline`: rendered in place (no overlay, header or close button); `fallback` is shown
+ * instead of the error if the file host isn't configured.
  */
-export default function LogFileViewer({ file, line: initialLine = 1, highlight, jumps = [], onClose }) {
+export default function LogFileViewer({ file, line: initialLine = 1, highlight, jumps = [], onClose, inline = false, fallback = null }) {
   const [start, setStart] = useState(Math.max(1, initialLine - 20));
   const [page, setPage] = useState(null);
   const [error, setError] = useState('');
@@ -41,19 +43,15 @@ export default function LogFileViewer({ file, line: initialLine = 1, highlight, 
   }, [start, load]);
 
   useEffect(() => {
+    if (inline) return undefined;
     const onKey = (e) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, inline]);
 
   const go = (n) => setStart(Math.min(Math.max(1, n), Math.max(1, total - PAGE + 1)));
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-2 backdrop-blur-sm sm:p-6" onClick={onClose}>
-      <div
-        className="flex h-full max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+  const header = (
         <div className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
           <span className="icon-tile h-9 w-9">
             <Icon name="file" className="h-4 w-4" />
@@ -79,7 +77,8 @@ export default function LogFileViewer({ file, line: initialLine = 1, highlight, 
             <Icon name="x" className="h-4 w-4" />
           </button>
         </div>
-
+  );
+  const toolbar = (
         <div className="flex flex-wrap items-center gap-2 border-b border-line bg-sand px-4 py-2">
           <button onClick={() => go(start - PAGE)} className="btn-ghost" disabled={start <= 1}>
             ← Prev
@@ -118,9 +117,10 @@ export default function LogFileViewer({ file, line: initialLine = 1, highlight, 
             </button>
           ))}
         </div>
-
+  );
+  const body = (
         <div className="flex-1 overflow-auto bg-slate-950 py-2">
-          {error && <p className="px-4 py-6 text-sm text-rose-300">Preview unavailable: {error}</p>}
+          {error && (inline && fallback ? fallback : <p className="px-4 py-6 text-sm text-rose-300">Preview unavailable: {error}</p>)}
           {!error && !page && <p className="px-4 py-6 text-sm text-slate-400">Loading…</p>}
           {page && (
             <pre className="font-mono text-[11px] leading-5">
@@ -151,6 +151,26 @@ export default function LogFileViewer({ file, line: initialLine = 1, highlight, 
             </pre>
           )}
         </div>
+  );
+
+  if (inline) {
+    return (
+      <div className="flex h-[480px] flex-col overflow-hidden rounded-xl border border-line bg-surface">
+        {toolbar}
+        {body}
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-2 backdrop-blur-sm sm:p-6" onClick={onClose}>
+      <div
+        className="flex h-full max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {header}
+        {toolbar}
+        {body}
       </div>
     </div>
   );

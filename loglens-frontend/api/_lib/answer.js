@@ -1,13 +1,15 @@
-// DeepLogLens AI: the Ask assistant for the showcase log.
+// DeepLogLens AI's building blocks. graph.js wires them into a LangGraph decision graph:
 //
-//   route:     one small LLM call picks how to answer (chat, the system in the log, its
-//              failures, general knowledge, the web) and notes the user's language
-//   chat:      greets, says what it is and what it can do
-//   system:    services, tenants, routes, dependencies, deployments, from log-profile.json
-//              (computed by extract.mjs over every line), citing its example lines
-//   general:   engineering knowledge, labelled as not coming from the log
-//   web:       Groq browser search, with the pages it read
-//   logs:      the grounded pipeline below; thin evidence falls back to the system route
+//   understand: one small LLM call reads the conversation so far and decides whether the
+//               message is a follow-up (and rewrites it as a standalone question), what kind
+//               of question it is (chat, system, logs, general, web) and its language
+//   chat:       greets, says what it is and what it can do
+//   system:     services, tenants, routes, dependencies, deployments, from log-profile.json
+//               (computed by extract.mjs over every line), citing its example lines
+//   general:    engineering knowledge, labelled as not coming from the log
+//   web:        Groq browser search, with the pages it read
+//   logs:       the grounded pipeline below
+//   nearest:    when the log can't answer, say so and give the closest facts it does hold
 //
 // The grounded pipeline:
 //   retrieve:  failure types (pgvector + full-text, RRF-fused), matching log lines
@@ -20,7 +22,7 @@
 
 import { readFileSync } from 'node:fs';
 import { db } from './db.js';
-import { chatJson, chatWeb, embed, vec, CHAT_MODEL } from './llm.js';
+import { chatJson, chatWeb, vec, CHAT_MODEL } from './llm.js';
 
 const STOP = new Set(
   'a an and are as at be by did do does for from had has have how i in is it its many me of on or so that the their them then there these they this to was we were what when where which who why will with you your around about after before during any much happen happened cause caused show tell give'.split(
@@ -277,7 +279,7 @@ const PROFILE_TEXT = profileText();
 
 // Incident titles from the pipeline, so chat and general answers name real events.
 let incidentList = null;
-async function incidents() {
+export async function incidents() {
   if (incidentList) return incidentList;
   try {
     const { rows } = await db().query('SELECT starts_at, ends_at, title FROM incidents ORDER BY starts_at');
@@ -288,39 +290,47 @@ async function incidents() {
   return incidentList;
 }
 
-const persona = (language) => `You are DeepLogLens AI, the assistant inside DeepLogLens, a log-analysis app. The user has opened one log archive:
+export const persona = (language) => `You are DeepLogLens AI, the assistant inside DeepLogLens, a log-analysis app. The user has opened one log archive:
 ${FILE_SUMMARY}
 Incidents DeepLogLens found: ${incidentList || 'see the context'}.
 DeepLogLens has already parsed every line into exact counts, flagged the unusual minutes and grouped them into incidents. You help the user understand this log: what failed and why, what the system looks like (services, tenants, routes, dependencies, deployments), and engineering questions around it. Be warm, direct and smart, like a senior SRE colleague. Reply in ${language || 'the language the user wrote in'}; keep JSON keys in English. Plain text, no markdown headings or bold.`;
 
-const history = (turns) =>
+export const history = (turns) =>
   turns.length ? `CONVERSATION SO FAR:\n${turns.map((t) => `User: ${t.question}\nYou: ${t.answer}`).join('\n')}\n\n` : '';
 
-// ---- route ----------------------------------------------------------------------------
+// ---- understand: follow-up or new question, and which kind -----------------------
 
-const ROUTER = `You route messages for DeepLogLens AI, an assistant that answers questions about one application log archive.
-Pick one route:
-- "chat": greetings, thanks, small talk, or questions about you and what you can do.
-- "system": the system in the log rather than its failures: services and what they do, tenants or customers, endpoints and traffic, dependencies, databases and tables, deployments and versions, architecture.
-- "logs": failures, errors, incidents, causes, timings, error counts, what happened when, which tenants were hit.
-- "general": general engineering knowledge that does not need this log (what is X, how does Y work, how to fix Z in general).
-- "web": needs current information from the internet (latest versions, news, vendor docs, status pages).
-Also give the language the user wrote in (e.g. "English", "Hindi", "Hinglish", "Spanish").
-Return only JSON: {"route": "chat" | "system" | "logs" | "general" | "web", "language": "..."}`;
+const UNDERSTAND = `You are the first step of DeepLogLens AI, an assistant that answers questions about one application log archive.
+Read the conversation so far and the new message, then decide:
+1. "followup": true only if the message depends on earlier turns to make sense (pronouns like "it", "they", "that", "and for acme?", "why?", "more detail"). A complete question is not a follow-up, even if it is on the same topic, and nothing that comes after a greeting is a follow-up of the greeting.
+2. "standalone": the message rewritten as a complete question that makes sense without the conversation (resolve every reference using the earlier turns). If it already stands alone, repeat it.
+3. "route", for the standalone question:
+   - "chat": greetings, thanks, small talk, or questions about you and what you can do.
+   - "system": the system in the log rather than its failures: services and what they do, tenants or customers, endpoints and traffic, dependencies, databases and tables, deployments and versions.
+   - "logs": failures, errors, incidents, causes, timings, error counts, what happened when, which tenants were hit.
+   - "general": general engineering knowledge that does not need this log (what is X, how does Y work, how to fix Z in general).
+   - "web": needs current information from the internet (latest versions, news, vendor docs, status pages).
+   A follow-up usually stays on the topic of the turn it follows.
+4. "language": the language the user wrote in (e.g. "English", "Hindi", "Hinglish", "Spanish").
+Return only JSON: {"followup": false, "standalone": "...", "route": "chat" | "system" | "logs" | "general" | "web", "language": "..."}`;
 
-async function route(question, turns) {
+export async function understand(question, turns) {
   try {
-    const { json } = await chatJson(ROUTER, `${history(turns)}MESSAGE: ${question}`, { maxTokens: 120, temperature: 0 });
-    const r = ['chat', 'system', 'logs', 'general', 'web'].includes(json.route) ? json.route : 'logs';
-    return { route: r, language: String(json.language || 'English').slice(0, 30) };
+    const { json } = await chatJson(UNDERSTAND, `${history(turns)}NEW MESSAGE: ${question}`, { maxTokens: 300, temperature: 0 });
+    return {
+      followup: Boolean(json.followup) && turns.length > 0,
+      standalone: String(json.standalone || question).slice(0, 400),
+      route: ['chat', 'system', 'logs', 'general', 'web'].includes(json.route) ? json.route : 'logs',
+      language: String(json.language || 'English').slice(0, 30),
+    };
   } catch {
-    return { route: 'logs', language: 'English' };
+    return { followup: false, standalone: question, route: 'logs', language: 'English' };
   }
 }
 
 // ---- chat, general, web ---------------------------------------------------------------
 
-async function chat(question, turns, language) {
+export async function chat(question, turns, language) {
   const { json, usage } = await chatJson(
     `${persona(language)}
 The user is chatting, not asking about the data yet. Answer naturally: greet them back if they greeted you, say in one or two sentences who you are and what you can do for this log, and offer three example questions this log can actually answer, each on its own line starting with "• ": one about one of the listed incidents, one about the services or tenants listed above, one about a cause. Do not invent links between services. Keep it under 90 words.
@@ -331,7 +341,7 @@ Return only JSON: {"answer": "..."}`,
   return { mode: 'assistant', answer: String(json.answer || '').trim(), usage };
 }
 
-async function general(question, turns, language) {
+export async function general(question, turns, language) {
   const { json, usage } = await chatJson(
     `${persona(language)}
 Answer this from general engineering knowledge in 2-5 sentences. If it connects to this log (its services, tenants or incidents), add one sentence saying how, using only the file summary above.
@@ -342,7 +352,7 @@ Return only JSON: {"answer": "..."}`,
   return { mode: 'general', answer: String(json.answer || '').trim(), usage };
 }
 
-async function web(question, turns, language) {
+export async function web(question, turns, language) {
   const { text, sources, usage } = await chatWeb(
     `${persona(language)}
 Search the web for this and answer in 2-5 plain sentences. Mention where the information comes from.`,
@@ -360,7 +370,7 @@ function related(point, line) {
   return [...words(point)].some((w) => lw.has(w) || [...lw].some((x) => x.startsWith(w) || w.startsWith(x)));
 }
 
-async function system(question, turns, language) {
+export async function system(question, turns, language) {
   const { json, usage } = await chatJson(
     `${persona(language)}
 Answer from the LOG PROFILE below. It was computed by parsers over all ${num(profile.file.lines)} lines, so its counts are exact.
@@ -402,156 +412,45 @@ ${PROFILE_TEXT}`,
 
 // ---- logs: grounded answers over the failure records ----------------------------------
 
-const logsSystem = (language) => `${persona(language)}
+export const logsSystem = (language) => `${persona(language)}
 Answer from the CONTEXT: incidents the pipeline found, failure types with exact counts for the whole file, and log lines with their line numbers.
 Rules:
 - Every point must cite evidence: line numbers from LOG LINES (as integers) and/or failure types (as "S1", "S2", ...).
 - Counts must be copied from FAILURE TYPES or counted from the listed lines. Never estimate or round.
 - Separate what the logs show from what you infer; say "likely" for inferences.
+- Answer the question directly. If it asks which tenants, services or pods, name them with their counts from the context (FAILURE TYPES list the top tenants of each failure type).
 - "background" is optional: one or two sentences of general engineering knowledge that help (for example what an exception means). Leave it empty if not needed.
 - If the context cannot answer, set "abstain": true and write one friendly sentence saying what the logs do contain.
 Return only JSON:
 {"answer": "2-4 plain sentences", "points": [{"text": "one supporting fact", "lines": [123], "types": ["S1"]}], "background": "", "confidence": "high" | "medium" | "low", "abstain": false}
 Give 1-4 points.`;
 
-async function logs(question, turns, language, trace) {
-  let ts = terms(question);
-  const windows = timeWindows(question, day);
+// ---- nearest: an honest answer when the log can't answer ------------------------------
 
-  let qv = null;
-  try {
-    [qv] = await embed([question], 'RETRIEVAL_QUERY');
-  } catch (e) {
-    trace.push(`embed failed (${e.status || 'error'}), lexical search only`);
-  }
+/**
+ * The log doesn't hold the answer: say so plainly, then give the closest facts the profile
+ * does hold. Numbers must come from the profile; if the reply invents one, it's replaced.
+ */
+export async function nearest(question, turns, language) {
+  const { json, usage } = await chatJson(
+    `${persona(language)}
+The question cannot be answered from this log. Say so in one sentence, then give the closest useful facts the LOG PROFILE does contain (for example the metrics, services or incidents nearest to what was asked), and suggest one question that the log can answer. Copy any number exactly from the profile; never invent one. 2-4 sentences.
+Return only JSON: {"answer": "..."}
 
-  let r = await retrieveOnce(question, qv, ts, windows);
-  trace.push(`retrieve · ${r.sigs.length} failure types (vector + full-text, RRF) · ${r.events.length} log lines${windows.length ? ` · time filter ${windows.length}` : ''}`);
-
-  // Grade: nothing lexical and nothing semantically close → rewrite the query once.
-  if (r.lexicalHits === 0 && r.maxSim < 0.55 && windows.length === 0) {
-    trace.push(`grade → weak (0 matching lines, best similarity ${r.maxSim.toFixed(2)})`);
-    try {
-      const { json } = await chatJson(
-        'Turn a question about application logs into search keywords that would appear in log lines (exception names, service names, HTTP status codes, component names). Return JSON {"keywords": ["..."]} with at most 8 single words, in English.',
-        question,
-        { maxTokens: 80 }
-      );
-      const extra = (json.keywords || []).flatMap((k) => terms(String(k)));
-      if (extra.length) {
-        ts = [...new Set([...ts, ...extra])].slice(0, 16);
-        trace.push(`rewrite → ${extra.slice(0, 6).join(', ')}`);
-        r = await retrieveOnce(question, qv, ts, windows);
-        trace.push(`re-retrieve · ${r.sigs.length} failure types · ${r.events.length} log lines`);
-      }
-    } catch (e) {
-      trace.push(`rewrite skipped (${e.status || 'error'})`);
-    }
-  } else {
-    trace.push(`grade → ${r.lexicalHits} lexical hits, best similarity ${r.maxSim.toFixed(2)}`);
-  }
-
-  const ctx = buildContext(r);
-  const { json, usage } = await chatJson(logsSystem(language), `${history(turns)}QUESTION: ${question}\n\nCONTEXT:\n${ctx.text}`);
-
-  // Verify: keep only citations that exist in the context.
-  const byLine = new Map(r.events.map((e) => [e.line_no, e]));
-  let dropped = 0;
-  const points = (Array.isArray(json.points) ? json.points : [])
-    .map((p) => {
-      const lines = (p.lines || []).map(Number).filter((n) => ctx.lineSet.has(n));
-      const types = (p.types || []).map(String).filter((t) => ctx.refs.has(t));
-      dropped += (p.lines || []).length + (p.types || []).length - lines.length - types.length;
-      return {
-        text: String(p.text || ''),
-        lines: lines.map((n) => {
-          const e = byLine.get(n);
-          return { no: n, end: e.line_end, ts: e.ts, level: e.level, service: e.service, text: e.body };
-        }),
-        types: types.map((t) => {
-          const sg = ctx.refs.get(t);
-          return {
-            ref: t, level: sg.level, service: sg.service, template: sg.template, sample: sg.sample, count: sg.count,
-            firstTs: sg.first_ts, lastTs: sg.last_ts, firstLine: sg.first_line, lastLine: sg.last_line,
-          };
-        }),
-      };
-    })
-    .filter((p) => p.text && (p.lines.length || p.types.length));
-
-  const text = String(json.answer || '').trim();
-  let confidence = ['high', 'medium', 'low'].includes(json.confidence) ? json.confidence : 'low';
-  // Numbers in the answer that appear nowhere in the context are a hallucination signal.
-  const unsupported = (text.match(/\b\d{2,}(?:,\d{3})*\b/g) || []).filter((n) => !ctx.text.includes(n) && !ctx.text.includes(n.replace(/,/g, '')));
-  if (unsupported.length) confidence = 'low';
-  trace.push(
-    `generate · ${CHAT_MODEL()} · ${points.length} cited point${points.length === 1 ? '' : 's'}` +
-      (dropped ? ` · ${dropped} unverifiable citation${dropped === 1 ? '' : 's'} removed` : '')
+LOG PROFILE:
+${PROFILE_TEXT}`,
+    `${history(turns)}QUESTION: ${question}`,
+    { maxTokens: 600, temperature: 0.2 }
   );
-  return {
-    mode: 'logs',
-    answer: text,
-    background: String(json.background || '').trim(),
-    abstained: Boolean(json.abstain) || points.length === 0,
-    confidence,
-    points,
-    unsupportedNumbers: unsupported,
-    usage,
-  };
+  let text = String(json.answer || '').trim();
+  const invented = (text.match(/\b\d{2,}(?:,\d{3})*(?:\.\d+)?\b/g) || []).filter((n) => !PROFILE_TEXT.includes(n) && !(incidentList || '').includes(n));
+  if (invented.length || !text) {
+    text = `That isn't in this log. It records ${num(profile.file.lines)} lines from ${profile.services.length} services (${profile.services
+      .slice(0, 8)
+      .map((x) => x.name)
+      .join(', ')}) and ${profile.tenants.length} tenants, with the incidents listed in the Incidents tab. Try asking what failed, why, or what a service depends on.`;
+  }
+  return { mode: 'nearest', answer: text, abstained: true, usage };
 }
 
-// ---- entry point ----------------------------------------------------------------------
-
-/** `turns`: the last few {question, answer} pairs of this conversation, oldest first. */
-export async function answer(question, turns = []) {
-  const started = Date.now();
-  const trace = [];
-  const [{ route: picked, language }] = await Promise.all([route(question, turns), incidents()]);
-  trace.push(`route → ${picked}${language && language !== 'English' ? ` · ${language}` : ''}`);
-
-  let out;
-  if (picked === 'chat') out = await chat(question, turns, language);
-  else if (picked === 'general') out = await general(question, turns, language);
-  else if (picked === 'web') {
-    try {
-      out = await web(question, turns, language);
-      trace.push(`web search · ${out.sources?.length || 0} source${out.sources?.length === 1 ? '' : 's'}`);
-    } catch (e) {
-      trace.push(`web search unavailable (${e.status || 'error'}), general knowledge instead`);
-      out = await general(question, turns, language);
-    }
-  } else if (picked === 'system') {
-    out = await system(question, turns, language);
-    trace.push(`log profile · ${out.points.reduce((n, p) => n + p.lines.length, 0)} example lines cited`);
-  } else {
-    out = await logs(question, turns, language, trace);
-    if (out.abstained) {
-      // Thin evidence in the failure records: the question may be about the system instead.
-      trace.push('failure records thin → log profile');
-      const sys = await system(question, turns, language);
-      if (!sys.abstained) out = sys;
-    }
-  }
-
-  let text = String(out.answer || '').replace(/\s+•\s*/g, '\n• ');
-  if (!text || /^abstain\.?$/i.test(text)) {
-    text = "I couldn't find that in this log. Ask me about its failures, services, tenants or dependencies, or anything general about logs and systems.";
-  }
-  if (out.abstained) trace.push('not in the log');
-
-  return {
-    question,
-    mode: out.mode,
-    answer: text,
-    background: out.background || '',
-    sources: out.sources || [],
-    abstained: Boolean(out.abstained),
-    confidence: out.mode === 'logs' || out.mode === 'system' ? out.confidence : null,
-    points: out.abstained ? [] : out.points || [],
-    unsupportedNumbers: out.unsupportedNumbers || [],
-    trace,
-    model: CHAT_MODEL(),
-    tokens: out.usage?.total_tokens ?? null,
-    ms: Date.now() - started,
-  };
-}
+export { profile, PROFILE_TEXT, num, day, STOP };

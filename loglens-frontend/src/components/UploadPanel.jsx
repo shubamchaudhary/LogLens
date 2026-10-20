@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { documentAPI } from '../services/api';
 import { isDemo } from '../demo/demoMode';
 import { loadFixture } from '../demo/demoApi';
-import { fmtBytes, fmtClock } from '../utils/format';
+import { fmtBytes } from '../utils/format';
 import Icon from './Icon';
 import LogViewer from './LogViewer';
 import LogFileViewer from './LogFileViewer';
@@ -120,7 +120,6 @@ function SampleUpload({ sessionId, onUploaded }) {
   const [info, setInfo] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [pct, setPct] = useState(0);
-  const [viewer, setViewer] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -156,8 +155,7 @@ function SampleUpload({ sessionId, onUploaded }) {
         <div className="min-w-0 flex-1">
           <p className="font-mono text-sm font-semibold text-ink">{f.name}</p>
           <p className="text-xs text-muted">
-            {fmtBytes(f.bytes)} · {f.lines.toLocaleString('en-US')} lines · {f.services} services · {f.tenants} tenants ·{' '}
-            {fmtClock(f.from).slice(0, 5)}–{fmtClock(f.to).slice(0, 5)} UTC
+            {f.bytes.toLocaleString('en-US')} bytes ({fmtBytes(f.bytes)})
           </p>
         </div>
         <button onClick={run} disabled={uploading} className="btn-primary w-full sm:w-auto">
@@ -180,32 +178,36 @@ function SampleUpload({ sessionId, onUploaded }) {
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button onClick={() => setViewer(true)} className="btn-secondary px-3 py-1.5 text-xs">
-          <Icon name="eye" className="h-3.5 w-3.5" /> Preview the file
-        </button>
-        {info?.gzipUrl && (
-          <a href={info.gzipUrl} className="btn-secondary px-3 py-1.5 text-xs">
-            <Icon name="download" className="h-3.5 w-3.5" /> Download .gz
-          </a>
-        )}
-        {info?.downloadUrl && (
-          <a href={info.downloadUrl} className="btn-secondary px-3 py-1.5 text-xs">
-            <Icon name="download" className="h-3.5 w-3.5" /> Download {fmtBytes(f.bytes)}
-          </a>
-        )}
-      </div>
-
-      {sample.excerpt.length > 0 && (
-        <div className="mt-4 space-y-2">
-          <p className="text-xs font-medium text-muted">A few of the 5.4 million lines:</p>
-          {sample.excerpt.map((e) => (
-            <LogViewer key={e.line} content={e.text} lineStart={e.line} maxHeight="max-h-40" title={`line ${e.line.toLocaleString('en-US')}`} />
-          ))}
+      {(info?.gzipUrl || info?.downloadUrl) && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {info?.gzipUrl && (
+            <a href={info.gzipUrl} className="btn-secondary px-3 py-1.5 text-xs">
+              <Icon name="download" className="h-3.5 w-3.5" /> Download .gz
+            </a>
+          )}
+          {info?.downloadUrl && (
+            <a href={info.downloadUrl} className="btn-secondary px-3 py-1.5 text-xs">
+              <Icon name="download" className="h-3.5 w-3.5" /> Download {fmtBytes(f.bytes)}
+            </a>
+          )}
         </div>
       )}
 
-      {viewer && <LogFileViewer file={f} line={1} onClose={() => setViewer(false)} />}
+      {/* The file itself, paged by HTTP Range reads; a few of its lines if the file host isn't set up. */}
+      <div className="mt-4">
+        <LogFileViewer
+          file={f}
+          line={1}
+          inline
+          fallback={
+            <div className="space-y-2 p-3">
+              {sample.excerpt.map((e) => (
+                <LogViewer key={e.line} content={e.text} lineStart={e.line} maxHeight="max-h-40" title={`line ${e.line.toLocaleString('en-US')}`} />
+              ))}
+            </div>
+          }
+        />
+      </div>
     </div>
   );
 }

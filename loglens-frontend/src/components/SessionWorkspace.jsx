@@ -12,7 +12,7 @@ import OverviewTab from './tabs/OverviewTab';
 import IncidentsTab from './tabs/IncidentsTab';
 import { isDemo } from '../demo/demoMode';
 import { loadFixture, skipReplay } from '../demo/demoApi';
-import { fmtBytes, fmtClock, fmtNum, fmtRange, fmtTime } from '../utils/format';
+import { fmtBytes, fmtClock, fmtTime } from '../utils/format';
 import { ThemeToggle } from './Site';
 
 const TABS = [
@@ -120,17 +120,10 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
   const showProgress = !isTerminal(status) && !showUpload;
   const file = data?.file;
 
-  // Something useful under the title: the log's size and time span, or when the session was made.
+  // Under the title: the file and its size (what anyone knows before the analysis), or when the session was made.
   const facts = sample || file;
   const subtitle = facts
-    ? [
-        facts.name,
-        fmtBytes(facts.bytes),
-        facts.lines && `${fmtNum(facts.lines)} lines`,
-        facts.from && fmtRange(facts.from, facts.to),
-      ]
-        .filter(Boolean)
-        .join(' · ')
+    ? `${facts.name} · ${fmtBytes(facts.bytes)}`
     : `Created ${fmtTime(session.createdAt)}`;
 
   const openIncident = (id) => {
@@ -174,7 +167,7 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
         {showUpload && (
           <div className="mx-auto mt-4 max-w-3xl">
             <h3 className="mb-6 text-center text-xl font-bold tracking-tight text-ink">
-              {guest ? 'Analyse a 1 GB production log' : 'Upload a log to analyse'}
+              {guest && sample ? `Analyse ${sample.name} (${fmtBytes(sample.bytes)})` : 'Upload a log to analyse'}
             </h3>
             <UploadPanel
               sessionId={sessionId}

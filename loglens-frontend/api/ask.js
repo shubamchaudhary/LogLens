@@ -1,10 +1,13 @@
-// POST /api/ask {question, history?} → DeepLogLens AI's answer about the showcase log.
+// POST /api/ask {question, conversationId, first?} → DeepLogLens AI's answer (graph.js).
+// With "Accept: application/x-ndjson" the response streams one JSON line per step
+// ({"step": "Searching …"}) and ends with {"result": {...}} or {"error": "..."}.
 // Guards: 300-char questions, a per-visitor daily quota, a global daily cap, and an
-// answer cache (identical questions never reach the model twice).
+// answer cache for opening questions (identical ones never reach the model twice).
 
 import { createHash } from 'node:crypto';
 import { db } from './_lib/db.js';
-import { answer } from './_lib/answer.js';
+import { runAsk } from './_lib/graph.js';
+import { addTurn } from './_lib/memory.js';
 
 const PER_VISITOR = Number(process.env.ASK_DAILY_LIMIT || 25);
 const GLOBAL = Number(process.env.ASK_GLOBAL_DAILY_LIMIT || 1500);
@@ -22,19 +25,33 @@ export default async function handler(req, res) {
   const question = String(body.question || '').trim();
   if (!question) return res.status(400).json({ error: 'question is required' });
   if (question.length > 300) return res.status(400).json({ error: 'Keep questions under 300 characters.' });
+  const conversationId = /^[\w-]{8,64}$/.test(body.conversationId || '') ? body.conversationId : null;
+  // Only an opening question can be answered from the cache: later ones depend on the conversation.
+  const first = body.first !== false;
+
+  const streaming = String(req.headers.accept || '').includes('application/x-ndjson');
+  const send = (obj) => res.write(`${JSON.stringify(obj)}\n`);
+  const reply = (status, obj) => {
+    if (!streaming) return res.status(status).json(obj);
+    send(status === 200 ? { result: obj } : { error: obj.error, status });
+    return res.end();
+  };
+  if (streaming) {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+  }
 
   try {
-    // The last few turns, so follow-ups ("and for acme?") make sense. Answers that depend
-    // on a conversation are not cached.
-    const turns = (Array.isArray(body.history) ? body.history : [])
-      .slice(-3)
-      .map((t) => ({ question: String(t.question || '').slice(0, 300), answer: String(t.answer || '').slice(0, 600) }))
-      .filter((t) => t.question);
     const pool = db();
     const key = normalise(question);
-    if (!turns.length) {
+    if (first) {
       const cached = await pool.query('SELECT response FROM ask_cache WHERE question = $1', [key]);
-      if (cached.rows.length) return res.status(200).json({ ...cached.rows[0].response, cached: true });
+      if (cached.rows.length) {
+        const r = cached.rows[0].response;
+        await addTurn(conversationId, { question, standalone: question, mode: r.mode, answer: String(r.answer || '').slice(0, 600), at: new Date().toISOString() }).catch(() => {});
+        return reply(200, { ...r, cached: true });
+      }
     }
 
     const who = visitor(req);
@@ -46,18 +63,18 @@ export default async function handler(req, res) {
     );
     const { count, total } = usage.rows[0];
     if (count > PER_VISITOR || Number(total) > GLOBAL) {
-      return res.status(429).json({ error: 'Daily question limit reached. The suggested questions still answer instantly.' });
+      return reply(429, { error: 'Daily question limit reached. The suggested questions still answer instantly.' });
     }
 
-    const result = await answer(question, turns);
-    if (!turns.length) {
+    const result = await runAsk(question, conversationId, streaming ? (step) => send({ step }) : undefined);
+    if (first && !result.standalone) {
       await pool.query('INSERT INTO ask_cache (question, response) VALUES ($1, $2) ON CONFLICT (question) DO NOTHING', [key, result]);
     }
-    return res.status(200).json(result);
+    return reply(200, result);
   } catch (e) {
     console.error('ask failed', e);
     const status = e.status === 429 ? 429 : 502;
-    return res.status(status).json({
+    return reply(status, {
       error: status === 429 ? 'The model is busy right now, try again in a minute.' : 'Could not answer right now.',
     });
   }

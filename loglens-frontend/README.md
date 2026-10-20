@@ -32,7 +32,12 @@ answer and in which language: small talk, questions about the system in the log
 `api/_lib/log-profile.json`, which `extract.mjs` computes from every line), failures
 (the grounded path: pgvector + Postgres full-text fused with RRF, numbered log lines and
 exact counts, citations not in the context are dropped), general knowledge, or the web
-(Groq browser search, with sources). The last three turns go along for follow-ups. `api/log.js`
+(Groq browser search, with sources). It runs as a LangGraph decision graph
+(`api/_lib/graph.js`): load memory → understand (follow-up? rewrite it as a standalone
+question; which route; which language) → the route's nodes, with fallbacks (weak evidence →
+rewrite the search once; no supported answer → log profile → closest facts the log does
+hold). Each conversation's turns live in Redis (`REDIS_URL`), and the steps stream to the
+browser as they run. `api/log.js`
 serves any slice of the file with an HTTP Range read, for the preview.
 
 ### Rebuild the data (from `loglens-frontend/`)
@@ -58,6 +63,7 @@ node scripts/demo/build-bench.mjs    # bench/results → src/demo/bench.json (he
 | `GEMINI_API_KEYS` | `api/ask` | comma-separated Gemini keys (query embeddings) |
 | `LOG_FILE_URL` | `api/log` | public URL of the raw file that honours `Range` (e.g. a GitHub release asset) |
 | `LOG_FILE_GZ_URL` | `api/log` | optional: compressed download |
+| `REDIS_URL` | `api/ask` | Redis for conversation memory (e.g. Upstash, `rediss://…`); without it, turns go to a Postgres table |
 | `GROQ_MODEL` | `api/ask` | optional, default `openai/gpt-oss-120b` |
 | `ASK_DAILY_LIMIT` / `ASK_GLOBAL_DAILY_LIMIT` | `api/ask` | optional quotas (default 25 per visitor, 1500 total per day) |
 | `VITE_GUEST_MODE` | build | `live` sends guests to the backend's guest session instead |

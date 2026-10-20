@@ -28,6 +28,7 @@ export default function AskPanel({ sessionId, suggestions = [], onOpenFile }) {
   const [question, setQuestion] = useState('');
   const [turns, setTurns] = useState([]);
   const [pending, setPending] = useState(null);
+  const [step, setStep] = useState('');
   const [error, setError] = useState('');
   const scroller = useRef(null);
   const mounted = useRef(true);
@@ -53,8 +54,9 @@ export default function AskPanel({ sessionId, suggestions = [], onOpenFile }) {
     setError('');
     setQuestion('');
     setPending(q);
+    setStep('Understanding your question');
     try {
-      const { data } = await analysisAPI.ask(sessionId, q);
+      const { data } = await analysisAPI.ask(sessionId, q, (label) => mounted.current && setStep(label));
       if (mounted.current) setTurns((prev) => [...prev, { ...data, question: q }]);
     } catch (err) {
       const status = err.response?.status;
@@ -110,7 +112,7 @@ export default function AskPanel({ sessionId, suggestions = [], onOpenFile }) {
             <UserBubble text={pending} />
             <div className="flex items-center gap-2 text-xs text-muted">
               <span className="h-2 w-2 animate-pulse rounded-full bg-accent" />
-              Searching 5.4M lines, grading evidence, writing a cited answer…
+              {step || 'Thinking'}…
             </div>
           </div>
         )}
@@ -195,6 +197,7 @@ function Turn({ t, onOpenFile }) {
             {t.ms != null && <span className="text-[10.5px] text-muted">{(t.ms / 1000).toFixed(1)} s</span>}
           </div>
         )}
+        {t.standalone && <p className="mb-1.5 text-[11.5px] italic text-muted">Understood as: {t.standalone}</p>}
         {t.markdown ? <Markdown>{t.answer}</Markdown> : <p className="whitespace-pre-line text-sm leading-relaxed text-ink">{t.answer}</p>}
 
         {t.background && (
