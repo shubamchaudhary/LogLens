@@ -31,6 +31,8 @@ export default function AskPanel({ sessionId, suggestions = [], onOpenFile }) {
   const [step, setStep] = useState('');
   const [error, setError] = useState('');
   const scroller = useRef(null);
+  const input = useRef(null);
+  const answered = useRef(false); // focus the box after an answer, not on first load
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -43,6 +45,12 @@ export default function AskPanel({ sessionId, suggestions = [], onOpenFile }) {
       mounted.current = false;
     };
   }, [sessionId]);
+
+  // The box is disabled while waiting, which drops focus; give it back for the next question.
+  useEffect(() => {
+    if (pending) answered.current = true;
+    else if (answered.current) input.current?.focus();
+  }, [pending]);
 
   useEffect(() => {
     if (scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
@@ -73,7 +81,7 @@ export default function AskPanel({ sessionId, suggestions = [], onOpenFile }) {
   const asked = new Set(turns.map((t) => t.question));
 
   return (
-    <div className="card flex h-[74vh] min-h-[520px] flex-col overflow-hidden">
+    <div className="card flex min-h-[520px] flex-1 flex-col overflow-hidden">
       <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-3">
         <div>
           <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
@@ -147,6 +155,7 @@ export default function AskPanel({ sessionId, suggestions = [], onOpenFile }) {
           className="flex gap-2"
         >
           <input
+            ref={input}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="Ask about failures, services, tenants…"
@@ -271,7 +280,7 @@ function Turn({ t, onOpenFile }) {
             How this was answered{t.cached ? ' · cached' : ''} <span className="group-open:hidden">▸</span>
             <span className="hidden group-open:inline">▾</span>
           </summary>
-          <ul className="mt-1 space-y-0.5 pl-3 font-mono text-[10.5px]">
+          <ul className="mt-1 list-disc space-y-0.5 pl-6 text-[11.5px] leading-relaxed">
             {t.trace.map((x, i) => (
               <li key={i}>{x}</li>
             ))}

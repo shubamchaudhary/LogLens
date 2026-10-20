@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/auth';
 import Landing from './pages/Landing';
@@ -43,10 +43,21 @@ function DemoEntry() {
   return user ? <Navigate to="/app" replace /> : null;
 }
 
+// A new page opens at its top; Back and Forward leave the scroll position alone.
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  const type = useNavigationType();
+  useEffect(() => {
+    if (type !== 'POP') window.scrollTo(0, 0);
+  }, [pathname, type]);
+  return null;
+}
+
 function App() {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/demo" element={<DemoEntry />} />

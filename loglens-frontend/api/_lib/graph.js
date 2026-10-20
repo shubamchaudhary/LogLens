@@ -17,7 +17,7 @@
 
 import { Annotation, END, START, StateGraph } from '@langchain/langgraph';
 import { chatJson, embed, CHAT_MODEL } from './llm.js';
-import { getTurns, addTurn, memoryBackend } from './memory.js';
+import { getTurns, addTurn } from './memory.js';
 import {
   buildContext, chat, day, general, incidents, logsSystem, nearest, retrieveOnce, system, terms, timeWindows, understand, web,
   history,
@@ -45,11 +45,20 @@ const State = Annotation.Root({
 
 const step = (config, label) => config?.configurable?.onStep?.(label);
 
+// How each route reads in the "How this was answered" trace.
+const KIND = {
+  chat: 'small talk',
+  general: 'a general question, not about this log',
+  web: 'a question that needs the web',
+  system: 'a question about the system (services, tenants, dependencies)',
+  logs: 'a question about failures in the log',
+};
+
 // ---- nodes --------------------------------------------------------------------------
 
 async function loadMemory(state) {
   const turns = await getTurns(state.conversationId, 4);
-  return { turns, trace: turns.length ? [`memory · ${turns.length} earlier turn${turns.length === 1 ? '' : 's'} (${memoryBackend()})`] : [] };
+  return { turns, trace: turns.length ? [`Read the last ${turns.length} message${turns.length === 1 ? '' : 's'} of this chat`] : [] };
 }
 
 async function understandNode(state, config) {
@@ -57,8 +66,8 @@ async function understandNode(state, config) {
   const [u] = await Promise.all([understand(state.question, state.turns), incidents()]);
   // Only an earlier question can be followed up; greetings and small talk can't.
   if (!state.turns.some((t) => t.mode && t.mode !== 'assistant')) Object.assign(u, { followup: false, standalone: state.question });
-  const trace = [`understand → ${u.route}${u.followup ? ' · follow-up' : ''}${u.language !== 'English' ? ` · ${u.language}` : ''}`];
-  if (u.followup && u.standalone !== state.question) trace.push(`rewritten as: “${u.standalone}”`);
+  const trace = [`Decided this is ${KIND[u.route] || KIND.logs}${u.followup ? ', following up the previous question' : ''}${u.language !== 'English' ? `, asked in ${u.language}` : ''}`];
+  if (u.followup && u.standalone !== state.question) trace.push(`Read it as: “${u.standalone}”`);
   return { ...u, trace };
 }
 
@@ -73,9 +82,9 @@ async function webNode(state, config) {
   step(config, 'Searching the web');
   try {
     const out = await web(state.standalone, state.turns, state.language);
-    return { out, tokens: out.usage?.total_tokens, trace: [`web search · ${out.sources?.length || 0} source${out.sources?.length === 1 ? '' : 's'}`] };
-  } catch (e) {
-    return { out: null, trace: [`web search unavailable (${e.status || 'error'})`] };
+    return { out, tokens: out.usage?.total_tokens, trace: [`Searched the web and read ${out.sources?.length || 0} page${out.sources?.length === 1 ? '' : 's'}`] };
+  } catch {
+    return { out: null, trace: ['Web search did not answer, so answered from general knowledge'] };
   }
 }
 
@@ -83,13 +92,13 @@ async function systemNode(state, config) {
   step(config, 'Reading the log profile');
   const out = await system(state.standalone, state.turns, state.language);
   const cited = out.points.reduce((n, p) => n + p.lines.length, 0);
-  return { out, tokens: out.usage?.total_tokens, trace: [`log profile · ${out.abstained ? 'does not cover it' : `${cited} example line${cited === 1 ? '' : 's'} cited`}`] };
+  return { out, tokens: out.usage?.total_tokens, trace: [out.abstained ? 'Checked the summary of the whole log: it does not cover this' : `Answered from a summary of the whole log, with ${cited} example line${cited === 1 ? '' : 's'}`] };
 }
 
 async function nearestNode(state, config) {
   step(config, 'Finding the closest facts the log does have');
   const out = await nearest(state.standalone, state.turns, state.language);
-  return { out, tokens: out.usage?.total_tokens, trace: ['not in the log → closest facts from the profile'] };
+  return { out, tokens: out.usage?.total_tokens, trace: ['The log does not record this, so gave the closest facts it does have'] };
 }
 
 async function retrieveNode(state, config) {
@@ -101,12 +110,12 @@ async function retrieveNode(state, config) {
     windows = timeWindows(state.standalone, day);
     try {
       [qv] = await embed([state.standalone], 'RETRIEVAL_QUERY');
-    } catch (e) {
-      trace.push(`embed failed (${e.status || 'error'}), lexical search only`);
+    } catch {
+      trace.push('Meaning search unavailable, searched by keywords only');
     }
   }
   const r = await retrieveOnce(state.standalone, qv, ts, windows);
-  trace.push(`retrieve · ${r.sigs.length} failure types (vector + full-text, RRF) · ${r.events.length} log lines${windows.length ? ` · time filter ${windows.length}` : ''}`);
+  trace.push(`Searched the failure records by meaning and by keywords${windows.length ? ' within the time you asked about' : ''}: found ${r.sigs.length} kinds of failure and ${r.events.length} matching lines`);
   return { ts, windows, qv, retrieval: r, trace };
 }
 
@@ -123,10 +132,10 @@ async function rewriteNode(state, config) {
       ts: [...new Set([...state.ts, ...extra])].slice(0, 16),
       rewrites: state.rewrites + 1,
       tokens: usage?.total_tokens,
-      trace: [`rewrite → ${extra.slice(0, 6).join(', ') || 'no new terms'}`],
+      trace: [extra.length ? `Weak match, so searched again with: ${extra.slice(0, 6).join(', ')}` : 'Weak match, and no better search words were found'],
     };
-  } catch (e) {
-    return { rewrites: state.rewrites + 1, trace: [`rewrite skipped (${e.status || 'error'})`] };
+  } catch {
+    return { rewrites: state.rewrites + 1, trace: ['Weak match, could not refine the search'] };
   }
 }
 
@@ -179,8 +188,8 @@ async function generateNode(state, config) {
     out,
     tokens: usage?.total_tokens,
     trace: [
-      `generate · ${CHAT_MODEL()} · ${points.length} cited point${points.length === 1 ? '' : 's'}` +
-        (dropped ? ` · ${dropped} unverifiable citation${dropped === 1 ? '' : 's'} removed` : ''),
+      `Wrote the answer with ${points.length} point${points.length === 1 ? '' : 's'}, each checked against the lines it cites` +
+        (dropped ? `; removed ${dropped} citation${dropped === 1 ? '' : 's'} that did not match the log` : ''),
     ],
   };
 }
@@ -214,7 +223,8 @@ const afterSystem = (s) => (s.out.abstained ? 'nearest' : 'save_memory');
 async function gradeNode(state, config) {
   step(config, 'Checking the evidence');
   const r = state.retrieval;
-  return { trace: [`grade → ${r.lexicalHits} lexical hits, best similarity ${r.maxSim.toFixed(2)}`] };
+  const strong = r.lexicalHits > 0 || r.maxSim >= 0.55;
+  return { trace: [strong ? 'Checked the matches: good enough to answer from' : 'Checked the matches: weak'] };
 }
 
 const graph = new StateGraph(State)

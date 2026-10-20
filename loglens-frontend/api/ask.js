@@ -44,7 +44,8 @@ export default async function handler(req, res) {
 
   try {
     const pool = db();
-    const key = normalise(question);
+    // Bump the prefix when answers change shape, so older cached answers are not served.
+    const key = `v2:${normalise(question)}`;
     if (first) {
       const cached = await pool.query('SELECT response FROM ask_cache WHERE question = $1', [key]);
       if (cached.rows.length) {
