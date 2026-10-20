@@ -12,10 +12,17 @@ const CONFIDENCE = {
 };
 const readable = (t) => t.replace(/<n>|<hex>|<ip>|<id>|<pod>/g, '…');
 
+// Where an answer came from (logs answers show their confidence instead).
+const SOURCE = {
+  system: 'From the log profile',
+  general: 'General knowledge · not from this log',
+  web: 'From the web · not from this log',
+};
+
 /**
- * Questions about the log, answered from retrieved evidence: every point the
- * answer makes carries the log lines and failure counts that back it, and the
- * server drops any citation that wasn't in the retrieved context.
+ * DeepLogLens AI. Questions about failures are answered from retrieved evidence (every
+ * point carries the log lines and counts that back it); questions about the system come
+ * from the log profile; small talk, general knowledge and web answers are labelled as such.
  */
 export default function AskPanel({ sessionId, suggestions = [], onOpenFile }) {
   const [question, setQuestion] = useState('');
@@ -68,11 +75,11 @@ export default function AskPanel({ sessionId, suggestions = [], onOpenFile }) {
       <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-3">
         <div>
           <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
-            <Icon name="message" className="h-4 w-4 text-accent" /> Ask about this log
+            <Icon name="message" className="h-4 w-4 text-accent" /> DeepLogLens AI
           </h3>
           <p className="text-xs text-muted">
-            Hybrid search (pgvector + full-text) over 127k error and warning records, then an LLM answers with the line
-            numbers that prove each point. It says so when the log doesn't contain the answer.
+            Ask about failures and their causes, services, tenants or dependencies, in any language. Answers about the log
+            point to the exact lines.
           </p>
         </div>
         {turns.length > 0 && (
@@ -91,8 +98,8 @@ export default function AskPanel({ sessionId, suggestions = [], onOpenFile }) {
             <span className="icon-tile mx-auto h-12 w-12">
               <Icon name="sparkles" className="h-6 w-6" />
             </span>
-            <p className="mt-3 text-sm font-medium text-ink">Ask in plain English</p>
-            <p className="mt-1 text-xs text-slate-400">Try a suggestion below, or ask your own.</p>
+            <p className="mt-3 text-sm font-medium text-ink">Hi, I'm DeepLogLens AI</p>
+            <p className="mt-1 text-xs text-muted">I've read all 5.4 million lines of this log. Say hello, pick a suggestion, or ask your own question.</p>
           </div>
         )}
         {turns.map((t, i) => (
@@ -140,7 +147,7 @@ export default function AskPanel({ sessionId, suggestions = [], onOpenFile }) {
           <input
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder="e.g. What failed first after the 10:38 deploy?"
+            placeholder="Ask about failures, services, tenants…"
             maxLength={300}
             disabled={!!pending}
             className="input"
@@ -156,42 +163,58 @@ export default function AskPanel({ sessionId, suggestions = [], onOpenFile }) {
 }
 
 function Turn({ t, onOpenFile }) {
+  const assistant = t.mode === 'assistant';
   return (
     <div className="space-y-2">
       <UserBubble text={t.question} />
-      {t.trace?.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {t.trace.map((s, i) => (
-            <span
-              key={i}
-              className={`rounded-md border px-2 py-0.5 font-mono text-[10.5px] ${
-                /weak|abstain|removed|failed|skipped/.test(s)
-                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-600'
-                  : 'border-accent bg-accent-soft/60 text-accent'
-              }`}
-            >
-              {s}
-            </span>
-          ))}
-          {t.cached && <span className="text-[10.5px] text-slate-400">· cached</span>}
-        </div>
-      )}
-      <div className={`rounded-2xl rounded-tl-sm border p-4 ${t.abstained ? 'border-amber-500/30 bg-amber-500/10' : 'border-line bg-surface'}`}>
-        <div className="mb-1.5 flex flex-wrap items-center gap-2">
-          {t.abstained ? (
-            <span className="rounded-full border border-amber-300 bg-surface px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-600">
-              Not in the logs
-            </span>
-          ) : (
-            t.confidence && (
-              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${CONFIDENCE[t.confidence]}`}>
-                {t.confidence} confidence
+      <div
+        className={`rounded-2xl rounded-tl-sm border p-4 ${
+          t.abstained ? 'border-amber-500/30 bg-amber-500/10' : assistant ? 'border-transparent bg-sand' : 'border-line bg-surface'
+        }`}
+      >
+        {!assistant && (
+          <div className="mb-1.5 flex flex-wrap items-center gap-2">
+            {t.abstained ? (
+              <span className="rounded-full border border-amber-500/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-600">
+                Not in the logs
               </span>
-            )
-          )}
-          {t.ms != null && <span className="text-[10.5px] text-slate-400">{(t.ms / 1000).toFixed(1)} s</span>}
-        </div>
-        {t.markdown ? <Markdown>{t.answer}</Markdown> : <p className="text-sm leading-relaxed text-ink">{t.answer}</p>}
+            ) : SOURCE[t.mode] && t.mode !== 'system' ? (
+              <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted">{SOURCE[t.mode]}</span>
+            ) : (
+              <>
+                {t.mode === 'system' && (
+                  <span className="rounded-full border border-line px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted">{SOURCE.system}</span>
+                )}
+                {t.confidence && (
+                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${CONFIDENCE[t.confidence]}`}>
+                    {t.confidence} confidence
+                  </span>
+                )}
+              </>
+            )}
+            {t.ms != null && <span className="text-[10.5px] text-muted">{(t.ms / 1000).toFixed(1)} s</span>}
+          </div>
+        )}
+        {t.markdown ? <Markdown>{t.answer}</Markdown> : <p className="whitespace-pre-line text-sm leading-relaxed text-ink">{t.answer}</p>}
+
+        {t.background && (
+          <p className="mt-3 rounded-lg bg-sand px-3 py-2 text-[13px] leading-relaxed text-body">
+            <span className="font-semibold text-ink">Background · </span>
+            {t.background}
+          </p>
+        )}
+
+        {t.sources?.length > 0 && (
+          <ul className="mt-3 space-y-1 border-t border-line pt-3">
+            {t.sources.map((src) => (
+              <li key={src.url} className="truncate text-[12.5px]">
+                <a href={src.url} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                  {src.title || src.url}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {t.points?.length > 0 && (
           <ol className="mt-3 space-y-3 border-t border-line pt-3">
@@ -239,6 +262,19 @@ function Turn({ t, onOpenFile }) {
           </ol>
         )}
       </div>
+      {t.trace?.length > 0 && (
+        <details className="group text-[11px] text-muted">
+          <summary className="cursor-pointer select-none list-none hover:text-ink">
+            How this was answered{t.cached ? ' · cached' : ''} <span className="group-open:hidden">▸</span>
+            <span className="hidden group-open:inline">▾</span>
+          </summary>
+          <ul className="mt-1 space-y-0.5 pl-3 font-mono text-[10.5px]">
+            {t.trace.map((x, i) => (
+              <li key={i}>{x}</li>
+            ))}
+          </ul>
+        </details>
+      )}
     </div>
   );
 }

@@ -262,10 +262,10 @@ const fixture = {
   suggestions: [
     'Why did checkout return 503s after 10:40?',
     'How many payment authorizations failed, and why?',
+    'Which tenants use this platform, and how much traffic does each send?',
+    'What does notification-service do, and what does it depend on?',
     'What happened right before search-service started crashing?',
-    'Which tenants were hit by the deadlocks?',
-    'Was the Kafka consumer group stable around 14:10?',
-    'What was the CPU usage on the database host?',
+    'Which deployments happened that day?',
   ],
   session: {
     id: '5d1c3a9e-7b42-4f0e-9c61-2a8d4e6f0b17',

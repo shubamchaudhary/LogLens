@@ -26,9 +26,13 @@ flags; `build-dataset.mjs` turns them into incidents with exact counts and evide
 lines; an LLM writes each incident's explanation. The UI replays the run, then
 serves the results from `src/demo/fixture.json`.
 
-**Ask is live.** `api/ask.js` searches the log's database (pgvector + Postgres
-full-text, fused with RRF), gives the model numbered log lines and exact counts,
-and drops any citation the model makes that wasn't in that context. `api/log.js`
+**Ask is live.** `api/ask.js` runs DeepLogLens AI. A small routing call decides how to
+answer and in which language: small talk, questions about the system in the log
+(services, tenants, routes, dependencies, deployments, answered from
+`api/_lib/log-profile.json`, which `extract.mjs` computes from every line), failures
+(the grounded path: pgvector + Postgres full-text fused with RRF, numbered log lines and
+exact counts, citations not in the context are dropped), general knowledge, or the web
+(Groq browser search, with sources). The last three turns go along for follow-ups. `api/log.js`
 serves any slice of the file with an HTTP Range read, for the preview.
 
 ### Rebuild the data (from `loglens-frontend/`)

@@ -1,4 +1,4 @@
-// POST /api/ask {question} → grounded answer about the showcase log.
+// POST /api/ask {question, history?} → DeepLogLens AI's answer about the showcase log.
 // Guards: 300-char questions, a per-visitor daily quota, a global daily cap, and an
 // answer cache (identical questions never reach the model twice).
 
@@ -24,10 +24,18 @@ export default async function handler(req, res) {
   if (question.length > 300) return res.status(400).json({ error: 'Keep questions under 300 characters.' });
 
   try {
+    // The last few turns, so follow-ups ("and for acme?") make sense. Answers that depend
+    // on a conversation are not cached.
+    const turns = (Array.isArray(body.history) ? body.history : [])
+      .slice(-3)
+      .map((t) => ({ question: String(t.question || '').slice(0, 300), answer: String(t.answer || '').slice(0, 600) }))
+      .filter((t) => t.question);
     const pool = db();
     const key = normalise(question);
-    const cached = await pool.query('SELECT response FROM ask_cache WHERE question = $1', [key]);
-    if (cached.rows.length) return res.status(200).json({ ...cached.rows[0].response, cached: true });
+    if (!turns.length) {
+      const cached = await pool.query('SELECT response FROM ask_cache WHERE question = $1', [key]);
+      if (cached.rows.length) return res.status(200).json({ ...cached.rows[0].response, cached: true });
+    }
 
     const who = visitor(req);
     const usage = await pool.query(
@@ -41,11 +49,10 @@ export default async function handler(req, res) {
       return res.status(429).json({ error: 'Daily question limit reached. The suggested questions still answer instantly.' });
     }
 
-    const result = await answer(question);
-    await pool.query(
-      'INSERT INTO ask_cache (question, response) VALUES ($1, $2) ON CONFLICT (question) DO NOTHING',
-      [key, result]
-    );
+    const result = await answer(question, turns);
+    if (!turns.length) {
+      await pool.query('INSERT INTO ask_cache (question, response) VALUES ($1, $2) ON CONFLICT (question) DO NOTHING', [key, result]);
+    }
     return res.status(200).json(result);
   } catch (e) {
     console.error('ask failed', e);
