@@ -166,6 +166,7 @@ export const analysisAPI = demoAware({
     };
   },
   ask: async (sessionId, question) => {
+    // (the backend answers in one response; it has no step stream)
     const { data } = await backend.drilldown(sessionId, question);
     const ids = data.citations || [];
     const rows = ids.length ? (await backend.evidence(sessionId, ids).catch(() => ({ data: [] }))).data : [];

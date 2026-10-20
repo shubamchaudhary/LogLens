@@ -16,12 +16,15 @@
     "demo:load-db": "node scripts/demo/load-db.mjs"
   },
   "dependencies": {
+    "@langchain/core": "^1.2.18",
+    "@langchain/langgraph": "^1.5.1",
     "axios": "^1.13.2",
     "pg": "^8.23.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^9.1.0",
     "react-router-dom": "^7.9.6",
+    "redis": "^6.3.0",
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
