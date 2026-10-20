@@ -65,6 +65,48 @@ export async function chatJson(system, user, { maxTokens = 700, temperature = 0.
   }
 }
 
+/**
+ * Chat completion with Groq's built-in web search (gpt-oss models only). Returns the
+ * answer text without the model's inline citation marks, plus the pages it read.
+ */
+export async function chatWeb(system, user, { maxTokens = 900 } = {}) {
+  if (!CHAT_MODEL().startsWith('openai/gpt-oss')) throw new LlmError('web search needs a gpt-oss model', 400);
+  const data = await withKeys('GROQ', (key) =>
+    fetch(`${GROQ_URL()}/chat/completions`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: CHAT_MODEL(),
+        ...reasoning(CHAT_MODEL()),
+        max_tokens: maxTokens,
+        tools: [{ type: 'browser_search' }],
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user },
+        ],
+      }),
+    })
+  );
+  const msg = data.choices?.[0]?.message || {};
+  const text = String(msg.content || '')
+    .replace(/【[^】]*】/g, '')
+    .replace(/\*\*/g, '')
+    .replace(/\s+([.,;:])/g, '$1')
+    .trim();
+  // search_results is normally {results: [{title, url}]}; older responses sent a Python-style string.
+  const sources = [];
+  const add = (title, url) => {
+    if (!url || /exa\.ai\/search/.test(url) || /viewing lines/.test(title) || sources.some((x) => x.url === url)) return;
+    sources.push({ title: String(title || '').replace(/\\n/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120), url });
+  };
+  for (const t of msg.executed_tools || []) {
+    const sr = t.search_results;
+    if (sr && typeof sr === 'object') for (const r of sr.results || []) add(r.title, r.url);
+    else for (const m of String(sr || '').matchAll(/'title': (['"])(.*?)\1, 'url': '(https?:\/\/[^']+)'/g)) add(m[2], m[3]);
+  }
+  return { text, sources: sources.slice(0, 4), usage: data.usage };
+}
+
 const normalise = (v) => {
   const n = Math.hypot(...v) || 1;
   return v.map((x) => x / n);

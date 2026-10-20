@@ -67,11 +67,11 @@ export const documentAPI = {
   },
 };
 
-async function postAsk(question) {
+async function postAsk(question, turns = []) {
   const resp = await fetch('/api/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question }),
+    body: JSON.stringify({ question, history: turns }),
   });
   const data = await resp.json().catch(() => ({}));
   if (!resp.ok) throw Object.assign(new Error(data.error || 'ask failed'), { response: { status: resp.status, data } });
@@ -85,7 +85,9 @@ export const analysisAPI = {
     return ok({ series: f.timeline, incidents: f.incidents, stats: f.stats, file: f.file, suggestions: f.suggestions });
   },
   ask: async (sessionId, question) => {
-    const data = await postAsk(question);
+    // The last three exchanges go along, so follow-up questions keep their context.
+    const turns = history.slice(-3).map((h) => ({ question: h.question, answer: h.answer }));
+    const data = await postAsk(question, turns);
     history.push({ ...data, question });
     return ok(data);
   },

@@ -1,5 +1,15 @@
-// Grounded Q&A over the showcase log.
+// DeepLogLens AI: the Ask assistant for the showcase log.
 //
+//   route:     one small LLM call picks how to answer (chat, the system in the log, its
+//              failures, general knowledge, the web) and notes the user's language
+//   chat:      greets, says what it is and what it can do
+//   system:    services, tenants, routes, dependencies, deployments, from log-profile.json
+//              (computed by extract.mjs over every line), citing its example lines
+//   general:   engineering knowledge, labelled as not coming from the log
+//   web:       Groq browser search, with the pages it read
+//   logs:      the grounded pipeline below; thin evidence falls back to the system route
+//
+// The grounded pipeline:
 //   retrieve:  failure types (pgvector + full-text, RRF-fused), matching log lines
 //              (full-text, optionally narrowed to times named in the question),
 //              busiest matching minutes (pgvector over minute digests), incidents
@@ -8,8 +18,9 @@
 //   verify:    drop citations that weren't in the context; no valid citation → abstain;
 //              numbers the context doesn't contain lower the confidence
 
+import { readFileSync } from 'node:fs';
 import { db } from './db.js';
-import { chatJson, embed, vec, CHAT_MODEL } from './llm.js';
+import { chatJson, chatWeb, embed, vec, CHAT_MODEL } from './llm.js';
 
 const STOP = new Set(
   'a an and are as at be by did do does for from had has have how i in is it its many me of on or so that the their them then there these they this to was we were what when where which who why will with you your around about after before during any much happen happened cause caused show tell give'.split(
@@ -212,21 +223,198 @@ export function buildContext(r) {
   return { text, refs, lineSet: new Set(r.events.map((e) => e.line_no)) };
 }
 
-const SYSTEM = `You are DeepLogLens, an SRE assistant. You answer questions about ONE log file: 15 Jul 2026, 08:00–17:50 UTC, an e-commerce platform of 10 services, 5.37 million lines.
-Use ONLY the context. It holds incidents the pipeline found, failure types with exact counts for the whole file, and log lines with their line numbers.
+// ---- the log profile: what the system in this log looks like -------------------------
+
+const profile = JSON.parse(readFileSync(new URL('./log-profile.json', import.meta.url), 'utf8'));
+const num = (n) => Number(n).toLocaleString('en-US');
+const day = profile.file.from.slice(0, 10);
+
+/** Example lines the profile can cite, by line number. */
+const profileLines = new Map();
+for (const s of profile.services) for (const l of s.logs) profileLines.set(l.line, { text: l.sample, service: s.name });
+for (const d of profile.deps) profileLines.set(d.line, { text: d.sample, service: d.from });
+
+const FILE_SUMMARY =
+  `${profile.file.name}: ${num(profile.file.lines)} lines, ${(profile.file.bytes / 2 ** 30).toFixed(1)} GB, ` +
+  `${profile.file.from.slice(0, 16).replace('T', ' ')} to ${profile.file.to.slice(11, 16)} UTC, from an e-commerce platform. ` +
+  `Services: ${profile.services.map((s) => s.name).join(', ')}. Tenants (customer accounts): ${profile.tenants.map((t) => t.name).join(', ')}.`;
+
+function profileText() {
+  const svc = profile.services.map((s) => {
+    const lv = ['ERROR', 'WARN'].filter((l) => s.levels[l]).map((l) => `${num(s.levels[l])} ${l}`).join(', ');
+    const logs = s.logs.slice(0, 3).map((l) => `"${l.template.slice(0, 110)}" ×${num(l.count)} (e.g. L${l.line})`).join('; ');
+    return `- ${s.name}: ${num(s.lines)} lines${lv ? ` (${lv})` : ''}, ${s.pods} pod(s), serves ${s.tenants} tenants${s.tables.length ? `, SQL tables: ${s.tables.join(', ')}` : ''}. Logs most: ${logs}`;
+  });
+  const ten = profile.tenants.map(
+    (t) =>
+      `- ${t.name}: ${num(t.requests)} gateway requests (${num(t.s5xx)} 5xx, ${num(t.s4xx)} 4xx), ${num(t.errors)} ERROR lines; top routes: ${t.routes.map((r) => `${r.route} ${num(r.count)}`).join(', ')}`
+  );
+  const routes = profile.routes.map(
+    (r) => `- ${r.route}: ${num(r.count)} requests, avg ${r.avgMs} ms, ${num(r.s5xx)} 5xx${r.upstream.length ? `, failures name upstream ${r.upstream.map((u) => `${u.service} ×${num(u.count)}`).join(', ')}` : ''}`
+  );
+  const deps = profile.deps.map((d) => `- ${d.from} → ${d.to} (${d.kind}) ×${num(d.count)}, e.g. L${d.line}`);
+  const deploys = profile.deploys.map((d) => `- L${d.line}: ${d.text}`);
+  return [
+    `FILE: ${FILE_SUMMARY}`,
+    '',
+    'SERVICES (what each one logs most shows what it does):',
+    ...svc,
+    '',
+    'TENANTS (customer accounts; every request line carries tenant=<name>):',
+    ...ten,
+    '',
+    'GATEWAY ROUTES:',
+    ...routes,
+    '',
+    'DEPENDENCIES NAMED IN THE LINES:',
+    ...deps,
+    '',
+    'DEPLOYMENTS:',
+    ...deploys,
+  ].join('\n');
+}
+const PROFILE_TEXT = profileText();
+
+// Incident titles from the pipeline, so chat and general answers name real events.
+let incidentList = null;
+async function incidents() {
+  if (incidentList) return incidentList;
+  try {
+    const { rows } = await db().query('SELECT starts_at, ends_at, title FROM incidents ORDER BY starts_at');
+    incidentList = rows.map((r) => `${hhmmss(r.starts_at).slice(0, 5)}–${hhmmss(r.ends_at).slice(0, 5)} ${r.title}`).join('; ');
+  } catch {
+    incidentList = '';
+  }
+  return incidentList;
+}
+
+const persona = (language) => `You are DeepLogLens AI, the assistant inside DeepLogLens, a log-analysis app. The user has opened one log archive:
+${FILE_SUMMARY}
+Incidents DeepLogLens found: ${incidentList || 'see the context'}.
+DeepLogLens has already parsed every line into exact counts, flagged the unusual minutes and grouped them into incidents. You help the user understand this log: what failed and why, what the system looks like (services, tenants, routes, dependencies, deployments), and engineering questions around it. Be warm, direct and smart, like a senior SRE colleague. Reply in ${language || 'the language the user wrote in'}; keep JSON keys in English. Plain text, no markdown headings or bold.`;
+
+const history = (turns) =>
+  turns.length ? `CONVERSATION SO FAR:\n${turns.map((t) => `User: ${t.question}\nYou: ${t.answer}`).join('\n')}\n\n` : '';
+
+// ---- route ----------------------------------------------------------------------------
+
+const ROUTER = `You route messages for DeepLogLens AI, an assistant that answers questions about one application log archive.
+Pick one route:
+- "chat": greetings, thanks, small talk, or questions about you and what you can do.
+- "system": the system in the log rather than its failures: services and what they do, tenants or customers, endpoints and traffic, dependencies, databases and tables, deployments and versions, architecture.
+- "logs": failures, errors, incidents, causes, timings, error counts, what happened when, which tenants were hit.
+- "general": general engineering knowledge that does not need this log (what is X, how does Y work, how to fix Z in general).
+- "web": needs current information from the internet (latest versions, news, vendor docs, status pages).
+Also give the language the user wrote in (e.g. "English", "Hindi", "Hinglish", "Spanish").
+Return only JSON: {"route": "chat" | "system" | "logs" | "general" | "web", "language": "..."}`;
+
+async function route(question, turns) {
+  try {
+    const { json } = await chatJson(ROUTER, `${history(turns)}MESSAGE: ${question}`, { maxTokens: 120, temperature: 0 });
+    const r = ['chat', 'system', 'logs', 'general', 'web'].includes(json.route) ? json.route : 'logs';
+    return { route: r, language: String(json.language || 'English').slice(0, 30) };
+  } catch {
+    return { route: 'logs', language: 'English' };
+  }
+}
+
+// ---- chat, general, web ---------------------------------------------------------------
+
+async function chat(question, turns, language) {
+  const { json, usage } = await chatJson(
+    `${persona(language)}
+The user is chatting, not asking about the data yet. Answer naturally: greet them back if they greeted you, say in one or two sentences who you are and what you can do for this log, and offer three example questions this log can actually answer, each on its own line starting with "• ": one about one of the listed incidents, one about the services or tenants listed above, one about a cause. Do not invent links between services. Keep it under 90 words.
+Return only JSON: {"answer": "..."}`,
+    `${history(turns)}USER: ${question}`,
+    { maxTokens: 500, temperature: 0.5 }
+  );
+  return { mode: 'assistant', answer: String(json.answer || '').trim(), usage };
+}
+
+async function general(question, turns, language) {
+  const { json, usage } = await chatJson(
+    `${persona(language)}
+Answer this from general engineering knowledge in 2-5 sentences. If it connects to this log (its services, tenants or incidents), add one sentence saying how, using only the file summary above.
+Return only JSON: {"answer": "..."}`,
+    `${history(turns)}QUESTION: ${question}`,
+    { maxTokens: 700, temperature: 0.3 }
+  );
+  return { mode: 'general', answer: String(json.answer || '').trim(), usage };
+}
+
+async function web(question, turns, language) {
+  const { text, sources, usage } = await chatWeb(
+    `${persona(language)}
+Search the web for this and answer in 2-5 plain sentences. Mention where the information comes from.`,
+    `${history(turns)}QUESTION: ${question}`
+  );
+  return { mode: 'web', answer: text, sources, usage };
+}
+
+// ---- system: answers from the log profile ---------------------------------------------
+
+// A cited example line must share a meaningful word with the point it backs.
+const words = (t) => new Set((t.toLowerCase().match(/[a-z][a-z0-9-]{3,}/g) || []).filter((w) => !STOP.has(w)));
+function related(point, line) {
+  const lw = words(line);
+  return [...words(point)].some((w) => lw.has(w) || [...lw].some((x) => x.startsWith(w) || w.startsWith(x)));
+}
+
+async function system(question, turns, language) {
+  const { json, usage } = await chatJson(
+    `${persona(language)}
+Answer from the LOG PROFILE below. It was computed by parsers over all ${num(profile.file.lines)} lines, so its counts are exact.
+Rules:
+- Use the profile's numbers as they are; never estimate.
+- Tenants are customer accounts that share the same services. They do not depend on each other unless the profile shows it; say so if asked.
+- You may infer what a service does from what it logs and which tables and systems it uses, and how routes map to services from their names; say "likely" for such inferences.
+- Put lists and numbers in the answer itself. Use points only for facts that one of the profile's example lines shows, and cite those lines (as integers).
+- If the profile does not cover the question, set "abstain": true and say in one friendly sentence what you can tell instead.
+Return only JSON: {"answer": "2-5 plain sentences", "points": [{"text": "one supporting fact", "lines": [123]}], "confidence": "high" | "medium" | "low", "abstain": false}
+Give 0-4 points.
+
+LOG PROFILE:
+${PROFILE_TEXT}`,
+    `${history(turns)}QUESTION: ${question}`,
+    { maxTokens: 1100, temperature: 0.2 }
+  );
+  const points = (Array.isArray(json.points) ? json.points : [])
+    .map((p) => ({
+      text: String(p.text || ''),
+      lines: (p.lines || [])
+        .map(Number)
+        .filter((n) => profileLines.has(n) && related(String(p.text || ''), profileLines.get(n).text))
+        .slice(0, 2)
+        .map((n) => ({ no: n, end: n, service: profileLines.get(n).service, text: profileLines.get(n).text })),
+      types: [],
+    }))
+    .filter((p) => p.text && p.lines.length)
+    .slice(0, 4);
+  return {
+    mode: 'system',
+    answer: String(json.answer || '').trim(),
+    abstained: Boolean(json.abstain),
+    confidence: ['high', 'medium', 'low'].includes(json.confidence) ? json.confidence : 'medium',
+    points,
+    usage,
+  };
+}
+
+// ---- logs: grounded answers over the failure records ----------------------------------
+
+const logsSystem = (language) => `${persona(language)}
+Answer from the CONTEXT: incidents the pipeline found, failure types with exact counts for the whole file, and log lines with their line numbers.
 Rules:
 - Every point must cite evidence: line numbers from LOG LINES (as integers) and/or failure types (as "S1", "S2", ...).
 - Counts must be copied from FAILURE TYPES or counted from the listed lines. Never estimate or round.
 - Separate what the logs show from what you infer; say "likely" for inferences.
-- If the context cannot answer the question, set "abstain": true and say briefly what the logs do contain instead.
+- "background" is optional: one or two sentences of general engineering knowledge that help (for example what an exception means). Leave it empty if not needed.
+- If the context cannot answer, set "abstain": true and write one friendly sentence saying what the logs do contain.
 Return only JSON:
-{"answer": "2-4 plain sentences, no markdown", "points": [{"text": "one supporting fact", "lines": [123], "types": ["S1"]}], "confidence": "high" | "medium" | "low", "abstain": false}
+{"answer": "2-4 plain sentences", "points": [{"text": "one supporting fact", "lines": [123], "types": ["S1"]}], "background": "", "confidence": "high" | "medium" | "low", "abstain": false}
 Give 1-4 points.`;
 
-export async function answer(question) {
-  const started = Date.now();
-  const trace = [];
-  const day = '2026-07-15';
+async function logs(question, turns, language, trace) {
   let ts = terms(question);
   const windows = timeWindows(question, day);
 
@@ -238,16 +426,14 @@ export async function answer(question) {
   }
 
   let r = await retrieveOnce(question, qv, ts, windows);
-  trace.push(
-    `retrieve · ${r.sigs.length} failure types (vector + full-text, RRF) · ${r.events.length} log lines${windows.length ? ` · time filter ${windows.length}` : ''}`
-  );
+  trace.push(`retrieve · ${r.sigs.length} failure types (vector + full-text, RRF) · ${r.events.length} log lines${windows.length ? ` · time filter ${windows.length}` : ''}`);
 
   // Grade: nothing lexical and nothing semantically close → rewrite the query once.
   if (r.lexicalHits === 0 && r.maxSim < 0.55 && windows.length === 0) {
     trace.push(`grade → weak (0 matching lines, best similarity ${r.maxSim.toFixed(2)})`);
     try {
       const { json } = await chatJson(
-        'Turn a question about application logs into search keywords that would appear in log lines (exception names, service names, HTTP status codes, component names). Return JSON {"keywords": ["..."]} with at most 8 single words.',
+        'Turn a question about application logs into search keywords that would appear in log lines (exception names, service names, HTTP status codes, component names). Return JSON {"keywords": ["..."]} with at most 8 single words, in English.',
         question,
         { maxTokens: 80 }
       );
@@ -266,7 +452,7 @@ export async function answer(question) {
   }
 
   const ctx = buildContext(r);
-  const { json, usage } = await chatJson(SYSTEM, `QUESTION: ${question}\n\nCONTEXT:\n${ctx.text}`);
+  const { json, usage } = await chatJson(logsSystem(language), `${history(turns)}QUESTION: ${question}\n\nCONTEXT:\n${ctx.text}`);
 
   // Verify: keep only citations that exist in the context.
   const byLine = new Map(r.events.map((e) => [e.line_no, e]));
@@ -283,44 +469,89 @@ export async function answer(question) {
           return { no: n, end: e.line_end, ts: e.ts, level: e.level, service: e.service, text: e.body };
         }),
         types: types.map((t) => {
-          const s = ctx.refs.get(t);
+          const sg = ctx.refs.get(t);
           return {
-            ref: t, level: s.level, service: s.service, template: s.template, sample: s.sample, count: s.count,
-            firstTs: s.first_ts, lastTs: s.last_ts, firstLine: s.first_line, lastLine: s.last_line,
+            ref: t, level: sg.level, service: sg.service, template: sg.template, sample: sg.sample, count: sg.count,
+            firstTs: sg.first_ts, lastTs: sg.last_ts, firstLine: sg.first_line, lastLine: sg.last_line,
           };
         }),
       };
     })
     .filter((p) => p.text && (p.lines.length || p.types.length));
 
-  let abstained = Boolean(json.abstain);
-  let text = String(json.answer || '').trim();
+  const text = String(json.answer || '').trim();
   let confidence = ['high', 'medium', 'low'].includes(json.confidence) ? json.confidence : 'low';
-  if (!abstained && points.length === 0) {
-    abstained = true;
-    text = "I couldn't find log lines that support an answer to that, so I won't guess.";
-  }
   // Numbers in the answer that appear nowhere in the context are a hallucination signal.
-  const unsupported = (text.match(/\b\d{2,}(?:,\d{3})*\b/g) || []).filter(
-    (n) => !ctx.text.includes(n) && !ctx.text.includes(n.replace(/,/g, ''))
-  );
+  const unsupported = (text.match(/\b\d{2,}(?:,\d{3})*\b/g) || []).filter((n) => !ctx.text.includes(n) && !ctx.text.includes(n.replace(/,/g, '')));
   if (unsupported.length) confidence = 'low';
   trace.push(
     `generate · ${CHAT_MODEL()} · ${points.length} cited point${points.length === 1 ? '' : 's'}` +
       (dropped ? ` · ${dropped} unverifiable citation${dropped === 1 ? '' : 's'} removed` : '')
   );
-  if (abstained) trace.push('abstain · not enough evidence in the logs');
+  return {
+    mode: 'logs',
+    answer: text,
+    background: String(json.background || '').trim(),
+    abstained: Boolean(json.abstain) || points.length === 0,
+    confidence,
+    points,
+    unsupportedNumbers: unsupported,
+    usage,
+  };
+}
+
+// ---- entry point ----------------------------------------------------------------------
+
+/** `turns`: the last few {question, answer} pairs of this conversation, oldest first. */
+export async function answer(question, turns = []) {
+  const started = Date.now();
+  const trace = [];
+  const [{ route: picked, language }] = await Promise.all([route(question, turns), incidents()]);
+  trace.push(`route → ${picked}${language && language !== 'English' ? ` · ${language}` : ''}`);
+
+  let out;
+  if (picked === 'chat') out = await chat(question, turns, language);
+  else if (picked === 'general') out = await general(question, turns, language);
+  else if (picked === 'web') {
+    try {
+      out = await web(question, turns, language);
+      trace.push(`web search · ${out.sources?.length || 0} source${out.sources?.length === 1 ? '' : 's'}`);
+    } catch (e) {
+      trace.push(`web search unavailable (${e.status || 'error'}), general knowledge instead`);
+      out = await general(question, turns, language);
+    }
+  } else if (picked === 'system') {
+    out = await system(question, turns, language);
+    trace.push(`log profile · ${out.points.reduce((n, p) => n + p.lines.length, 0)} example lines cited`);
+  } else {
+    out = await logs(question, turns, language, trace);
+    if (out.abstained) {
+      // Thin evidence in the failure records: the question may be about the system instead.
+      trace.push('failure records thin → log profile');
+      const sys = await system(question, turns, language);
+      if (!sys.abstained) out = sys;
+    }
+  }
+
+  let text = String(out.answer || '').replace(/\s+•\s*/g, '\n• ');
+  if (!text || /^abstain\.?$/i.test(text)) {
+    text = "I couldn't find that in this log. Ask me about its failures, services, tenants or dependencies, or anything general about logs and systems.";
+  }
+  if (out.abstained) trace.push('not in the log');
 
   return {
     question,
+    mode: out.mode,
     answer: text,
-    abstained,
-    confidence,
-    points: abstained ? [] : points,
-    unsupportedNumbers: unsupported,
+    background: out.background || '',
+    sources: out.sources || [],
+    abstained: Boolean(out.abstained),
+    confidence: out.mode === 'logs' || out.mode === 'system' ? out.confidence : null,
+    points: out.abstained ? [] : out.points || [],
+    unsupportedNumbers: out.unsupportedNumbers || [],
     trace,
     model: CHAT_MODEL(),
-    tokens: usage?.total_tokens ?? null,
+    tokens: out.usage?.total_tokens ?? null,
     ms: Date.now() - started,
   };
 }
