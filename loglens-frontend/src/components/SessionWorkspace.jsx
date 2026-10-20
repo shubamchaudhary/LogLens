@@ -155,7 +155,7 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div className="flex flex-1 flex-col overflow-y-auto p-3 sm:p-4">
         {status === 'FAILED' && (
           <div className="mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4">
             <p className="text-sm font-medium text-rose-600">Analysis failed</p>
@@ -181,15 +181,15 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
         )}
 
         {showProgress && (
-          <div className="mx-auto mt-2 max-w-4xl space-y-4">
+          <div className="mx-auto mt-2 w-full max-w-5xl space-y-4">
             <ProgressTracker progress={progress} stats={stats} />
             {consoleLines.length > 0 && <PipelineConsole lines={consoleLines} running />}
           </div>
         )}
 
         {isTerminal(status) && (
-          <div className="mx-auto max-w-6xl">
-            <div className="-mx-4 mb-4 flex items-center justify-between gap-3 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <div className={`flex w-full flex-col ${tab === 'ask' ? 'min-h-0 flex-1' : ''}`}>
+            <div className="-mx-4 mb-3 flex items-center justify-between gap-3 overflow-x-auto px-4 sm:mx-0 sm:px-0">
               <div className="inline-flex gap-1 rounded-xl border border-line bg-surface p-1 shadow-sm">
                 {TABS.map(([key, label, icon]) => (
                   <button
@@ -221,7 +221,7 @@ export default function SessionWorkspace({ session, onStatusChange, onReplay }) 
             {loadingResults && !data ? (
               <div className="card p-10 text-center text-sm text-slate-400">Loading results…</div>
             ) : (
-              <div key={tab} className="animate-fade-up">
+              <div key={tab} className={`animate-fade-up ${tab === 'ask' ? 'flex min-h-0 flex-1 flex-col' : ''}`}>
                 {tab === 'overview' && <OverviewTab data={data} onOpenIncident={openIncident} onOpenFile={openFile} />}
                 {tab === 'incidents' && (
                   <IncidentsTab sessionId={sessionId} incidents={data?.incidents} focus={focus} onOpenFile={openFile} />

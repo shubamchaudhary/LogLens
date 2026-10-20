@@ -3,7 +3,7 @@ import bench from '../demo/bench.json';
 import BarChart from '../components/BarChart';
 import HeapChart, { LiveSetBars } from '../components/HeapChart';
 import GateExplainer from '../components/GateExplainer';
-import { Heading, Section, SiteHeader } from '../components/Site';
+import { Heading, Section, SiteFooter, SiteHeader } from '../components/Site';
 import Icon from '../components/Icon';
 import { fmtBytes, fmtNum } from '../utils/format';
 
@@ -296,6 +296,7 @@ export default function Benchmarks() {
         </div>
       </Section>
 
+      <SiteFooter />
     </div>
   );
 }

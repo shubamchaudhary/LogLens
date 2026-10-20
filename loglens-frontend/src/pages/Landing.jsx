@@ -5,7 +5,7 @@ import bench from '../demo/bench.json';
 import TimelineChart from '../components/TimelineChart';
 import HeapChart from '../components/HeapChart';
 import { ArchitectureSteps, ArchitectureStory } from '../components/Architecture';
-import { Heading, Section, SiteHeader } from '../components/Site';
+import { Heading, Section, SiteFooter, SiteHeader } from '../components/Site';
 import Icon from '../components/Icon';
 import { useGuestLaunch } from '../hooks/useGuestLaunch';
 import { pipelineSteps } from '../utils/pipeline';
@@ -160,6 +160,7 @@ export default function Landing() {
         </div>
       </Section>
 
+      <SiteFooter />
     </div>
   );
 }

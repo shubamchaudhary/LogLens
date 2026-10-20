@@ -54,6 +54,19 @@ export function SiteHeader({ links = [], back = false }) {
   );
 }
 
+export function SiteFooter() {
+  return (
+    <footer className="border-t border-line py-8">
+      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 sm:flex-row sm:px-6">
+        <Logo />
+        <p className="text-center font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+          Log intelligence · GB-scale archives · AI-enabled Q&amp;A · Deep log analysis
+        </p>
+      </div>
+    </footer>
+  );
+}
+
 /** ☾ / ☀ switch for the public pages' theme. */
 export function ThemeToggle() {
   const [theme, toggle] = useTheme();

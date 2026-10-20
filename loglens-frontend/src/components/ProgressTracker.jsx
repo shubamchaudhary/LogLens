@@ -1,42 +1,19 @@
 import { fmtBytes } from '../utils/format';
 
-const STEPS = ['CHUNKING', 'PARSING', 'ENRICHING', 'CORRELATING', 'REPORTING', 'DONE'];
+// UPLOAD is done by the time this shows; the rest follow the backend's statuses.
+const STEPS = ['UPLOAD', 'CHUNKING', 'PARSING', 'ENRICHING', 'CORRELATING', 'REPORTING', 'DONE'];
 
-/** What each pipeline stage does, in plain words (sub-labels use the run's own numbers when known). */
+/** Each pipeline stage's name, with the run's own numbers under it when known. */
 function stages(stats) {
   const n = (x) => (x == null ? null : x.toLocaleString('en-US'));
   return {
-    CHUNKING: {
-      label: 'Split',
-      sub: stats ? `${fmtBytes(stats.bytes)} → ${stats.parts} pieces` : 'into pieces',
-      title: 'Cutting the file into pieces',
-      hint: 'The file is cut into pieces of about 5 MB so several workers can read it at the same time.',
-    },
-    PARSING: {
-      label: 'Read',
-      sub: stats ? `${n(stats.lines)} lines` : 'every line',
-      title: 'Reading every line',
-      hint: 'Every line is read and counted per minute: errors, failed requests, slow responses, database failures. Minutes that look unusual compared with the rest of the log are marked.',
-    },
-    ENRICHING: {
-      label: 'Explain',
-      sub: stats ? `${stats.flaggedMinutes} unusual minutes` : 'unusual minutes',
-      title: 'AI explains the unusual minutes',
-      hint: 'Only the marked minutes are sent to the AI, which describes what went wrong in each one.',
-    },
-    CORRELATING: {
-      label: 'Group',
-      sub: 'into incidents',
-      title: 'Grouping problems into incidents',
-      hint: 'Related problems across services are grouped into one incident, for example a bad deploy that breaks both orders and checkout.',
-    },
-    REPORTING: {
-      label: 'Report',
-      sub: 'causes and impact',
-      title: 'Writing the report',
-      hint: 'Each incident gets its likely cause, its impact on users, and the log lines that show it.',
-    },
-    DONE: { label: 'Ready', sub: 'report and Q&A' },
+    UPLOAD: { label: 'Upload', sub: stats ? fmtBytes(stats.bytes) : 'to storage' },
+    CHUNKING: { label: 'Chunk', sub: stats ? `${stats.parts} chunks` : '~5 MB chunks' },
+    PARSING: { label: 'Parse', sub: stats ? `${n(stats.lines)} lines` : 'every line' },
+    ENRICHING: { label: 'Enrich', sub: 'AI on anomalies' },
+    CORRELATING: { label: 'Correlate', sub: 'into incidents' },
+    REPORTING: { label: 'Report', sub: 'root causes' },
+    DONE: { label: 'Done', sub: 'report and Q&A' },
   };
 }
 
@@ -51,7 +28,7 @@ export default function ProgressTracker({ progress, stats }) {
   const failed = status === 'FAILED';
   const S = stages(stats);
 
-  const currentIdx = STEPS.indexOf(status);
+  const currentIdx = Math.max(1, STEPS.indexOf(status));
   const pct = total > 0 ? Math.min(100, Math.round((enriched / total) * 100)) : 0;
 
   return (
@@ -61,7 +38,7 @@ export default function ProgressTracker({ progress, stats }) {
         {failed ? <span className="text-sm font-medium text-rose-600">Failed</span> : <span className="text-xs text-slate-400">live</span>}
       </div>
 
-      <ol className="mb-6 grid grid-cols-3 gap-y-4 sm:flex sm:w-full sm:items-start">
+      <ol className="grid grid-cols-4 gap-y-4 sm:flex sm:w-full sm:items-start">
         {STEPS.map((step, i) => {
           const done = !failed && currentIdx > i;
           const active = !failed && currentIdx === i;
@@ -99,9 +76,9 @@ export default function ProgressTracker({ progress, stats }) {
       </ol>
 
       {status === 'ENRICHING' && total > 0 && (
-        <div className="mb-3">
+        <div className="mt-6">
           <div className="mb-1 flex justify-between text-xs text-muted">
-            <span>Minutes explained</span>
+            <span>Anomalies enriched</span>
             <span className="font-semibold text-ink">
               {enriched} / {total}
             </span>
@@ -115,12 +92,6 @@ export default function ProgressTracker({ progress, stats }) {
         </div>
       )}
 
-      {S[status]?.hint && (
-        <div className="rounded-xl border border-line bg-sand px-4 py-3">
-          <p className="text-sm font-semibold text-ink">{S[status].title}</p>
-          <p className="mt-0.5 text-sm text-body">{S[status].hint}</p>
-        </div>
-      )}
     </div>
   );
 }
