@@ -1,5 +1,6 @@
 // Conversation memory for Ask: the recent turns of each chat, keyed by a conversation id
-// the browser makes. Redis when REDIS_URL is set (any Redis, e.g. Upstash: a list per
+// the browser makes. Redis when REDIS_URL or KV_URL is set (any Redis, e.g. Upstash or a
+// Vercel Marketplace Redis, which sets one of them; a list per
 // conversation, trimmed to the last 20 turns, expiring a day after the last message);
 // otherwise a Postgres table, so Ask keeps its memory before Redis is configured.
 
@@ -11,10 +12,12 @@ const TTL_S = 24 * 3600;
 const key = (id) => `ask:chat:${id}`;
 
 let client; // one connection per function instance, reused across requests
+const redisUrl = () => process.env.REDIS_URL || process.env.KV_URL;
+
 async function redis() {
-  if (!process.env.REDIS_URL) return null;
+  if (!redisUrl()) return null;
   if (!client) {
-    client = createClient({ url: process.env.REDIS_URL, socket: { connectTimeout: 3000, reconnectStrategy: false } });
+    client = createClient({ url: redisUrl(), socket: { connectTimeout: 3000, reconnectStrategy: false } });
     client.on('error', () => {}); // a lost connection fails the call below, which falls back
     await client.connect();
   }
@@ -31,7 +34,7 @@ async function table() {
   }
 }
 
-export const memoryBackend = () => (process.env.REDIS_URL ? 'redis' : 'postgres');
+export const memoryBackend = () => (redisUrl() ? 'redis' : 'postgres');
 
 /** The last `n` turns of a conversation, oldest first. */
 export async function getTurns(id, n = 4) {

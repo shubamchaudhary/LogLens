@@ -63,7 +63,7 @@ node scripts/demo/build-bench.mjs    # bench/results → src/demo/bench.json (he
 | `GEMINI_API_KEYS` | `api/ask` | comma-separated Gemini keys (query embeddings) |
 | `LOG_FILE_URL` | `api/log` | public URL of the raw file that honours `Range` (e.g. a GitHub release asset) |
 | `LOG_FILE_GZ_URL` | `api/log` | optional: compressed download |
-| `REDIS_URL` | `api/ask` | Redis for conversation memory (e.g. Upstash, `rediss://…`); without it, turns go to a Postgres table |
+| `REDIS_URL` or `KV_URL` | `api/ask` | Redis for conversation memory (`rediss://…`; a Vercel Marketplace Redis sets one of them); without it, turns go to a Postgres table |
 | `GROQ_MODEL` | `api/ask` | optional, default `openai/gpt-oss-120b` |
 | `ASK_DAILY_LIMIT` / `ASK_GLOBAL_DAILY_LIMIT` | `api/ask` | optional quotas (default 25 per visitor, 1500 total per day) |
 | `VITE_GUEST_MODE` | build | `live` sends guests to the backend's guest session instead |
