@@ -89,13 +89,13 @@ export default function AppLayout() {
   const current = sessions.find((s) => s.id === currentId) || null;
 
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-slate-500">Loading…</div>;
+    return <div className="flex min-h-screen items-center justify-center text-muted">Loading…</div>;
   }
 
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden md:flex-row">
       {/* Phone/tablet top bar; the sidebar takes over from md up. */}
-      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2.5 md:hidden">
+      <div className="flex items-center justify-between border-b border-line bg-surface px-4 py-2.5 md:hidden">
         <Link to="/">
           <Logo />
         </Link>
@@ -126,8 +126,8 @@ export default function AppLayout() {
       ) : (
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <h2 className="text-lg font-semibold text-slate-800">No session selected</h2>
-            <p className="mb-4 mt-1 text-sm text-slate-500">
+            <h2 className="text-lg font-semibold text-ink">No session selected</h2>
+            <p className="mb-4 mt-1 text-sm text-muted">
               {isGuest
                 ? 'Loading…'
                 : 'Create a session to upload logs and run the analysis pipeline.'}

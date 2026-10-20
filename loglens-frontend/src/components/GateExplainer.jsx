@@ -29,7 +29,7 @@ export default function GateExplainer() {
     <div>
       <div className="relative h-44 border-b border-line">
         <Cut at={pct(meanCut)} label="mean + 3σ" value={meanCut} cls="border-line2 text-muted" />
-        <Cut at={pct(robustCut)} label="median + MAD" value={robustCut} cls="border-pink-600 text-hot" />
+        <Cut at={pct(robustCut)} label="median + MAD" value={robustCut} cls="border-hot text-hot" />
         <div className="absolute inset-y-0 left-0 right-[6.5rem] flex items-end gap-1.5 px-1">
           {xs.map((v, i) => {
             const isSpike = BASE[i] == null;
@@ -38,7 +38,7 @@ export default function GateExplainer() {
               <div key={i} className="flex h-full flex-1 flex-col items-center justify-end">
                 {isSpike && <span className="mb-0.5 text-[10px] font-semibold text-ink">{v}</span>}
                 <div
-                  className={`w-full max-w-7 rounded-t-[4px] ${flagged ? 'bg-pink-600' : isSpike ? 'bg-violet-400' : 'bg-line2'}`}
+                  className={`w-full max-w-7 rounded-t-[4px] ${flagged ? 'bg-hot' : isSpike ? 'bg-accent' : 'bg-line2'}`}
                   style={{ height: pct(Math.max(v, 0.3)) }}
                 />
               </div>
@@ -60,7 +60,7 @@ export default function GateExplainer() {
           max="300"
           value={spike}
           onChange={(e) => setSpike(Number(e.target.value))}
-          className="mt-2 w-full accent-violet-600"
+          className="mt-2 w-full accent-accent"
         />
       </label>
 

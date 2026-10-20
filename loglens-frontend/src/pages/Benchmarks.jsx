@@ -1,35 +1,48 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import bench from '../demo/bench.json';
 import BarChart from '../components/BarChart';
 import HeapChart, { LiveSetBars } from '../components/HeapChart';
 import GateExplainer from '../components/GateExplainer';
-import TestedGrid from '../components/TestedGrid';
-import { loadFixture } from '../demo/demoApi';
 import { Heading, Section, SiteHeader } from '../components/Site';
 import Icon from '../components/Icon';
-import { REPO_URL } from '../config';
-import { usePublicTheme } from '../hooks/useTheme';
 import { fmtBytes, fmtNum } from '../utils/format';
 
 // The repo's bench/BENCHMARKS.md and eval reports as charts and tables. All values
 // come from src/demo/bench.json, generated from bench/results and evals/results.
 
 const NAV = [
-  ['#tested', 'Summary'],
   ['#ingest', 'Ingest'],
   ['#faults', 'Faults'],
   ['#quality', 'Quality'],
   ['#vectors', 'Vectors'],
 ];
 
-const SCENARIO = {
-  baseline: ['Clean run', 'reference'],
-  crash_after_part_commit: ['Process killed while parsing', 'kill -9, three times, right after a commit'],
-  crash_after_enrich_commit: ['Process killed while explaining', 'kill -9, three times, right after an LLM result'],
-  replay_ingest: ['Ingest topic replayed', 'Kafka consumer group rewound to the start'],
-  replay_enrich: ['LLM topic replayed', 'rewound to the start and fully drained'],
-  rebalance: ['One of two instances stopped', 'partitions move to the survivor mid-run'],
+// What was broken on purpose, and how the system carried on (counts from bench.json).
+const FAULT = {
+  crash_after_part_commit: {
+    title: 'Killed while reading the file',
+    text: (r) =>
+      `The process was killed (kill -9) three times, each time right after it saved a piece. On restart it carried on from the next unsaved piece: the ${fmtNum(r.skips)} pieces already saved were recognised and skipped.`,
+  },
+  crash_after_enrich_commit: {
+    title: 'Killed while the AI was explaining',
+    text: () =>
+      'Killed three times right after an AI explanation was saved. On restart it continued with the minutes still waiting; nothing was explained or counted twice.',
+  },
+  replay_ingest: {
+    title: 'Whole ingest history replayed',
+    text: (r) => `Kafka was rewound to its very first message. All ${fmtNum(r.skips)} already-processed pieces were recognised, so the results stayed the same.`,
+  },
+  replay_enrich: {
+    title: 'Whole AI queue replayed',
+    text: (r) => `The AI queue was rewound to the start and drained. ${fmtNum(r.skips)} finished explanations were recognised and not sent to the model again.`,
+  },
+  rebalance: {
+    title: 'One of two servers stopped mid-run',
+    text: () => 'Its share of the work moved to the other server, which continued from where the first one stopped.',
+  },
 };
+
 
 const CASE = {
   'malformed_lines.log': 'Malformed lines',
@@ -65,15 +78,6 @@ const LAYOUT_SHORT = {
 const RETRIEVER = { vector_only: 'Vector', fts_only: 'Full text', hybrid_rrf: 'Hybrid (RRF)' };
 
 export default function Benchmarks() {
-  usePublicTheme();
-  const [lines1g, setLines1g] = useState(null);
-  useEffect(() => {
-    let cancelled = false;
-    loadFixture().then((f) => !cancelled && setLines1g(f.stats.lines));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
   useEffect(() => {
     document.title = 'Benchmarks · DeepLogLens';
     return () => {
@@ -88,6 +92,13 @@ export default function Benchmarks() {
   const cell = (session, layout) => bench.vector.rows.find((r) => r.session === session && r.layout === layout);
   const small = sessions.at(-1);
   const g = bench.gate;
+  const medium = g.synthetic.find((d) => d.dataset.includes('medium'));
+  const incidents = g.synthetic.reduce((n, d) => n + d.incidents, 0);
+  const found = g.synthetic.reduce((n, d) => n + Math.round(d.incidentRecall * d.incidents), 0);
+  const held = g.heldout.map((d) => d.f1);
+  const minCut = Math.min(...g.volume.map((v) => v.callReduction));
+  const hybrid = bench.retrieval.rows.find((r) => r.retriever.startsWith('hybrid'));
+  const own = bench.vector.rows.filter((r) => r.layout === 'per_session_table');
 
   return (
     <div className="min-h-screen overflow-x-clip bg-paper text-ink">
@@ -103,16 +114,7 @@ export default function Benchmarks() {
             </span>
           ))}
         </div>
-        <a href={`${REPO_URL}/blob/main/bench/BENCHMARKS.md`} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:underline">
-          <Icon name="github" className="h-4 w-4" /> Raw results and scripts
-        </a>
       </section>
-
-      {/* Summary */}
-      <Section id="tested">
-        <Heading kicker="Tested at scale" title="The headline numbers" />
-        <TestedGrid lines1g={lines1g} />
-      </Section>
 
       {/* Ingest */}
       <Section id="ingest">
@@ -149,54 +151,59 @@ export default function Benchmarks() {
 
       {/* Faults */}
       <Section id="faults">
-        <Heading kicker="02 · Faults" title="Crashes and replays give the same result" />
-        <div className="mt-8 panel flex flex-wrap items-center gap-x-8 gap-y-2 bg-sand px-5 py-4">
-          <span className="text-sm font-semibold text-ink">Clean run</span>
-          {[
-            [base.chunks, 'windows'],
-            [base.lineSum, 'lines'],
-            [base.metricSum, 'metric total'],
-            [base.occurrences, 'findings'],
-          ].map(([v, k]) => (
-            <span key={k} className="text-sm text-body">
-              <span className="font-display font-bold text-ink">{fmtNum(v)}</span> {k}
-            </span>
-          ))}
-        </div>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <Heading kicker="02 · Faults" title="It resumes after a crash, it does not start over" />
+        <p className="mt-4 max-w-3xl text-base leading-relaxed text-body">
+          The same {fmtBytes(bench.chaos.bytes)} log was ingested once cleanly, then again while we broke things on purpose.
+          Every run below ended with the same result as the clean one:{' '}
+          <b className="text-ink">
+            {fmtNum(base.chunks)} windows, {fmtNum(base.lineSum)} lines, {fmtNum(base.occurrences)} findings
+          </b>
+          .
+        </p>
+        <ul className="mt-10 grid gap-x-12 gap-y-9 md:grid-cols-2">
           {bench.chaos.rows
             .filter((r) => r.scenario !== 'baseline')
             .map((r) => (
-              <div key={r.scenario} className="panel p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="font-semibold text-ink">{SCENARIO[r.scenario]?.[0] || r.scenario}</h3>
-                  <Check ok={matches(r)} label="identical" />
+              <li key={r.scenario} className="flex gap-4">
+                <span className={`mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${matches(r) ? 'bg-emerald-500/15 text-emerald-500' : 'bg-rose-500/15 text-rose-500'}`}>
+                  <Icon name="check" className="h-3.5 w-3.5" />
+                </span>
+                <div>
+                  <h3 className="font-semibold text-ink">{FAULT[r.scenario]?.title || r.scenario}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-body">{FAULT[r.scenario]?.text(r)}</p>
                 </div>
-                <p className="mt-1 text-sm text-muted">{SCENARIO[r.scenario]?.[1]}</p>
-                <p className="mt-4 font-mono text-xs text-body">
-                  {fmtNum(r.chunks)} windows · {fmtNum(r.lineSum)} lines · {fmtNum(r.occurrences)} findings
-                </p>
-                {r.skips > 0 && <p className="mt-1 text-xs text-accent">{fmtNum(r.skips)} repeated deliveries recognised and skipped</p>}
-              </div>
+              </li>
             ))}
-        </div>
+        </ul>
 
-        <h3 className="mt-12 font-display text-xl font-extrabold text-ink">Unusual input</h3>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <h3 className="mt-16 font-display text-xl font-extrabold text-ink">Unusual input</h3>
+        <ul className="mt-6 grid gap-x-12 gap-y-4 sm:grid-cols-2">
           {bench.robustness.map((r) => (
-            <div key={r.case} className="panel p-4">
-              <p className="text-sm font-semibold text-ink">{CASE[r.case] || r.case}</p>
-              <p className="font-mono text-[11px] text-dim">{r.bytes != null ? fmtBytes(r.bytes) : 'Kafka message'}</p>
-              <p className="mt-3 text-sm text-ink">{outcome(r)}</p>
-              {r.seconds != null && <p className="font-mono text-[11px] text-muted">{r.seconds} s</p>}
-            </div>
+            <li key={r.case} className="flex items-baseline gap-3 border-b border-line pb-3">
+              <Icon name="check" className="h-3.5 w-3.5 shrink-0 translate-y-0.5 text-emerald-500" />
+              <span className="font-medium text-ink">{CASE[r.case] || r.case}</span>
+              <span className="ml-auto text-right text-sm text-muted">
+                {outcome(r)}
+                {r.seconds != null && <span className="font-mono text-xs"> · {r.seconds} s</span>}
+              </span>
+            </li>
           ))}
-        </div>
+        </ul>
       </Section>
 
       {/* Quality */}
       <Section id="quality">
         <Heading kicker="03 · Quality" title="Anomaly detection and Q&A retrieval" lead="On labelled logs where every incident line is known." />
+        <BigNumbers
+          items={[
+            [medium.f1.toFixed(2), 'F1 score, incident detection'],
+            [`${found} / ${incidents}`, 'injected incidents found'],
+            [`${Math.min(...held).toFixed(2)}–${Math.max(...held).toFixed(2)}`, 'F1 on unseen logs'],
+            [`≥ ${Math.floor(minCut * 100)}%`, 'fewer LLM calls at every traffic level'],
+            [hybrid.r30.toFixed(2), `Q&A recall@30, ${bench.retrieval.questions} questions`],
+            [`${Math.round(hybrid.p95)} ms`, 'p95 search latency'],
+          ]}
+        />
         <div className="mt-8 grid gap-4 lg:grid-cols-2">
           <Panel title="F1 per dataset" sub="labelled corpora, then held-out seeds the rules never saw">
             <BarChart
@@ -207,7 +214,7 @@ export default function Benchmarks() {
             />
           </Panel>
           <Panel title="LLM calls saved by traffic level" sub="same generator, only lines per second changes">
-            <BarChart data={g.volume.map((v) => ({ label: `${v.linesPerS}/s`, v: v.callReduction * 100 }))} series={[{ key: 'v', name: 'saved', cls: 'bg-pink-500' }]} max={100} format={(v) => `${Math.round(v)}%`} />
+            <BarChart data={g.volume.map((v) => ({ label: `${v.linesPerS}/s`, v: v.callReduction * 100 }))} series={[{ key: 'v', name: 'saved', cls: 'bg-hot' }]} max={100} format={(v) => `${Math.round(v)}%`} />
           </Panel>
         </div>
         <div className="mt-4">
@@ -257,6 +264,13 @@ export default function Benchmarks() {
       {/* Vectors */}
       <Section id="vectors">
         <Heading kicker="04 · Vectors" title="One table per session keeps small tenants at 100% recall" lead={`${fmtNum(bench.vector.vectors)} vectors across three tenants; the smallest holds 0.83% of the rows.`} />
+        <BigNumbers
+          items={[
+            [Math.min(...own.map((r) => r.recall)).toFixed(2), 'recall@10 for every tenant'],
+            [`${Math.min(...own.map((r) => r.p50))} ms`, 'median query, smallest tenant'],
+            [`${Math.max(...own.map((r) => r.p50))} ms`, 'median query, largest tenant'],
+          ]}
+        />
         <div className="mt-8 grid gap-4 lg:grid-cols-[0.9fr_1.6fr]">
           <Panel title="Recall@10 for the small tenant" sub={`session ${small}, by table layout`}>
             <BarChart
@@ -282,6 +296,20 @@ export default function Benchmarks() {
         </div>
       </Section>
 
+    </div>
+  );
+}
+
+/** Measured figures set as type: a big number over a short label, no boxes. */
+function BigNumbers({ items }) {
+  return (
+    <div className="mt-10 grid grid-cols-2 gap-x-10 gap-y-8 border-y border-line py-8 md:grid-cols-3">
+      {items.map(([v, k]) => (
+        <div key={k}>
+          <p className="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">{v}</p>
+          <p className="mt-1 text-sm text-muted">{k}</p>
+        </div>
+      ))}
     </div>
   );
 }
@@ -325,18 +353,9 @@ function Table({ head, rows, strong }) {
   );
 }
 
-function Check({ ok, label = 'matches' }) {
-  return ok ? (
-    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-1.5 py-0.5 font-sans text-[11px] font-semibold text-emerald-500">
-      <Icon name="check" className="h-3 w-3" /> {label}
-    </span>
-  ) : (
-    <span className="rounded-md bg-rose-500/10 px-1.5 py-0.5 font-sans text-[11px] font-semibold text-rose-500">differs</span>
-  );
-}
 
 function outcome(r) {
   if (r.status === 'FAILED') return 'Rejected with a clear message';
-  if (r.status === 'DLQ') return 'Set aside in the dead-letter queue; the next upload runs';
+  if (r.status === 'DLQ') return 'Set aside; the next upload runs';
   return r.lines != null ? `Parsed, ${fmtNum(r.lines)} line${r.lines === 1 ? '' : 's'}` : 'Parsed';
 }

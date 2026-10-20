@@ -70,10 +70,11 @@ export function ThemeToggle() {
   );
 }
 
-export function Section({ id, children, className = '' }) {
+/** `wide`: a wider column for big figures (the architecture diagram). */
+export function Section({ id, children, className = '', wide = false }) {
   return (
     <section id={id} className={`scroll-mt-16 border-t border-line py-20 ${className}`}>
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">{children}</div>
+      <div className={`mx-auto px-4 sm:px-6 ${wide ? 'max-w-7xl' : 'max-w-6xl'}`}>{children}</div>
     </section>
   );
 }

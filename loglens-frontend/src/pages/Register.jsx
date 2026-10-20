@@ -136,7 +136,7 @@ export default function Register() {
                 type="text"
                 autoComplete="name"
                 required
-                className="w-full bg-surface text-ink placeholder:text-dim px-4 py-3 border border-line rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
+                className="w-full bg-surface text-ink placeholder:text-dim px-4 py-3 border border-line rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-colors"
                 placeholder="John Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -155,7 +155,7 @@ export default function Register() {
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full bg-surface text-ink placeholder:text-dim px-4 py-3 border border-line rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors"
+                className="w-full bg-surface text-ink placeholder:text-dim px-4 py-3 border border-line rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-colors"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -175,7 +175,7 @@ export default function Register() {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   required
-                  className="w-full bg-surface text-ink placeholder:text-dim px-4 py-3 border border-line rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors pr-12"
+                  className="w-full bg-surface text-ink placeholder:text-dim px-4 py-3 border border-line rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-colors pr-12"
                   placeholder="Create a strong password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -282,7 +282,7 @@ export default function Register() {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-colors ${
+                className={`w-full bg-surface text-ink placeholder:text-dim px-4 py-3 border rounded-lg focus:ring-2 focus:ring-accent focus:border-accent transition-colors ${
                   confirmPassword && password !== confirmPassword
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
                     : 'border-line'
@@ -301,7 +301,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={loading || (confirmPassword && password !== confirmPassword)}
-              className="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-pink-500 hover:brightness-110 text-white shadow-lg shadow-violet-500/25 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full py-3 px-4 bg-accent hover:brightness-110 text-on-accent font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? (
                 <>
@@ -330,7 +330,7 @@ export default function Register() {
           {/* Sign In Link */}
           <Link
             to="/login"
-            className="w-full py-3 px-4 border-2 border-violet-600 text-accent font-medium rounded-lg hover:bg-accent-soft transition-colors flex items-center justify-center"
+            className="w-full py-3 px-4 border-2 border-accent text-accent font-medium rounded-lg hover:bg-accent-soft transition-colors flex items-center justify-center"
           >
             Sign in instead
           </Link>

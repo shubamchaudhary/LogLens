@@ -23,9 +23,10 @@ export default {
         body: 'rgb(var(--body) / <alpha-value>)', // running text
         muted: 'rgb(var(--muted) / <alpha-value>)', // secondary text
         dim: 'rgb(var(--dim) / <alpha-value>)', // faint labels
-        accent: 'rgb(var(--accent) / <alpha-value>)', // violet text and marks
-        'accent-soft': 'rgb(var(--accent-soft) / <alpha-value>)', // violet tint behind it
-        hot: 'rgb(var(--hot) / <alpha-value>)', // pink text (live set, verdicts)
+        accent: 'rgb(var(--accent) / <alpha-value>)', // the one brand colour (amber): buttons, marks
+        'accent-soft': 'rgb(var(--accent-soft) / <alpha-value>)', // its tint behind text
+        'on-accent': 'rgb(var(--on-accent) / <alpha-value>)', // text on an accent fill
+        hot: 'rgb(var(--hot) / <alpha-value>)', // second data colour (teal): live set, verdicts
       },
       keyframes: {
         'fade-up': {

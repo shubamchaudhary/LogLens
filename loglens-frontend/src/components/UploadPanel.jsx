@@ -65,7 +65,7 @@ function FileUpload({ sessionId, onUploaded }) {
         onDrop={onDrop}
         onClick={() => !uploading && inputRef.current?.click()}
         className={`cursor-pointer rounded-xl border-2 border-dashed p-10 text-center transition-colors ${
-          dragging ? 'border-violet-500 bg-violet-50' : 'border-slate-300 hover:border-violet-400'
+          dragging ? 'border-accent bg-accent-soft' : 'border-line hover:border-accent'
         }`}
       >
         <input
@@ -76,7 +76,7 @@ function FileUpload({ sessionId, onUploaded }) {
           onChange={(e) => doUpload(e.target.files?.[0])}
         />
         <svg
-          className="mx-auto h-12 w-12 text-violet-400"
+          className="mx-auto h-12 w-12 text-accent"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -90,17 +90,17 @@ function FileUpload({ sessionId, onUploaded }) {
         </svg>
         {uploading ? (
           <div className="mt-4">
-            <p className="text-sm text-slate-600 mb-2">Uploading… {pct}%</p>
-            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+            <p className="text-sm text-body mb-2">Uploading… {pct}%</p>
+            <div className="w-full bg-sand rounded-full h-2 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-violet-600 to-pink-500 h-2 rounded-full transition-all"
+                className="bg-accent h-2 rounded-full transition-all"
                 style={{ width: `${pct}%` }}
               />
             </div>
           </div>
         ) : (
           <>
-            <p className="mt-4 text-sm font-medium text-slate-700">
+            <p className="mt-4 text-sm font-medium text-ink">
               Drop a log file here, or click to browse
             </p>
             <p className="mt-1 text-xs text-slate-400">
@@ -154,8 +154,8 @@ function SampleUpload({ sessionId, onUploaded }) {
           <Icon name="file" className="h-6 w-6" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-sm font-semibold text-slate-900">{f.name}</p>
-          <p className="text-xs text-slate-500">
+          <p className="font-mono text-sm font-semibold text-ink">{f.name}</p>
+          <p className="text-xs text-muted">
             {fmtBytes(f.bytes)} · {f.lines.toLocaleString('en-US')} lines · {f.services} services · {f.tenants} tenants ·{' '}
             {fmtClock(f.from).slice(0, 5)}–{fmtClock(f.to).slice(0, 5)} UTC
           </p>
@@ -172,9 +172,9 @@ function SampleUpload({ sessionId, onUploaded }) {
       </div>
 
       {uploading && (
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-sand">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-violet-600 to-pink-500 transition-all"
+            className="h-full rounded-full bg-accent transition-all"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -198,7 +198,7 @@ function SampleUpload({ sessionId, onUploaded }) {
 
       {sample.excerpt.length > 0 && (
         <div className="mt-4 space-y-2">
-          <p className="text-xs font-medium text-slate-500">A few of the 5.4 million lines:</p>
+          <p className="text-xs font-medium text-muted">A few of the 5.4 million lines:</p>
           {sample.excerpt.map((e) => (
             <LogViewer key={e.line} content={e.text} lineStart={e.line} maxHeight="max-h-40" title={`line ${e.line.toLocaleString('en-US')}`} />
           ))}

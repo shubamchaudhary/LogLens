@@ -146,7 +146,7 @@ export default function Login() {
         <label className="flex items-center gap-2 text-sm text-body">
           <input
             type="checkbox"
-            className="h-4 w-4 rounded border-line accent-violet-600"
+            className="h-4 w-4 rounded border-line accent-accent"
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
           />

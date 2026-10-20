@@ -8,30 +8,35 @@ function stages(stats) {
   return {
     CHUNKING: {
       label: 'Split',
-      sub: stats ? `${fmtBytes(stats.bytes)} → ${stats.parts} parts` : 'into parts on Kafka',
-      hint: 'One streaming pass cuts the file into ~5 MB parts on 1-minute boundaries and queues them on Kafka, so memory stays flat at any file size.',
+      sub: stats ? `${fmtBytes(stats.bytes)} → ${stats.parts} pieces` : 'into pieces',
+      title: 'Cutting the file into pieces',
+      hint: 'The file is cut into pieces of about 5 MB so several workers can read it at the same time.',
     },
     PARSING: {
-      label: 'Parse & detect',
-      sub: stats ? `${n(stats.lines)} lines` : 'exact metrics',
-      hint: 'Parallel consumers read their part with an HTTP Range request; 8 regex parsers count every request, error, GC pause and SQL call per minute, and robust statistics flag the unusual minutes.',
+      label: 'Read',
+      sub: stats ? `${n(stats.lines)} lines` : 'every line',
+      title: 'Reading every line',
+      hint: 'Every line is read and counted per minute: errors, failed requests, slow responses, database failures. Minutes that look unusual compared with the rest of the log are marked.',
     },
     ENRICHING: {
       label: 'Explain',
-      sub: stats ? `${n(stats.flaggedChunks)} flagged chunks` : 'LLM on anomalies',
-      hint: 'Only the flagged chunks go to the LLM, which returns findings as JSON. Every chunk also gets a vector embedding for search. One Kafka partition per API key keeps each worker inside its rate limit.',
+      sub: stats ? `${stats.flaggedMinutes} unusual minutes` : 'unusual minutes',
+      title: 'AI explains the unusual minutes',
+      hint: 'Only the marked minutes are sent to the AI, which describes what went wrong in each one.',
     },
     CORRELATING: {
-      label: 'Correlate',
-      sub: 'findings → incidents',
-      hint: 'A LangGraph agent groups findings across services into incidents, and an LLM judge drops any claim its cited lines do not support.',
+      label: 'Group',
+      sub: 'into incidents',
+      title: 'Grouping problems into incidents',
+      hint: 'Related problems across services are grouped into one incident, for example a bad deploy that breaks both orders and checkout.',
     },
     REPORTING: {
       label: 'Report',
-      sub: 'causes & follow-ups',
-      hint: 'Ranking incidents by impact and writing probable causes with the lines that show them.',
+      sub: 'causes and impact',
+      title: 'Writing the report',
+      hint: 'Each incident gets its likely cause, its impact on users, and the log lines that show it.',
     },
-    DONE: { label: 'Ready', sub: 'ask questions' },
+    DONE: { label: 'Ready', sub: 'report and Q&A' },
   };
 }
 
@@ -52,7 +57,7 @@ export default function ProgressTracker({ progress, stats }) {
   return (
     <div className="card p-6">
       <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-900">Analysis pipeline</h3>
+        <h3 className="text-sm font-semibold text-ink">Analysing the log</h3>
         {failed ? <span className="text-sm font-medium text-rose-600">Failed</span> : <span className="text-xs text-slate-400">live</span>}
       </div>
 
@@ -66,25 +71,25 @@ export default function ProgressTracker({ progress, stats }) {
                 <span
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition ${
                     done
-                      ? 'bg-gradient-to-br from-violet-600 to-pink-500 text-white'
+                      ? 'bg-accent text-on-accent'
                       : active
-                        ? 'bg-violet-50 text-violet-700 ring-2 ring-violet-500 ring-offset-2'
+                        ? 'bg-accent-soft text-accent ring-2 ring-accent ring-offset-2 ring-offset-surface'
                         : failed && currentIdx === i
-                          ? 'bg-rose-100 text-rose-700 ring-2 ring-rose-500'
-                          : 'bg-slate-100 text-slate-400'
+                          ? 'bg-rose-500/15 text-rose-600 ring-2 ring-rose-500'
+                          : 'bg-sand text-slate-400'
                   }`}
                 >
                   {done ? '✓' : active && step !== 'DONE' ? <Spinner /> : i + 1}
                 </span>
-                <span className={`mt-1.5 whitespace-nowrap text-[11px] font-semibold ${active ? 'text-violet-700' : done ? 'text-slate-700' : 'text-slate-400'}`}>
+                <span className={`mt-1.5 whitespace-nowrap text-[11px] font-semibold ${active ? 'text-accent' : done ? 'text-ink' : 'text-slate-400'}`}>
                   {S[step].label}
                 </span>
                 <span className="whitespace-nowrap text-[10px] text-slate-400">{S[step].sub}</span>
               </div>
               {i < STEPS.length - 1 && (
-                <div className="mx-2 mt-4 hidden h-0.5 flex-1 overflow-hidden rounded bg-slate-200 sm:block">
+                <div className="mx-2 mt-4 hidden h-0.5 flex-1 overflow-hidden rounded bg-line2 sm:block">
                   <div
-                    className={`h-full bg-gradient-to-r from-violet-600 to-pink-500 transition-all duration-700 ${done ? 'w-full' : 'w-0'}`}
+                    className={`h-full bg-accent transition-all duration-700 ${done ? 'w-full' : 'w-0'}`}
                   />
                 </div>
               )}
@@ -95,22 +100,27 @@ export default function ProgressTracker({ progress, stats }) {
 
       {status === 'ENRICHING' && total > 0 && (
         <div className="mb-3">
-          <div className="mb-1 flex justify-between text-xs text-slate-500">
-            <span>Work items (LLM explanations + embedding batches)</span>
-            <span className="font-semibold text-slate-700">
+          <div className="mb-1 flex justify-between text-xs text-muted">
+            <span>Minutes explained</span>
+            <span className="font-semibold text-ink">
               {enriched} / {total}
             </span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-sand">
             <div
-              className="h-2 rounded-full bg-gradient-to-r from-violet-600 to-pink-500 transition-all duration-300"
+              className="h-2 rounded-full bg-accent transition-all duration-300"
               style={{ width: `${pct}%` }}
             />
           </div>
         </div>
       )}
 
-      {S[status]?.hint && <p className="text-sm text-slate-500">{S[status].hint}</p>}
+      {S[status]?.hint && (
+        <div className="rounded-xl border border-line bg-sand px-4 py-3">
+          <p className="text-sm font-semibold text-ink">{S[status].title}</p>
+          <p className="mt-0.5 text-sm text-body">{S[status].hint}</p>
+        </div>
+      )}
     </div>
   );
 }

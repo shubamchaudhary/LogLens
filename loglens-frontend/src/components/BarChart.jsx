@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-const SERIES_CLS = ['bg-violet-600', 'bg-pink-500', 'bg-line2'];
-const SERIES_DOT = ['bg-violet-600', 'bg-pink-500', 'bg-line2'];
+const SERIES_CLS = ['bg-accent', 'bg-hot', 'bg-line2'];
+const SERIES_DOT = ['bg-accent', 'bg-hot', 'bg-line2'];
 
 /**
  * Vertical bars, one group per category. `series` lists the measures (one or more,

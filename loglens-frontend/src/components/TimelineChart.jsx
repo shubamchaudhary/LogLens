@@ -44,7 +44,7 @@ export default function TimelineChart({ series, incidents = [], onSelectIncident
       <div className="relative" style={{ height }} onMouseMove={onMove} onMouseLeave={() => setHover(null)}>
         <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1000 100" preserveAspectRatio="none">
           {bands.map(({ i, x0, w }) => (
-            <rect key={i} x={x0 * 1000} y="0" width={w * 1000} height="100" className="fill-violet-500/10" />
+            <rect key={i} x={x0 * 1000} y="0" width={w * 1000} height="100" className="fill-ink/[0.06]" />
           ))}
           {series.map((s, i) => {
             const x = pos(s.bucket) * 1000;
@@ -60,7 +60,7 @@ export default function TimelineChart({ series, incidents = [], onSelectIncident
             );
           })}
           {flagged.map((s) => (
-            <rect key={`f${s.bucket}`} x={pos(s.bucket) * 1000} y="98.5" width={Math.max(1000 / span, 1.5)} height="1.5" className="fill-violet-600" />
+            <rect key={`f${s.bucket}`} x={pos(s.bucket) * 1000} y="98.5" width={Math.max(1000 / span, 1.5)} height="1.5" className="fill-hot" />
           ))}
         </svg>
 
@@ -69,7 +69,7 @@ export default function TimelineChart({ series, incidents = [], onSelectIncident
             key={inc.id}
             onClick={() => onSelectIncident?.(inc, i)}
             title={`Incident ${i + 1}`}
-            className="absolute top-1 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-pink-500 text-[10px] font-bold text-white shadow ring-2 ring-white hover:scale-110"
+            className="absolute top-1 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-on-accent shadow ring-2 ring-surface hover:scale-110"
             style={{ left: pct(x0 + w / 2) }}
           >
             {i + 1}
@@ -85,7 +85,7 @@ export default function TimelineChart({ series, incidents = [], onSelectIncident
             <div className="text-rose-300">{hovered.errors} ERROR</div>
             <div className="text-amber-200">{hovered.warns} WARN</div>
             <div className="text-dim">{hovered.lines.toLocaleString('en-US')} lines</div>
-            {hovered.flagged && <div className="text-violet-300">flagged by the anomaly gate</div>}
+            {hovered.flagged && <div className="text-hot">flagged by the anomaly gate</div>}
           </div>
         )}
       </div>
@@ -101,8 +101,8 @@ export default function TimelineChart({ series, incidents = [], onSelectIncident
       <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] text-muted">
         <Legend cls="bg-rose-500" label="ERROR lines / min" />
         <Legend cls="bg-amber-400" label="WARN lines / min" />
-        {flagged.length > 0 && <Legend cls="bg-violet-600" label="Minute flagged by the anomaly gate" />}
-        {bands.length > 0 && <Legend cls="bg-violet-500/20" label="Incident" />}
+        {flagged.length > 0 && <Legend cls="bg-hot" label="Minute flagged by the anomaly gate" />}
+        {bands.length > 0 && <Legend cls="bg-ink/10" label="Incident" />}
         <span className="ml-auto">peak {max} / min · UTC</span>
       </div>
     </div>
