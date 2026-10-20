@@ -14,6 +14,7 @@ const NODES = {
   workers: { x: 620, y: 210, title: 'Workers', sub: 'split · parse · gate' },
   llm: { x: 820, y: 40, title: 'LLMs', sub: 'Groq · Gemini' },
   pg: { x: 820, y: 210, title: 'Postgres', sub: '+ pgvector' },
+  redis: { x: 820, y: 380, title: 'Redis', sub: 'chat memory' },
 };
 
 // [id, svg path, label, label x, label y]
@@ -26,7 +27,8 @@ const EDGES = [
   ['workers-llm', 'M780 222 L820 96', 'flagged only', 852, 160],
   ['workers-pg', 'M780 254 L820 254', '', 0, 0],
   ['api-python', 'M300 274 L300 412 L420 412', 'analyze · ask', 362, 402],
-  ['python-pg', 'M580 412 L900 412 L900 274', 'hybrid SQL', 740, 402],
+  ['python-pg', 'M580 396 L760 396 L760 300 L880 300 L880 274', 'hybrid SQL', 670, 386],
+  ['python-redis', 'M580 428 L820 428', 'conversation', 700, 452],
 ];
 
 export function ArchitectureDiagram({ step }) {

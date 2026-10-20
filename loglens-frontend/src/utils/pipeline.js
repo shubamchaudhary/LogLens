@@ -57,10 +57,10 @@ export function pipelineSteps(stats) {
     {
       key: 'ask',
       title: 'Ask',
-      body: 'Questions are answered with hybrid search: vector and full-text search in Postgres, merged into one ranking. Each answer cites the exact log lines it is based on.',
+      body: 'A LangGraph decision graph reads the conversation so far from Redis, works out whether your message is a follow-up, and picks how to answer: hybrid search over the failure records in Postgres, the log profile, or general knowledge. Answers about the log cite the exact lines.',
       metric: 'answers cite exact log lines',
-      nodes: ['browser', 'api', 'python', 'pg'],
-      edges: ['browser-api', 'api-python', 'python-pg'],
+      nodes: ['browser', 'api', 'python', 'pg', 'redis'],
+      edges: ['browser-api', 'api-python', 'python-pg', 'python-redis'],
     },
   ];
 }
