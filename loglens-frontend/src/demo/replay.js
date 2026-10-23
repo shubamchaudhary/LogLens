@@ -24,7 +24,7 @@ export function buildReplay(f) {
 
   // 1. Split
   progress('CHUNKING');
-  log('upload', `Received upload of ${f.file.name} (${fmtBytes(f.file.bytes)}) - sent from the browser straight to file storage`, 0);
+  log('upload', `Received upload of ${f.file.name} (${fmtBytes(f.file.bytes)}) - sent from the browser straight to the blob store`, 0);
   log('upload', 'Upload confirmed, returning 202 Accepted - queued the file on Kafka topic log.ingest.requests', 400);
   log('split', `Split the file into ${s.parts} parts of about 5 MB, each cut at a minute boundary - published to log.ingest.parts`, 900);
 
@@ -32,7 +32,7 @@ export function buildReplay(f) {
   progress('PARSING', 0, 600);
   const perPart = Math.round(s.lines / s.parts);
   for (const p of [1, Math.round(s.parts / 3), Math.round((2 * s.parts) / 3), s.parts]) {
-    log('parse', `Part ${p}/${s.parts}: read 5 MB from file storage, parsed ~${fmt(perPart)} lines, saved to the database`, 550);
+    log('parse', `Part ${p}/${s.parts}: read 5 MB from the blob store, parsed ~${fmt(perPart)} lines, saved to the database`, 550);
   }
   log(
     'parse',
