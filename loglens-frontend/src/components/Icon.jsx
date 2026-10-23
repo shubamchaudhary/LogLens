@@ -58,7 +58,7 @@ export default function Icon({ name, className = 'h-4 w-4', strokeWidth = 2 }) {
 export function Logo({ compact = false }) {
   return (
     <span className="flex items-center gap-2.5">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-on-accent">
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#a8480a] text-white">
         <Icon name="activity" className="h-5 w-5" strokeWidth={2.4} />
       </span>
       {!compact && (
