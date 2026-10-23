@@ -9,10 +9,10 @@ export function pipelineSteps(stats) {
     {
       key: 'upload',
       title: 'Upload',
-      body: 'Your browser sends the file straight to blob storage with a short-lived upload link. The API checks that the file arrived and starts the analysis.',
+      body: 'Your browser sends the file straight to file storage with a short-lived upload link. The API checks that the file arrived and starts the analysis.',
       metric: stats ? `${(stats.bytes / 2 ** 30).toFixed(1)} GB uploaded directly to storage` : 'uploaded directly to storage',
-      nodes: ['browser', 'blob', 'api'],
-      edges: ['browser-blob', 'browser-api'],
+      nodes: ['client', 'blob', 'api'],
+      edges: ['client-blob', 'client-api'],
     },
     {
       key: 'split',
@@ -51,16 +51,16 @@ export function pipelineSteps(stats) {
       title: 'Root cause',
       body: 'A LangGraph pipeline groups related findings into incidents and ranks their likely causes. A judge checks each explanation against the log lines it cites.',
       metric: stats?.incidents != null ? `${stats.incidents} incidents with ranked causes` : 'incidents with ranked causes',
-      nodes: ['api', 'python', 'pg'],
-      edges: ['api-python', 'python-pg'],
+      nodes: ['api', 'langgraph', 'pg'],
+      edges: ['api-langgraph', 'langgraph-pg'],
     },
     {
       key: 'ask',
       title: 'Ask',
       body: 'A LangGraph decision graph reads the conversation so far from Redis, works out whether your message is a follow-up, and picks how to answer: hybrid search over the failure records in Postgres, the log profile, or general knowledge. Answers about the log cite the exact lines.',
       metric: 'answers cite exact log lines',
-      nodes: ['browser', 'api', 'python', 'pg', 'redis'],
-      edges: ['browser-api', 'api-python', 'python-pg', 'python-redis'],
+      nodes: ['client', 'api', 'langgraph', 'pg', 'redis'],
+      edges: ['client-api', 'api-langgraph', 'langgraph-pg', 'langgraph-redis'],
     },
   ];
 }

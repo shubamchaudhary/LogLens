@@ -150,7 +150,7 @@ export default function Landing() {
       </Section>
 
       {/* How it works */}
-      <Section id="how" className="pb-24" wide>
+      <Section id="how" className="pb-24" full>
         <Heading kicker="How it works" title="From one log file to a cited report" />
         <div className="mt-4 hidden lg:block">
           <ArchitectureStory steps={steps} />

@@ -84,10 +84,10 @@ export function ThemeToggle() {
 }
 
 /** `wide`: a wider column for big figures (the architecture diagram). */
-export function Section({ id, children, className = '', wide = false }) {
+export function Section({ id, children, className = '', wide = false, full = false }) {
   return (
     <section id={id} className={`scroll-mt-16 border-t border-line py-20 ${className}`}>
-      <div className={`mx-auto px-4 sm:px-6 ${wide ? 'max-w-7xl' : 'max-w-6xl'}`}>{children}</div>
+      <div className={`mx-auto px-4 sm:px-6 ${full ? 'max-w-[1800px]' : wide ? 'max-w-7xl' : 'max-w-6xl'}`}>{children}</div>
     </section>
   );
 }

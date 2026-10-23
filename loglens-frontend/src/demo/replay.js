@@ -24,33 +24,32 @@ export function buildReplay(f) {
 
   // 1. Split
   progress('CHUNKING');
-  log('upload', `presigned PUT → object storage · ${fmtBytes(f.file.bytes)} sent straight from the browser`, 0);
-  log('upload', 'confirm → 202 Accepted · file pointer queued on Kafka (log.ingest.requests)', 400);
-  log('split', `one streaming pass → ${s.parts} parts of ~5 MB, each cut on a 1-minute boundary → log.ingest.parts`, 900);
+  log('upload', `Received upload of ${f.file.name} (${fmtBytes(f.file.bytes)}) - sent from the browser straight to file storage`, 0);
+  log('upload', 'Upload confirmed, returning 202 Accepted - queued the file on Kafka topic log.ingest.requests', 400);
+  log('split', `Split the file into ${s.parts} parts of about 5 MB, each cut at a minute boundary - published to log.ingest.parts`, 900);
 
   // 2. Parse + detect
   progress('PARSING', 0, 600);
   const perPart = Math.round(s.lines / s.parts);
   for (const p of [1, Math.round(s.parts / 3), Math.round((2 * s.parts) / 3), s.parts]) {
-    log('parse', `part ${p}/${s.parts} · ranged GET (~5 MB) → ~${fmt(perPart)} lines → parsed → committed`, 550);
+    log('parse', `Part ${p}/${s.parts}: read 5 MB from file storage, parsed ~${fmt(perPart)} lines, saved to the database`, 550);
   }
   log(
     'parse',
-    `8 parsers (HTTP, SQL, errors, JVM/GC, auth, deploys, traffic, message templates) → ${fmt(s.lines)} lines in ` +
-      `${fmt(s.chunks)} chunks → ${fmt(s.metricRows)} metric rows`,
+    `Parsing complete: ${fmt(s.lines)} lines read, grouped into ${fmt(s.chunks)} time windows, ${fmt(s.metricRows)} metric rows stored`,
     600
   );
-  log('parse', "exactly-once: each part's rows and a done-marker commit in one transaction", 500);
-  log('detect', `robust anomaly rules over ${s.minutes} minutes → ${s.flaggedMinutes} minutes flagged`, 700);
+  log('parse', 'Each part is saved in a single database transaction, so a retry can never double-count', 500);
+  log('detect', `Compared ${s.minutes} minutes against the log's normal behaviour: ${s.flaggedMinutes} minutes look unusual`, 700);
   const rules = Object.entries(s.anomalyRules)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6)
     .map(([rule, n]) => `${rule} ×${n}`)
     .join(' · ');
-  log('detect', `rules fired: ${rules}`, 350);
+  log('detect', `Rules that triggered: ${rules}`, 350);
   log(
     'fan-out',
-    `${fmt(s.flaggedChunks)} flagged chunks to explain + ${s.embedBatches} embedding batches → llm.enrich.requests (one partition per API key)`,
+    `Queued ${fmt(s.flaggedChunks)} unusual windows for the AI to explain, plus ${s.embedBatches} embedding batches - one queue lane per API key`,
     600
   );
 
@@ -58,12 +57,12 @@ export function buildReplay(f) {
   progress('ENRICHING', 0, 500);
   const lines = f.incidents.map((inc) => ({
     stage: 'explain',
-    text: `${hhmm(inc.start)}–${hhmm(inc.end)} · ${inc.flaggedMinutes} flagged minutes · ${fmt(inc.llmCalls)} chat calls → findings (JSON)`,
+    text: `Explained ${hhmm(inc.start)}-${hhmm(inc.end)}: ${inc.flaggedMinutes} unusual minutes, ${fmt(inc.llmCalls)} AI calls, findings saved`,
   }));
   for (let b = 1; b <= s.embedBatches; b += Math.max(1, Math.floor(s.embedBatches / 4))) {
     lines.splice(Math.min(lines.length, Math.round((b / s.embedBatches) * lines.length)), 0, {
       stage: 'embed',
-      text: `batch ${b}/${s.embedBatches} · 80 chunks → 768-d vectors → pgvector`,
+      text: `Embedding batch ${b}/${s.embedBatches}: 80 windows turned into vectors and stored for search`,
     });
   }
   const tickGap = Math.max(25, Math.round(9000 / total));
@@ -76,17 +75,17 @@ export function buildReplay(f) {
     }
   }
   const saved = Math.round((1 - s.llmCallsGated / s.llmCallsUngated) * 1000) / 10;
-  log('explain', `LLM calls: ${fmt(s.llmCallsGated)} with the anomaly gate vs ${fmt(s.llmCallsUngated)} without → ${saved}% fewer`, 300);
+  log('explain', `Used ${fmt(s.llmCallsGated)} AI calls instead of ${fmt(s.llmCallsUngated)} by skipping quiet minutes (${saved}% fewer)`, 300);
 
   // 4. Correlate, 5. Report
   progress('CORRELATING', total, 500);
-  log('correlate', `LangGraph groups the findings across services → ${f.incidents.length} incidents`, 900);
-  log('verify', 'an LLM judge checks every claim against the log lines it cites; unsupported claims are dropped', 1000);
+  log('correlate', `Grouped related findings across services into ${f.incidents.length} incidents`, 900);
+  log('verify', 'Checking every claim against the log lines it cites - dropping anything the log does not support', 1000);
   progress('REPORTING', total, 600);
-  log('report', 'rank incidents by impact · probable causes · follow-up actions', 900);
+  log('report', 'Ranking incidents by impact and writing probable causes and follow-up actions', 900);
 
   at += 1200;
-  steps.push({ at, log: { stage: 'done', text: `${f.incidents.length} incidents ready · ask questions about the file` }, final: true });
+  steps.push({ at, log: { stage: 'done', text: `Analysis complete: ${f.incidents.length} incidents ready - you can now ask questions about the log` }, final: true });
   steps.push({ at, progress: { status: 'DONE', enriched: total, total } });
   return steps;
 }
