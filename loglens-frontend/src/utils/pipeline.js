@@ -9,7 +9,7 @@ export function pipelineSteps(stats) {
     {
       key: 'upload',
       title: 'Upload',
-      body: 'Your browser sends the file straight to file storage with a short-lived upload link. The API checks that the file arrived and starts the analysis.',
+      body: 'Your browser sends the file straight to the blob store with a short-lived upload link. The API checks that the file arrived and starts the analysis.',
       metric: stats ? `${(stats.bytes / 2 ** 30).toFixed(1)} GB uploaded directly to storage` : 'uploaded directly to storage',
       nodes: ['client', 'blob', 'api'],
       edges: ['client-blob', 'client-api'],

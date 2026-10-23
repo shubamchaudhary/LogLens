@@ -3,14 +3,14 @@ import { useEffect, useRef, useState } from 'react';
 // The system on one diagram, plus the seven steps a log file takes through it.
 // Picking a step lights up the boxes and arrows it uses (steps: utils/pipeline.js).
 
-// Application server: the API and the workers run in the same Spring Boot app.
-const GROUP = { x: 225, y: 140, w: 520, h: 180, title: 'Application server (Spring Boot)' };
+// Application server: the API and the workers run in the same app.
+const GROUP = { x: 270, y: 140, w: 520, h: 180, title: 'Application server' };
 const NODES = {
-  client: { x: 30, y: 200, w: 150, title: 'Client', sub: 'your browser' },
-  blob: { x: 30, y: 30, w: 150, title: 'File storage', sub: 'holds the log file' },
-  api: { x: 270, y: 190, w: 180, title: 'API', sub: 'handles requests' },
-  workers: { x: 530, y: 190, w: 180, title: 'Workers', sub: 'split · parse · detect' },
-  kafka: { x: 400, y: 400, w: 170, title: 'Kafka', sub: 'job queue' },
+  client: { x: 30, y: 200, w: 150, title: 'Client', sub: '' },
+  blob: { x: 30, y: 30, w: 150, title: 'Blob Store', sub: 'holds the log file' },
+  api: { x: 315, y: 190, w: 180, title: 'API', sub: 'handles requests' },
+  workers: { x: 575, y: 190, w: 180, title: 'Workers', sub: 'split · parse · detect' },
+  kafka: { x: 445, y: 400, w: 170, title: 'Kafka', sub: 'job queue' },
   langgraph: { x: 700, y: 400, w: 150, title: 'LangGraph', sub: 'root cause + Q&A' },
   llm: { x: 890, y: 30, w: 150, title: 'LLM', sub: 'Groq · Gemini' },
   pg: { x: 890, y: 200, w: 150, title: 'Postgres', sub: 'data + vectors' },
@@ -20,15 +20,15 @@ const H = 80;
 
 // [id, svg path, label, label x, label y, label anchor]
 const EDGES = [
-  ['client-blob', 'M105 200 L105 110', 'direct upload', 117, 160, 'start'],
-  ['client-api', 'M180 240 L270 240', '', 0, 0],
-  ['api-kafka', 'M345 290 L345 440 L400 440', 'queue the job', 353, 372, 'start'],
-  ['kafka-workers', 'M570 440 L620 440 L620 290', 'hand out pieces', 630, 372, 'start'],
-  ['workers-blob', 'M620 190 L620 70 L180 70', 'read file slices', 400, 60, 'middle'],
-  ['workers-llm', 'M710 205 L830 205 L830 70 L890 70', 'flagged minutes', 822, 125, 'end'],
-  ['workers-pg', 'M710 255 L890 255', 'save results', 800, 247, 'middle'],
-  ['api-langgraph', 'M290 290 L290 510 L775 510 L775 480', 'analyze · ask', 545, 503, 'middle'],
-  ['langgraph-pg', 'M850 420 L870 420 L870 300 L965 300 L965 280', 'hybrid SQL', 862, 360, 'end'],
+  ['client-blob', 'M105 200 L105 110', 'upload', 117, 160, 'start'],
+  ['client-api', 'M180 240 L315 240', '', 0, 0],
+  ['api-kafka', 'M390 290 L390 440 L445 440', 'queue the job', 398, 372, 'start'],
+  ['kafka-workers', 'M615 440 L665 440 L665 290', 'hand out pieces', 675, 372, 'start'],
+  ['workers-blob', 'M665 190 L665 70 L180 70', 'read file slices', 420, 60, 'middle'],
+  ['workers-llm', 'M755 205 L830 205 L830 70 L890 70', 'flagged minutes', 822, 125, 'end'],
+  ['workers-pg', 'M755 255 L890 255', 'save results', 800, 247, 'middle'],
+  ['api-langgraph', 'M335 290 L335 510 L775 510 L775 480', 'analyze · ask', 555, 503, 'middle'],
+  ['langgraph-pg', 'M850 420 L870 420 L870 300 L965 300 L965 280', 'hybrid SQL', 880, 360, 'start'],
   ['langgraph-redis', 'M850 440 L890 440', '', 0, 0],
 ];
 
@@ -58,7 +58,7 @@ export function ArchitectureDiagram({ step }) {
           strokeWidth="1.5"
           className={groupOn ? 'fill-none stroke-accent' : 'fill-none stroke-line2'}
         />
-        <text x={GROUP.x + 20} y={GROUP.y + 28} className={`text-[15px] font-semibold ${groupOn ? 'fill-accent' : 'fill-muted'}`}>
+        <text x={GROUP.x + GROUP.w / 2} y={GROUP.y + 28} textAnchor="middle" className={`text-[15px] font-semibold ${groupOn ? 'fill-accent' : 'fill-muted'}`}>
           {GROUP.title}
         </text>
       </g>
@@ -94,12 +94,14 @@ export function ArchitectureDiagram({ step }) {
               strokeWidth={on ? 2 : 1}
               className={on ? 'fill-accent-soft stroke-accent' : 'fill-surface stroke-line2'}
             />
-            <text x={nd.x + nd.w / 2} y={nd.y + 34} textAnchor="middle" className="fill-ink text-[21px] font-semibold">
+            <text x={nd.x + nd.w / 2} y={nd.y + (nd.sub ? 34 : 47)} textAnchor="middle" className="fill-ink text-[21px] font-semibold">
               {nd.title}
             </text>
-            <text x={nd.x + nd.w / 2} y={nd.y + 58} textAnchor="middle" className="fill-muted text-[14px]">
-              {nd.sub}
-            </text>
+            {nd.sub && (
+              <text x={nd.x + nd.w / 2} y={nd.y + 58} textAnchor="middle" className="fill-muted text-[14px]">
+                {nd.sub}
+              </text>
+            )}
           </g>
         );
       })}
